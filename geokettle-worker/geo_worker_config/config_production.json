@@ -1,0 +1,15 @@
+{
+  "redis": {
+    "db": {
+      "host": "192.168.99.100",
+      "port": 6379,
+      "pass": ""
+    },
+    "db_ids": [
+      "status",
+      "cmapping",
+      "pmapping"
+    ]
+  },
+  "celery": {}
+}
