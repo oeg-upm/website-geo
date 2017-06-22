@@ -167,7 +167,7 @@ class Worker(object):
         """
 
         # Get RabbitMQ URL
-        celery_url = 'amqp://' + \
+        celery_url = 'pyamqp://' + \
             self.config['celery']['broker_user'] + ':' + \
             self.config['celery']['broker_pass'] + '@' + \
             self.config['celery']['broker_host'] + ':' + \
@@ -176,12 +176,27 @@ class Worker(object):
         # Create new Celery instance
         celery_app = Celery('geo_worker', broker_url=celery_url)
 
+        # Configure exchanges of RabbitMQ
+        default_exchange = Exchange('default', type='direct')
+        mapping_exchange = Exchange('mapping', type='direct')
+
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
-            Queue('default', Exchange('default'), routing_key='default'),
-            Queue('mapping-partial', Exchange('mapping'), routing_key='mapping.create.partial'),
-            Queue('mapping-entire', Exchange('mapping'), routing_key='mapping.create.entire')
+            Queue(
+                'default', default_exchange,
+                routing_key='default'
+            ),
+            Queue(
+                'mapping-partial', mapping_exchange,
+                routing_key='mapping.create.partial'
+            ),
+            Queue(
+                'mapping-entire', mapping_exchange,
+                routing_key='mapping.create.entire'
+            )
         )
+
+        # Configure default queue of RabbitMQ
         celery_app.conf.task_default_queue = 'default'
         celery_app.conf.task_default_exchange_type = 'direct'
         celery_app.conf.task_default_routing_key = 'default'
