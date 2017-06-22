@@ -7,9 +7,15 @@
     },
     "db_ids": [
       "status",
-      "cmapping",
-      "pmapping"
+      "mapping-p",
+      "mapping-e"
     ]
   },
-  "celery": {}
+  "celery": {
+    "broker_host": "localhost",
+    "broker_port": 5672,
+    "broker_user": "admin",
+    "broker_pass": "password"
+  },
+  "resources": "/opt/geo-resources"
 }

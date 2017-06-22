@@ -25,6 +25,7 @@ import sys
 import json
 import redis
 from celery import Celery
+from kombu import Exchange, Queue
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -164,7 +165,28 @@ class Worker(object):
     def configure_celery(self):
         """ This function allows to configure a Celery instance.
         """
-        return Celery('geo_worker', self.config['celery'])
+
+        # Get RabbitMQ URL
+        celery_url = 'amqp://' + \
+            self.config['celery']['broker_user'] + ':' + \
+            self.config['celery']['broker_pass'] + '@' + \
+            self.config['celery']['broker_host'] + ':' + \
+            self.config['celery']['broker_port'] + '//'
+
+        # Create new Celery instance
+        celery_app = Celery('geo_worker', broker_url=celery_url)
+
+        # Configure queues of RabbitMQ
+        celery_app.conf.task_queues = (
+            Queue('default', Exchange('default'), routing_key='default'),
+            Queue('mapping-partial', Exchange('mapping'), routing_key='mapping.create.partial'),
+            Queue('mapping-entire', Exchange('mapping'), routing_key='mapping.create.entire')
+        )
+        celery_app.conf.task_default_queue = 'default'
+        celery_app.conf.task_default_exchange_type = 'direct'
+        celery_app.conf.task_default_routing_key = 'default'
+
+        return celery_app
 
     def configure_redis(self):
         """ This function allows to configure a Redis database.
@@ -209,7 +231,7 @@ class Worker(object):
             self.redis = self.configure_redis()
 
         else:
-            raise Exception('Geokettle binaries are not available')
+            raise Exception('Geokettle binaries are not available [PATH]')
         
 
 # Create Celery Worker and export Celery app

@@ -50,7 +50,7 @@ setup(
     keywords="geolinkeddata celery worker geokettle gis",
     url="https://github.com/oeg-upm/website-geo.git",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-    install_requires=['celery'],
+    install_requires=['librabbitmq', 'celery', 'redis'],
     classifiers=[],
     scripts=['geo_worker.py']
 )
