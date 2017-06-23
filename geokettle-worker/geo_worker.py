@@ -26,6 +26,7 @@ import json
 import redis
 from celery import Celery
 from kombu import Exchange, Queue
+from redis import TimeoutError, ConnectionError
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -46,23 +47,30 @@ def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
         Geokettle.
 
     Returns:
-        Redis Instance or Raise an exception if configuration fails
+        Redis Instance or None if configuration fails
 
     """
 
+    __redis_pool = redis.ConnectionPool(
+        socket_connect_timeout=5,
+        host=redis_host,
+        port=redis_port,
+        password=redis_pass,
+        db=redis_db
+    )
     try:
-        __redis_pool = redis.Redis(
-            connection_pool=redis.ConnectionPool(
-                host=redis_host,
-                port=redis_port,
-                password=redis_pass,
-                db=redis_db
-            )
-        )
-        __redis_pool.client_list()
+
+        # Detect if Redis is running
+        __connection = __redis_pool.get_connection('ping')
+        __connection.send_command('ping')
         return __redis_pool
-    except Exception as e:
-        raise e
+
+    except (ConnectionError, TimeoutError):
+        
+        # Disconnect connection pool
+        __redis_pool.disconnect()
+
+        return None
 
 
 def check_geokettle_path():
@@ -87,12 +95,6 @@ def check_geokettle_path():
 
         # Get all nodes from directory
         path_files = os.listdir(path_dir)
-
-        # Get all (regular files) nodes
-        path_files = [
-            path_file for path_file in path_files if
-            os.path.isfile(path_file) and not os.path.islink(path_file)
-        ]
 
         # Return if kitchen and pan exists at the same folder
         if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
@@ -168,10 +170,10 @@ class Worker(object):
 
         # Get RabbitMQ URL
         celery_url = 'pyamqp://' + \
-            self.config['celery']['broker_user'] + ':' + \
-            self.config['celery']['broker_pass'] + '@' + \
-            self.config['celery']['broker_host'] + ':' + \
-            self.config['celery']['broker_port'] + '//'
+            str(self.config['celery']['broker_user']) + ':' + \
+            str(self.config['celery']['broker_pass']) + '@' + \
+            str(self.config['celery']['broker_host']) + ':' + \
+            str(self.config['celery']['broker_port']) + '//'
 
         # Create new Celery instance
         celery_app = Celery('geo_worker', broker_url=celery_url)
@@ -208,30 +210,41 @@ class Worker(object):
         """
 
         number_redis_db = 0
-        redis_config = {}
+        redis_connections = {}
+        redis_pools = {}
 
         # Generate connection pools to Redis Database
         for redis_config_name in self.config['redis']['db_ids']:
-            try:
-                redis_config[redis_config_name] = create_redis_pool(
-                    self.config['redis']['db']['host'],
-                    self.config['redis']['db']['port'],
-                    self.config['redis']['db']['pass'],
-                    number_redis_db
-                )
-            except Exception as e:
-                
+
+            # Create new connection pool
+            __redis_pool = create_redis_pool(
+                self.config['redis']['db']['host'],
+                self.config['redis']['db']['port'],
+                self.config['redis']['db']['pass'],
+                number_redis_db
+            )
+
+            # Test connection pool
+            if __redis_pool is None:
+
                 # Disconnect other connection pools
-                for redis_pool_name in redis_config.keys():
-                    redis_config[redis_pool_name].disconnect()
+                for redis_pool_name in redis_pools.keys():
+                    redis_pools[redis_pool_name].disconnect()
 
                 # Raise exception to caller method
-                raise e
+                raise Exception('Redis is not running or configured')
+
+            else:
+
+                # Save connection to structure
+                redis_connections[redis_config_name] = redis.Redis(
+                    connection_pool=__redis_pool
+                )
 
             # Add new number for next connection pool
             number_redis_db += 1
 
-        return redis_config
+        return redis_connections
 
     def __init__(self):
 
