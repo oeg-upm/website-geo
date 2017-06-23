@@ -20,6 +20,8 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
+from celery.task import task
+
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
 __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
@@ -29,13 +31,16 @@ __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
 
 
-def temporal_mapping():
-    print "temporal mapping"
+@task(bind=True, name='geo_worker_tasks.temporal_mapping', max_retries=5)
+def temporal_mapping(self):
+    print "Message has been received from temporal_mapping"
 
 
-def entire_mapping():
-    print "entire mapping"
+@task(bind=True, name='geo_worker_tasks.entire_mapping', max_retries=5)
+def entire_mapping(self):
+    print "Message has been received from entire_mapping"
 
 
-def default():
-    print "default"
+@task(bind=True, name='geo_worker_tasks.default', max_retries=5)
+def default(self):
+    print "Message has been received from default"

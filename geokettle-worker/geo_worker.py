@@ -168,19 +168,25 @@ class Worker(object):
         """ This function allows to configure a Celery instance.
         """
 
+        # Create new Celery instance
+        celery_app = Celery('geo_worker')
+
+        # Configure exchanges of RabbitMQ
+        default_exchange = Exchange('default', type='direct')
+        mapping_exchange = Exchange('mapping', type='direct')
+
         # Get RabbitMQ URL
-        celery_url = 'pyamqp://' + \
+        celery_app.conf.broker_url = 'pyamqp://' + \
             str(self.config['celery']['broker_user']) + ':' + \
             str(self.config['celery']['broker_pass']) + '@' + \
             str(self.config['celery']['broker_host']) + ':' + \
             str(self.config['celery']['broker_port']) + '//'
 
-        # Create new Celery instance
-        celery_app = Celery('geo_worker', broker_url=celery_url)
+        # Compatibility with previous AMQP protocols
+        celery_app.conf.task_protocol = 1
 
-        # Configure exchanges of RabbitMQ
-        default_exchange = Exchange('default', type='direct')
-        mapping_exchange = Exchange('mapping', type='direct')
+        # Import registered tasks
+        celery_app.conf.imports = ('geo_worker_tasks',)
 
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
