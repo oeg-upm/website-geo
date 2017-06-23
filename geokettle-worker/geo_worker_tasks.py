@@ -27,3 +27,15 @@ __license__ = "Apache"
 __version__ = "2.0"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
+
+
+def temporal_mapping():
+    print "temporal mapping"
+
+
+def entire_mapping():
+    print "entire mapping"
+
+
+def default():
+    print "default"

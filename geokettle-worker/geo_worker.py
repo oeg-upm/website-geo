@@ -215,7 +215,7 @@ class Worker(object):
                 'exchange': mapping_exchange,
                 'routing_key': 'mapping.create.entire'
             },
-            'geo_tasks.default': {
+            'geo_worker_tasks.default': {
                 'queue': 'default',
                 'exchange': default_exchange,
                 'routing_key': 'default'
