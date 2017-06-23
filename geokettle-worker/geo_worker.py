@@ -84,7 +84,7 @@ def check_geokettle_path():
 
     """
 
-    # Create split character depeding on operative system
+    # Create split character depending on operative system
     path_split = ';' if 'win32' in sys.platform else ':'
 
     # Get folders from PATH variable
@@ -185,16 +185,16 @@ class Worker(object):
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
             Queue(
-                'default', default_exchange,
-                routing_key='default'
-            ),
-            Queue(
                 'mapping-partial', mapping_exchange,
                 routing_key='mapping.create.partial'
             ),
             Queue(
                 'mapping-entire', mapping_exchange,
                 routing_key='mapping.create.entire'
+            ),
+            Queue(
+                'default', default_exchange,
+                routing_key='default'
             )
         )
 
@@ -202,6 +202,25 @@ class Worker(object):
         celery_app.conf.task_default_queue = 'default'
         celery_app.conf.task_default_exchange_type = 'direct'
         celery_app.conf.task_default_routing_key = 'default'
+
+        # Configure tasks of Celery - RabbitMQ
+        celery_app.conf.task_routes = {
+            'geo_worker_tasks.temporal_mapping': {
+                'queue': 'mapping-partial',
+                'exchange': mapping_exchange,
+                'routing_key': 'mapping.create.partial'
+            },
+            'geo_worker_tasks.entire_mapping': {
+                'queue': 'mapping-entire',
+                'exchange': mapping_exchange,
+                'routing_key': 'mapping.create.entire'
+            },
+            'geo_tasks.default': {
+                'queue': 'default',
+                'exchange': default_exchange,
+                'routing_key': 'default'
+            }
+        }
 
         return celery_app
 
