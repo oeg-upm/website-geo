@@ -17,5 +17,6 @@
     "broker_user": "rabbitmq",
     "broker_pass": "password"
   },
-  "resources": "/opt/geo-resources"
+  "resources": "/opt/geo-resources",
+  "logging": "/var/log/geokettle-worker.log"
 }
