@@ -21,15 +21,14 @@
 """
 
 import os
+import sys
 import json
-import logging
-from logging.handlers import RotatingFileHandler
+from geo_worker_log import WorkerLogger
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
 __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
 __license__ = "Apache"
-__version__ = "2.0"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
 
@@ -46,30 +45,82 @@ def get_configuration_file():
     """
 
     # Configuration folder
-    base_path = './geo_worker_config'
+    __config_base_path = '../geo_worker_config'
 
     # Check if application is on Debug mode
     if int(os.environ.get('OEG_DEBUG_MODE', 1)) == 1:
 
         # Get development configuration
-        config_file_path = os.environ.get(
-            'OEG_CONFIG_DEBUG_FILE', base_path + '/config_debug.json'
+        __config_path = os.environ.get(
+            'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
         )
     else:
 
         # Get production configuration
-        config_file_path = os.environ.get(
-            'OEG_CONFIG_FILE', base_path + '/config_production.json'
+        __config_path = os.environ.get(
+            'OEG_CONFIG_FILE', __config_base_path + '/config_production.json'
         )
 
     # Load current directory of geo_worker.py
     cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
 
     # Open file to load configuration
-    with open(cwd + config_file_path) as data_file:
+    with open(cwd + __config_path) as __file_data:
 
         # Return dictionary as configuration
-        return dict(json.load(data_file))
+        return dict(json.load(__file_data))
+
+
+##########################################################################
+
+
+def check_geokettle_path():
+    """ This function detects if Geokettle executables are included
+        on the current environment (PATH variable). This is important
+        to avoid full path directories and to be compatible with Docker
+        Geokettle Image.
+
+    Returns:
+        bool: Return True if "kitchen" and "pan" exist, False otherwise.
+
+    """
+
+    # Create split character depending on operative system
+    path_split = ';' if 'win32' in sys.platform else ':'
+
+    # Get folders from PATH variable
+    path_dirs = os.environ.get('PATH').split(path_split)
+
+    # Iterate over folders
+    for path_dir in path_dirs:
+
+        # Get all nodes from directory
+        path_files = os.listdir(path_dir)
+
+        # Return if kitchen and pan exists at the same folder
+        if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
+            return True
+
+    # executables were not found
+    return False
+
+
+def check_gdal_path():
+    """ This function detects if GDAL executables are included
+        on the current environment (PATH variable). This is important
+        to avoid full path directories and to be sure that GDAL tools
+        are available to execute them.
+
+    Returns:
+        bool: Return True if GDAL tools exist, False otherwise.
+
+    """
+
+    try:
+        from osgeo import ogr, osr, gdal
+        return True
+    except Exception:
+        return False
 
 
 ##########################################################################
@@ -88,8 +139,9 @@ class Singleton(type):
             return super(Singleton, cls).__call__(*args, **kwargs)
 
 
-class WorkerLogger(object):
-    """ This constructor creates only an instance of a Logger
+class WorkerGIS(object):
+    """ This constructor creates only an instance of a GIS library
+        for doing transformations or getting information from data
         following the singleton pattern (software design pattern).
 
     """
@@ -98,23 +150,11 @@ class WorkerLogger(object):
     __metaclass__ = Singleton
 
     def __init__(self):
-        
-        # Create logger - formatter
-        logger_formatter = logging.Formatter(
-            fmt='%(asctime)s %(levelname)-8s %(message)s',
-            datefmt='%a, %d %b %Y %H:%M:%S'
-        )
 
-        # Create logger - handler
-        logger_handler = RotatingFileHandler(
-            get_configuration_file()['logging'],
-            maxBytes=10*1024*1024, backupCount=5
-        )
-        logger_handler.setFormatter(logger_formatter)
+        # Set status of GIS configuration
+        self.status = check_geokettle_path() and check_gdal_path()
 
-        # Create logger
-        self.log = logging.getLogger("WorkerLogger")
+        if self.status:
 
-        # Set configuration for logger
-        self.log.setLevel(logging.DEBUG)
-        self.log.addHandler(logger_handler)
+            # Create logger for this Python script
+            self.logger = WorkerLogger()

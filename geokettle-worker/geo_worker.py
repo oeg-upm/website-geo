@@ -23,85 +23,21 @@
 import os
 import sys
 import json
-import redis
 from celery import Celery
 from kombu import Exchange, Queue
-from redis import TimeoutError, ConnectionError
+from geo_worker_helpers.geo_worker_gis import WorkerGIS
+from geo_worker_helpers.geo_worker_db import WorkerRedis
+from geo_worker_helpers.geo_worker_log import WorkerLogger
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
 __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
 __license__ = "Apache"
-__version__ = "2.0"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
 
 
 ##########################################################################
-
-
-def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
-    """ This function creates a connection pool for Redis Database
-        with a specific configuration. This is important to save and get
-        information and status of the jobs and transformations for
-        Geokettle.
-
-    Returns:
-        Redis Instance or None if configuration fails
-
-    """
-
-    __redis_pool = redis.ConnectionPool(
-        socket_connect_timeout=5,
-        host=redis_host,
-        port=redis_port,
-        password=redis_pass,
-        db=redis_db
-    )
-    try:
-
-        # Detect if Redis is running
-        __connection = __redis_pool.get_connection('ping')
-        __connection.send_command('ping')
-        return __redis_pool
-
-    except (ConnectionError, TimeoutError):
-        
-        # Disconnect connection pool
-        __redis_pool.disconnect()
-
-        return None
-
-
-def check_geokettle_path():
-    """ This function detects if Geokettle executables are included
-        on the current environment (PATH variable). This is important
-        to avoid full path directories and to be compatible with Docker
-        Geokettle Image.
-
-    Returns:
-        bool: Return True if "kitchen" and "pan" exist, False otherwise.
-
-    """
-
-    # Create split character depending on operative system
-    path_split = ';' if 'win32' in sys.platform else ':'
-
-    # Get folders from PATH variable
-    path_dirs = os.environ.get('PATH').split(path_split)
-
-    # Iterate over folders
-    for path_dir in path_dirs:
-
-        # Get all nodes from directory
-        path_files = os.listdir(path_dir)
-
-        # Return if kitchen and pan exists at the same folder
-        if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
-            return True
-
-    # executables were not found
-    return False
 
 
 def get_configuration_file():
@@ -191,12 +127,16 @@ class Worker(object):
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
             Queue(
-                'mapping-partial', mapping_exchange,
-                routing_key='mapping.create.partial'
+                'mapping-initial', mapping_exchange,
+                routing_key='mapping.initial'
             ),
             Queue(
-                'mapping-entire', mapping_exchange,
-                routing_key='mapping.create.entire'
+                'mapping-partial', mapping_exchange,
+                routing_key='mapping.partial'
+            ),
+            Queue(
+                'mapping-complete', mapping_exchange,
+                routing_key='mapping.complete'
             ),
             Queue(
                 'default', default_exchange,
@@ -211,15 +151,20 @@ class Worker(object):
 
         # Configure tasks of Celery - RabbitMQ
         celery_app.conf.task_routes = {
-            'geo_worker_tasks.temporal_mapping': {
+            'geo_worker_tasks.initial_mapping': {
+                'queue': 'mapping-initial',
+                'exchange': mapping_exchange,
+                'routing_key': 'mapping.initial'
+            },
+            'geo_worker_tasks.partial_mapping': {
                 'queue': 'mapping-partial',
                 'exchange': mapping_exchange,
-                'routing_key': 'mapping.create.partial'
+                'routing_key': 'mapping.partial'
             },
-            'geo_worker_tasks.entire_mapping': {
-                'queue': 'mapping-entire',
+            'geo_worker_tasks.complete_mapping': {
+                'queue': 'mapping-complete',
                 'exchange': mapping_exchange,
-                'routing_key': 'mapping.create.entire'
+                'routing_key': 'mapping.complete'
             },
             'geo_worker_tasks.default': {
                 'queue': 'default',
@@ -230,62 +175,48 @@ class Worker(object):
 
         return celery_app
 
-    def configure_redis(self):
-        """ This function allows to configure a Redis database.
-        """
-
-        number_redis_db = 0
-        redis_connections = {}
-        redis_pools = {}
-
-        # Generate connection pools to Redis Database
-        for redis_config_name in self.config['redis']['db_ids']:
-
-            # Create new connection pool
-            __redis_pool = create_redis_pool(
-                self.config['redis']['db']['host'],
-                self.config['redis']['db']['port'],
-                self.config['redis']['db']['pass'],
-                number_redis_db
-            )
-
-            # Test connection pool
-            if __redis_pool is None:
-
-                # Disconnect other connection pools
-                for redis_pool_name in redis_pools.keys():
-                    redis_pools[redis_pool_name].disconnect()
-
-                # Raise exception to caller method
-                raise Exception('Redis is not running or configured')
-
-            else:
-
-                # Save connection to structure
-                redis_connections[redis_config_name] = redis.Redis(
-                    connection_pool=__redis_pool
-                )
-
-            # Add new number for next connection pool
-            number_redis_db += 1
-
-        return redis_connections
-
     def __init__(self):
 
-        # Check if geokettle is available
-        if check_geokettle_path():
+        # Create logger for this Python script
+        self.logger = WorkerLogger()
 
-            # Get configuration of worker
-            self.config = get_configuration_file()
+        # Init Database connections
+        self.db = WorkerRedis()
 
-            # Generate links
-            self.celery = self.configure_celery()
-            self.redis = self.configure_redis()
+        # Check Database connections
+        if not self.db.status:
 
-        else:
-            raise Exception('Geokettle binaries are not available [PATH]')
-        
+            # Log error to log file
+            self.logger.log.error(
+                'Redis configuration is not valid or Redis '
+                'is not running'
+            )
+
+            # Exit worker
+            sys.exit(1)
+
+        # Init GIS helpers
+        self.gis = WorkerGIS()
+
+        # Check GIS helpers
+        if not self.gis.status:
+
+            # Log error to log file
+            self.logger.log.error(
+                'GIS tools are not available at PATH. Please, '
+                'check your Geokettle configuration and be sure '
+                'that GDAL libraries are installed correctly'
+            )
+
+            # Exit worker
+            sys.exit(1)
+
+        # Get configuration of worker
+        self.config = get_configuration_file()
+
+        # Init Celery worker
+        self.celery = self.configure_celery()
+
 
 # Create Celery Worker and export Celery app
 worker = Worker()

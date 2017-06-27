@@ -20,9 +20,6 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-from celery.task import task
-from geo_worker_helpers.geo_worker_log import WorkerLogger
-
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
 __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
@@ -32,43 +29,3 @@ __email__ = "alejfcarrera@mail.ru"
 
 
 ##########################################################################
-
-
-@task(bind=True, name='geo_worker_tasks.initial_mapping', max_retries=5)
-def initial_mapping(self):
-
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
-
-    # Log kind of task received
-    logger.log.info("[Worker - Initial] Task received")
-
-
-@task(bind=True, name='geo_worker_tasks.partial_mapping', max_retries=5)
-def partial_mapping(self):
-
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
-
-    # Log kind of task received
-    logger.log.info("[Worker - Partial] Task received")
-
-
-@task(bind=True, name='geo_worker_tasks.complete_mapping', max_retries=5)
-def complete_mapping(self):
-
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
-
-    # Log kind of task received
-    logger.log.info("[Worker - Complete] Task received")
-
-
-@task(bind=True, name='geo_worker_tasks.default', max_retries=5)
-def default(self):
-
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
-
-    # Log kind of task received
-    logger.log.info("[Worker - Default] Task received")
