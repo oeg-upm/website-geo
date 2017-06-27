@@ -21,13 +21,9 @@
 """
 
 import os
-import sys
 import json
 from celery import Celery
 from kombu import Exchange, Queue
-from geo_worker_helpers.geo_worker_gis import WorkerGIS
-from geo_worker_helpers.geo_worker_db import WorkerRedis
-from geo_worker_helpers.geo_worker_log import WorkerLogger
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -176,40 +172,6 @@ class Worker(object):
         return celery_app
 
     def __init__(self):
-
-        # Create logger for this Python script
-        self.logger = WorkerLogger()
-
-        # Init Database connections
-        self.db = WorkerRedis()
-
-        # Check Database connections
-        if not self.db.status:
-
-            # Log error to log file
-            self.logger.log.error(
-                'Redis configuration is not valid or Redis '
-                'is not running'
-            )
-
-            # Exit worker
-            sys.exit(1)
-
-        # Init GIS helpers
-        self.gis = WorkerGIS()
-
-        # Check GIS helpers
-        if not self.gis.status:
-
-            # Log error to log file
-            self.logger.log.error(
-                'GIS tools are not available at PATH. Please, '
-                'check your Geokettle configuration and be sure '
-                'that GDAL libraries are installed correctly'
-            )
-
-            # Exit worker
-            sys.exit(1)
 
         # Get configuration of worker
         self.config = get_configuration_file()

@@ -20,8 +20,11 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
+import time
 from celery.task import task
-from geo_worker_helpers.geo_worker_log import WorkerLogger
+from celery.utils.log import get_task_logger
+from geo_worker_helpers.geo_worker_gis import WorkerGIS
+from geo_worker_helpers.geo_worker_db import WorkerRedis
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -34,41 +37,154 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
+def get_libraries():
+    """ This function allows to configure the database and the GDAL
+        libraries to use them from the Celery workers of this project.
+
+    Returns:
+        Dict: Return a tuple with Redis and GDAL or Raise an exception.
+
+    """
+
+    # Create instance of Redis database
+    __redis_db = WorkerRedis()
+
+    # Check if redis configuration is good
+    if not __redis_db.status:
+        raise Exception(
+            'Redis configuration is not valid or Redis '
+            'is not running'
+        )
+
+    # Create instance of GDAL methods
+    __gdal_lib = WorkerGIS()
+
+    # Check if libraries are good imported
+    if not __gdal_lib.status:
+        raise Exception(
+            'GIS tools are not available at PATH. Please, '
+            'check your Geokettle configuration and be sure '
+            'that GDAL libraries are installed correctly'
+        )
+
+    return __redis_db, __gdal_lib
+
+
+def print_worker_status(status):
+    """ This function allows to print a specific message depending on
+        returned Celery worker's status.
+
+    """
+
+    # Create logger to log messages to specific log file
+    logger = get_task_logger(__name__)
+
+    if status == 1:
+
+        # Log when the configuration is wrong
+        logger.warn('-> Skipped task (redis is not running)')
+
+    elif status == 2:
+
+        # Log when the task is locked
+        logger.warn('-> Skipped task (locked by other worker)')
+
+    else:
+
+        # Log when the task is finished
+        logger.warn('-> Skipped task (finished by other worker)')
+
+
+##########################################################################
+
+
 @task(bind=True, name='geo_worker_tasks.initial_mapping', max_retries=5)
 def initial_mapping(self):
 
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
+    # Get instance of Redis and GDAL instance of Redis Database
+    __redis_db, __gdal_lib = get_libraries()
 
-    # Log kind of task received
-    logger.log.info("[Worker - Initial] Task received")
+    # Get identifier of the task -> file
+    __identifier = self.request.id
+
+    # Lock the execution for this task. In this case we will use
+    # the Redis SETNX to ensure that other remote machines won't do
+    # the same task.
+    __lock_status = __redis_db.lock(__identifier, 'mapping-i')
+
+    # Check status of the lock
+    if __lock_status == 0:
+
+        # Do task
+        time.sleep(5)
+
+        # Release lock
+        __redis_db.unlock(__identifier + ':mapping-i', True)
+
+    else:
+
+        # Log status
+        print_worker_status(__lock_status)
 
 
 @task(bind=True, name='geo_worker_tasks.partial_mapping', max_retries=5)
 def partial_mapping(self):
 
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
+    # Get instance of Redis and GDAL instance of Redis Database
+    __redis_db, __gdal_lib = get_libraries()
 
-    # Log kind of task received
-    logger.log.info("[Worker - Partial] Task received")
+    # Get identifier of the task -> file
+    __identifier = self.request.id
+
+    # Lock the execution for this task. In this case we will use
+    # the Redis SETNX to ensure that other remote machines won't do
+    # the same task.
+    __lock_status = __redis_db.lock(__identifier, 'mapping-p')
+
+    # Check status of the lock
+    if __lock_status == 0:
+
+        # Do task
+        time.sleep(5)
+
+        # Release lock
+        __redis_db.unlock(__identifier + ':mapping-p', True)
+
+    else:
+
+        # Log status
+        print_worker_status(__lock_status)
 
 
 @task(bind=True, name='geo_worker_tasks.complete_mapping', max_retries=5)
 def complete_mapping(self):
 
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
+    # Get instance of Redis and GDAL instance of Redis Database
+    __redis_db, __gdal_lib = get_libraries()
 
-    # Log kind of task received
-    logger.log.info("[Worker - Complete] Task received")
+    # Get identifier of the task -> file
+    __identifier = self.request.id
+
+    # Lock the execution for this task. In this case we will use
+    # the Redis SETNX to ensure that other remote machines won't do
+    # the same task.
+    __lock_status = __redis_db.lock(__identifier, 'mapping-c')
+
+    # Check status of the lock
+    if __lock_status == 0:
+
+        # Do task
+        time.sleep(5)
+
+        # Release lock
+        __redis_db.unlock(__identifier + ':mapping-c', True)
+
+    else:
+
+        # Log status
+        print_worker_status(__lock_status)
 
 
 @task(bind=True, name='geo_worker_tasks.default', max_retries=5)
 def default(self):
-
-    # Create logger to log messages to specific log file
-    logger = WorkerLogger()
-
-    # Log kind of task received
-    logger.log.info("[Worker - Default] Task received")
+    return

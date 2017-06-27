@@ -22,8 +22,9 @@
 
 import os
 import json
+import time
 import redis
-from geo_worker_log import WorkerLogger
+from celery.utils.log import get_task_logger
 from redis import TimeoutError, ConnectionError
 
 __author__ = "Alejandro F. Carrera"
@@ -187,4 +188,102 @@ class WorkerRedis(object):
         if self.status:
 
             # Create logger for this Python script
-            self.logger = WorkerLogger()
+            self.logger = get_task_logger(__name__)
+
+    def check_existence(self, identifier, database):
+        """ This function allows to check if key exists.
+        """
+
+        # Check Redis configuration
+        if not self.status:
+            return False
+
+        # Return status
+        return self.redis[database].exists(identifier)   
+
+    def unlock(self, identifier, forced=False):
+        """ This function allows to remove a Redis lock.
+
+        Returns:
+            Bool: Return True if unlock, False otherwise.
+
+        """
+
+        # Check Redis configuration
+        if not self.status:
+            return False
+
+        # Check if lock exists
+        if self.redis['tasks'].exists(identifier):
+        
+            # Check the time of expiration
+            # This behaviour is to be sure that the
+            # worker with the lock is not crashed
+            if (int(self.redis['tasks'].get(identifier)) <
+                    int(time.time())) or forced:
+
+                self.logger.warn(' -> UNLOCKED %s', identifier)
+
+                # Release the identifier of the task
+                self.redis['tasks'].delete(identifier)
+
+                # Unlock was successful
+                return True
+
+        # Unlock was unsuccessful
+        return False
+
+    def lock(self, identifier, database, seconds=21):
+        """ This function allows to create a Redis lock.
+
+        Returns:
+            int: Return
+                0 = lock is created.
+                1 = lock is not created by redis.
+                2 = lock is not created by worker.
+                3 = lock is not created by status.
+
+        """
+
+        # Check Redis configuration
+        if not self.status:
+            return 1
+
+        # Create pseudo-identifier
+        __identifier = identifier + ':' + database
+
+        # Check if lock does not exist
+        if not self.redis['tasks'].exists(__identifier):
+            
+            # Save database to lock
+            self.redis['tasks'].setnx(
+                __identifier, str(int(time.time()) + seconds)
+            )
+
+            self.logger.warn(' -> LOCKED %s', __identifier)
+
+            # Lock was successful
+            return 0
+
+        else:
+
+            # Try to unlock
+            if self.unlock(__identifier):
+                
+                # Try to lock again
+                if self.lock(identifier, database) == 0:
+
+                    # Lock was successful
+                    return 0
+
+        # Check if for any reason the task is finished
+        if self.check_existence(identifier, database):
+
+            # If task is finished, unlock the resource
+            self.unlock(__identifier, True)
+
+            # Lock must be removed for always
+            return 3
+
+        # Lock was unsuccessful
+        return 2

@@ -23,7 +23,6 @@
 import os
 import sys
 import json
-from geo_worker_log import WorkerLogger
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -153,8 +152,3 @@ class WorkerGIS(object):
 
         # Set status of GIS configuration
         self.status = check_geokettle_path() and check_gdal_path()
-
-        if self.status:
-
-            # Create logger for this Python script
-            self.logger = WorkerLogger()
