@@ -23,6 +23,7 @@
 import os
 import sys
 import json
+from subprocess import Popen, PIPE
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -115,11 +116,129 @@ def check_gdal_path():
 
     """
 
-    try:
-        from osgeo import ogr, osr, gdal
-        return True
-    except Exception:
-        return False
+    # Create split character depending on operative system
+    path_split = ';' if 'win32' in sys.platform else ':'
+
+    # Get folders from PATH variable
+    path_dirs = os.environ.get('PATH').split(path_split)
+
+    # Iterate over folders
+    for path_dir in path_dirs:
+
+        # Get all nodes from directory
+        path_files = os.listdir(path_dir)
+
+        # Return if kitchen and pan exists at the same folder
+        if 'ogr2ogr' in path_files and 'ogrinfo' in path_files:
+            return True
+
+    # executables were not found
+    return False
+
+
+##########################################################################
+
+
+def cmd_ogr2ogr(arguments):
+    """ This function executes an ogr2ogr command.
+
+    Returns:
+        Triple: Return parsed output, errors and exit code.
+
+    """
+
+    # Extend arguments with ogr executable
+    __arguments = ['ogr2ogr'] + arguments
+
+    # Execute GDAL commands
+    __g_out, __g_err, __g_exit = exec_ogr_command(__arguments)
+    
+    return parse_ogr_return(__g_out, __g_err, __g_exit)
+
+
+def cmd_ogrinfo(arguments):
+    """ This function executes an ogrinfo command.
+
+    Returns:
+        Triple: Return parsed output, errors and exit code.
+
+    """
+
+    # Extend arguments with ogr executable
+    __arguments = ['ogrinfo', '-al', '-so'] + arguments
+
+    # Execute GDAL commands
+    __g_out, __g_err, __g_exit = exec_ogr_command(__arguments)
+    
+    return parse_ogr_return(__g_out, __g_err, __g_exit)
+
+
+def exec_ogr_command(arguments):
+    """ This function executes an ogr command through subprocess.
+
+    Returns:
+        Triple: Return output, errors and exit code of the process.
+
+    """
+
+    # Create process
+    __proc = Popen(arguments, stdout=PIPE, stderr=PIPE)
+
+    # Execute process
+    __proc_out, __proc_err = __proc.communicate()
+
+    # Get exit status
+    __proc_exit = __proc.returncode
+
+    return __proc_out, __proc_err, __proc_exit
+
+
+def parse_ogr_return(outputs, errors, code):
+    """ This function parses the both outputs from ogr execution.
+
+    Returns:
+        Dict: Return information about the outputs.
+
+    """
+
+    # Create temporal output log
+    __output = outputs.split('\n')
+
+    # Search failures at ogrinfo output
+    __error = []
+    for __o in range(len(__output)):
+        if 'FAILURE' in __output[__o]:
+            __error.append(__output[__o + 1])
+
+    # Remove empty lines and search only properties
+    # from ogrinfo output
+    __output = [
+        __o for __o in __output
+        if __o != '' and ':' in __o and __o[-1] != ':'
+        and 'INFO' not in __o
+    ]
+
+    # Create temporal error log
+    __errors = errors.split('\n')
+
+    # Remove empty lines and save only warnings
+    __warning = [
+        __e[__e.index(':') + 2:] for __e in __error
+        if 'Warning' in __e and __e != ''
+    ]
+
+    # Remove empty lines and save only errors
+    __error += [
+        __e[__e.index(':') + 2:] for __e in __errors
+        if 'ERROR' in __e and __e != ''
+    ]
+
+    return {
+        'status': code,
+        'info': __output,
+        'warn': __warning,
+        'error': __error
+    }
 
 
 ##########################################################################
@@ -151,4 +270,39 @@ class WorkerGIS(object):
     def __init__(self):
 
         # Set status of GIS configuration
-        self.status = check_geokettle_path() and check_gdal_path()
+        self.status = check_geokettle_path() and check_gdal_path()      
+
+    def transform_to_shp(self, identifier, extension):
+
+        # Create arguments for transforming to Shapefile
+        __command = [
+            '-t_srs', 'EPSG:4326', '-f', 'ESRI Shapefile',
+            identifier + '.shp', identifier + '.' + extension,
+            '-explodecollections'
+        ]
+
+        return cmd_ogr2ogr(__command)
+
+    def get_info(self, identifier, extension):
+
+        # Create arguments for getting information about file
+        __command = [identifier + '.' + extension]
+
+        return cmd_ogrinfo(__command)
+
+    def get_fields(self, identifier, extension):
+
+        # Create arguments for getting information about file
+        __command = [identifier + '.' + extension]
+
+        # Get information when executes
+        __info = cmd_ogrinfo(__command)
+
+        # Only get fields for output
+        __info['info'] = [
+            __o for __o in __info['info'] 
+            if 'Geometry:' not in __o and 'Feature Count:' not in __o
+            and 'Extent: (' not in __o and 'Layer name:' not in __o
+        ]
+
+        return __info
