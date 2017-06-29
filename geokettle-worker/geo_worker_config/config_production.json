@@ -8,9 +8,16 @@
     "db_ids": [
       "tasks",
       "status",
+      "files",
       "mapping-i",
+      "mapping-i-w",
+      "mapping-i-e",
       "mapping-p",
-      "mapping-c"
+      "mapping-p-w",
+      "mapping-p-e",
+      "mapping-c",
+      "mapping-c-w",
+      "mapping-c-e"
     ]
   },
   "celery": {
