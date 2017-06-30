@@ -20,6 +20,10 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
+import sys
+reload(sys)  
+sys.setdefaultencoding('utf8')
+
 import os
 import json
 from celery import Celery
@@ -45,30 +49,38 @@ def get_configuration_file():
     """
 
     # Configuration folder
-    base_path = './geo_worker_config'
+    __config_base_path = './geo_worker_config'
+    __debug = False
 
     # Check if application is on Debug mode
     if int(os.environ.get('OEG_DEBUG_MODE', 1)) == 1:
 
         # Get development configuration
-        config_file_path = os.environ.get(
-            'OEG_CONFIG_DEBUG_FILE', base_path + '/config_debug.json'
+        __config_path = os.environ.get(
+            'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
         )
+
+        # Set debug flag
+        __debug = True
+
     else:
 
         # Get production configuration
-        config_file_path = os.environ.get(
-            'OEG_CONFIG_FILE', base_path + '/config_production.json'
+        __config_path = os.environ.get(
+            'OEG_CONFIG_FILE', __config_base_path + '/config_production.json'
         )
 
     # Load current directory of geo_worker.py
     cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
 
     # Open file to load configuration
-    with open(cwd + config_file_path) as data_file:
+    with open(cwd + __config_path) as __file_data:
 
         # Return dictionary as configuration
-        return dict(json.load(data_file))
+        __dict = dict(json.load(__file_data))
+        __dict['debug'] = __debug
+        
+        return __dict
 
 
 ##########################################################################
