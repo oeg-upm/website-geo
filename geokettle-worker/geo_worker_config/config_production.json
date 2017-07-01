@@ -26,5 +26,5 @@
     "broker_user": "admin",
     "broker_pass": "password"
   },
-  "resources": "/opt/geo-resources"
+  "resources": "/opt/geo-resources/"
 }

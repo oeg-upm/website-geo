@@ -21,11 +21,15 @@
 """
 
 import os
+import sys
 import json
 import time
 import redis
 from celery.utils.log import get_task_logger
 from redis import TimeoutError, ConnectionError
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -48,6 +52,7 @@ def get_configuration_file():
 
     # Configuration folder
     __config_base_path = '../geo_worker_config'
+    __debug = False
 
     # Check if application is on Debug mode
     if int(os.environ.get('OEG_DEBUG_MODE', 1)) == 1:
@@ -56,6 +61,10 @@ def get_configuration_file():
         __config_path = os.environ.get(
             'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
         )
+
+        # Set debug flag
+        __debug = True
+
     else:
 
         # Get production configuration
@@ -70,7 +79,10 @@ def get_configuration_file():
     with open(cwd + __config_path) as __file_data:
 
         # Return dictionary as configuration
-        return dict(json.load(__file_data))
+        __dict = dict(json.load(__file_data))
+        __dict['debug'] = __debug
+        
+        return __dict
 
 
 ##########################################################################
@@ -109,23 +121,23 @@ def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
         return None
 
 
-def configure_redis():
+def configure_redis(configuration):
     """ This function allows to configure a Redis database.
+
     """
 
     __number_redis = 0
     __redis_connections = {}
     __redis_pools = {}
-    __configuration = get_configuration_file()
 
     # Generate connection pools to Redis Database
-    for __redis_name in __configuration['redis']['db_ids']:
+    for __redis_name in configuration['redis']['db_ids']:
 
         # Create new connection pool
         __redis_pool = create_redis_pool(
-            __configuration['redis']['db']['host'],
-            __configuration['redis']['db']['port'],
-            __configuration['redis']['db']['pass'],
+            configuration['redis']['db']['host'],
+            configuration['redis']['db']['port'],
+            configuration['redis']['db']['pass'],
             __number_redis
         )
 
@@ -179,8 +191,11 @@ class WorkerRedis(object):
 
     def __init__(self):
         
+        # Get current configuration
+        self.config = get_configuration_file()
+
         # Create configuration for Redis
-        self.redis = configure_redis()
+        self.redis = configure_redis(self.config)
 
         # Set status of Redis configuration
         self.status = self.redis is not None
@@ -192,6 +207,10 @@ class WorkerRedis(object):
 
     def check_existence(self, identifier, database):
         """ This function allows to check if key exists.
+
+        Returns:
+            Return True if exists, False otherwise
+
         """
 
         # Check Redis configuration
@@ -199,7 +218,91 @@ class WorkerRedis(object):
             return False
 
         # Return status
-        return self.redis[database].exists(identifier)   
+        return self.redis[database].exists(identifier)
+
+    def save_initial_mapping(self, identifier, mapping):
+        """ This function allows to save the mapping for
+            specific identifier. This mapping is the generated
+            mapping from GDAL tools, identifying the fields from
+            the source or raw data.
+        
+        """
+
+        # Get a deep copy of the dictionary to modify it
+        __mapping = mapping.copy()
+
+        # Change dictionary values to join types
+        for __m in __mapping:
+            if __mapping[__m] == 'Integer' or __mapping[__m] == 'Double':
+                __mapping[__m] = 'Number'
+            __mapping[__m] = __mapping[__m].lower() 
+
+        # Save mapping fields on database
+        self.redis['mapping-i'].hmset(identifier, __mapping)
+
+    def save_record_properties(self, identifier, fields):
+        """ This function allows to save the new parameters.
+        
+        """
+
+        # Create dictionary from fields
+        __fields = {
+            __f[:__f.index(':')].lower(): __f[__f.index(':') + 2:]
+            for __f in fields
+        }
+
+        # Get previous values
+        __values = self.redis['files'].hgetall(identifier)
+
+        # Join dictionaries
+        __values.update(__fields)
+
+        # Rename fields
+        if 'extent' in __values:
+            __values['bounding'] = __values['extent']
+            del __values['extent']
+        if 'feature count' in __values:
+            __values['features'] = __values['feature count']
+            del __values['feature count']
+
+        # Save new dictionary with information
+        self.redis['files'].hmset(identifier, __values)
+
+    def save_record_status(self, identifier, database, status):
+        """ This function allows to save the status of the task.
+        
+        """
+
+        # Create new value with join of parameters
+        __value = database + ':' + str(status)
+
+        # Get current timestamp
+        __time = str(int(time.time()))
+
+        # Save new status on the database
+        self.redis['status'].zadd(identifier, __value, __time)
+
+    def save_record_warning(self, identifier, database, messages):
+        """ This function allows to save log messages on the database.
+        
+        """
+
+        # Remove previous messages
+        self.redis[database + '-w'].delete(identifier)
+
+        # Save new messages
+        self.redis[database + '-w'].sadd(identifier, *messages)
+
+    def save_record_error(self, identifier, database, messages):
+        """ This function allows to save log messages on the database.
+        
+        """
+
+        # Remove previous messages
+        self.redis[database + '-e'].delete(identifier)
+
+        # Save new messages
+        self.redis[database + '-e'].sadd(identifier, *messages)
 
     def unlock(self, identifier, forced=False):
         """ This function allows to remove a Redis lock.
@@ -222,7 +325,8 @@ class WorkerRedis(object):
             if (int(self.redis['tasks'].get(identifier)) <
                     int(time.time())) or forced:
 
-                self.logger.warn(' -> UNLOCKED %s', identifier)
+                if self.config['debug']:
+                    self.logger.warn('\n * UNLOCKED %s', identifier)
 
                 # Release the identifier of the task
                 self.redis['tasks'].delete(identifier)
@@ -249,6 +353,9 @@ class WorkerRedis(object):
         if not self.status:
             return 1
 
+        # Create lock flag
+        __lock_status = False
+
         # Create pseudo-identifier
         __identifier = identifier + ':' + database
 
@@ -260,10 +367,11 @@ class WorkerRedis(object):
                 __identifier, str(int(time.time()) + seconds)
             )
 
-            self.logger.warn(' -> LOCKED %s', __identifier)
+            if self.config['debug']:
+                self.logger.warn('\n * LOCKED %s', __identifier)
 
-            # Lock was successful
-            return 0
+            # Set new value to flag
+            __lock_status = True
 
         else:
 
@@ -273,8 +381,8 @@ class WorkerRedis(object):
                 # Try to lock again
                 if self.lock(identifier, database) == 0:
 
-                    # Lock was successful
-                    return 0
+                    # Set new value to flag
+                    __lock_status = True
 
         # Check if for any reason the task is finished
         if self.check_existence(identifier, database):
@@ -285,5 +393,5 @@ class WorkerRedis(object):
             # Lock must be removed for always
             return 3
 
-        # Lock was unsuccessful
-        return 2
+        # Return status depending previous lock
+        return 0 if __lock_status else 2
