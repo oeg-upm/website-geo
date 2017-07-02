@@ -12,7 +12,7 @@ ENV GEOKETTLE_VERSION=2.5 \
     ANT_URL=http://ftp.cixug.es/apache/ant/binaries/ \
     ANT_PATH=apache-ant-1.10.1 \
     ANT_HOME=/usr/local/ant \
-    PATH="${PATH}:/usr/local/ant/bin"
+    PATH="${PATH}:/usr/local/ant/bin:/opt/geokettle"
 
 # Download source code from repository
 RUN cd /opt && \
