@@ -268,7 +268,7 @@ def check_ogr_fields(file_path, fields, extension):
 
             # Get if the feature has value
             __fields_null[__fields[__f_index]] = \
-                __file_feat.IsFieldSet(__fields[__f_index])
+                __file_feat.IsFieldSetAndNotNull(__fields[__f_index])
 
     # Remove empty fields from Shapefile
     __f_pad = 0
@@ -501,5 +501,13 @@ class WorkerGIS(object):
             # Add new possible warning messages
             __info['warn'] += ['Removed field ' + __f +
                 ' because is empty' for __f in __diff]
+
+        else:
+
+            # Generate new fields information
+            __info['info'] = {
+                __f[:__f.index(':')]: __f[__f.index(':') + 2:].split(' ')[0]
+                for __f in __info['info'] if __f[:__f.index(':')] in __old_fields
+            }
 
         return __info

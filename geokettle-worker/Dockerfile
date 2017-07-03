@@ -7,27 +7,35 @@ MAINTAINER Alejandro F. Carrera
 
 # Set environment to download GDAL
 ENV GDAL_VERSION=2.2.1 \
-    GDAL_URL=http://download.osgeo.org/gdal
+    GDAL_URL=http://download.osgeo.org/gdal \
+    LIBKML_URL=https://github.com/google/libkml/trunk
 
-# Install dependencies and GDAL libraries
-RUN apt-get update && apt-get upgrade -qq -y && apt-get install -qq -y \
-    build-essential make curl ca-certificates libcurl4-gnutls-dev \
-    shapelib libproj-dev libproj0 proj-data libgeos-3.4.2 libgeos-c1 libgeos-dev \
-    postgresql-client-common libpq-dev && \
-    curl $GDAL_URL/$GDAL_VERSION/gdal-$GDAL_VERSION.tar.gz | tar zxv -C /tmp > /dev/null 2>&1 && \
+# Install machine dependencies
+RUN apt-get update && apt-get upgrade -qq -y && apt-get install -qq -y libtool \
+    build-essential cmake make curl ca-certificates g++ autoconf bison flex doxygen \
+    libpq-dev libpng12-dev libjpeg-dev libgif-dev liblzma-dev libgeos-dev \
+    libcurl4-gnutls-dev libproj-dev libxml2-dev libexpat-dev libxerces-c-dev \
+    libnetcdf-dev libpq-dev libpng12-dev libjpeg-dev libgif-dev liblzma-dev \
+    libgeos-dev libcurl4-gnutls-dev libproj-dev libxml2-dev libexpat-dev \
+    libxerces-c-dev libnetcdf-dev libepsilon-dev liblcms2-2 libproj0 proj-data \
+    libpcre3-dev libjasper-dev libarmadillo-dev subversion libgeos-3.4.2 \
+    libgeos-c1 shapelib proj-data postgresql-client-common libpq-dev
+
+# Install GDAL dependencies
+RUN cd /opt && svn co $LIBKML_URL libkml && \
+    cd libkml && ./autogen.sh && ./configure && make && make install
+
+# Install GDAL libraries
+RUN curl $GDAL_URL/$GDAL_VERSION/gdal-$GDAL_VERSION.tar.gz | tar zxv -C /tmp > /dev/null 2>&1 && \
     cd /tmp/gdal-$GDAL_VERSION && \
     ./configure --prefix=/usr --with-threads \
     --with-hide-internal-symbols=yes \
     --with-rename-internal-libtiff-symbols=yes \
     --with-rename-internal-libgeotiff-symbols=yes \
-    --with-libtiff=internal \
-    --with-geotiff=internal \
-    --with-geos --with-pg --with-curl \
-    --with-static-proj4=yes --with-ecw=no \
-    --with-grass=no --with-hdf5=no --with-java=no \
-    --with-mrsid=no --with-perl=no --with-python=no \
-    --with-webp=no --with-xerces=no && \
-    make && make install && \
+    --with-spatialite --with-pg --with-epsilon --with-gta \
+    --with-liblzma --with-webp --with-libkml --with-armadillo \
+    --with-libtiff=internal --with-geotiff=internal --with-geos \
+    --with-curl --with-static-proj4=yes && make && make install && \
     apt-get install -qq -y python-setuptools python-dev && \
     easy_install pip && mkdir -p /opt/worker
 
@@ -50,9 +58,7 @@ COPY . /opt/worker
 RUN python setup.py install
 
 # Clean docker image
-RUN apt-get remove --purge libcurl4-gnutls-dev libproj-dev \
-    libgeos-dev libpq-dev -y && \
-    apt-get clean -y && \
+RUN apt-get clean -y && \
     apt-get autoclean -y && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
@@ -60,7 +66,8 @@ RUN apt-get remove --purge libcurl4-gnutls-dev libproj-dev \
     rm -rf /var/cache/debconf/*-old && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /usr/share/doc/* && \
-    rm -rf /opt/GDAL-$GDAL_VERSION && \
+    rm -rf /opt/GDAL-$GDAL_VERSION.tar.gz && \
+    rm -rf /opt/libkml && \
     rm -rf /tmp/*
 
 # Run celery when docker run
