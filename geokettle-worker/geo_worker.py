@@ -142,12 +142,8 @@ class Worker(object):
                 routing_key='mapping.initial'
             ),
             Queue(
-                'mapping-partial', mapping_exchange,
-                routing_key='mapping.partial'
-            ),
-            Queue(
-                'mapping-complete', mapping_exchange,
-                routing_key='mapping.complete'
+                'mapping-extended', mapping_exchange,
+                routing_key='mapping.extended'
             ),
             Queue(
                 'default', default_exchange,
@@ -167,15 +163,10 @@ class Worker(object):
                 'exchange': mapping_exchange,
                 'routing_key': 'mapping.initial'
             },
-            'geo_worker_tasks.partial_mapping': {
-                'queue': 'mapping-partial',
+            'geo_worker_tasks.extended_mapping': {
+                'queue': 'mapping-extended',
                 'exchange': mapping_exchange,
-                'routing_key': 'mapping.partial'
-            },
-            'geo_worker_tasks.complete_mapping': {
-                'queue': 'mapping-complete',
-                'exchange': mapping_exchange,
-                'routing_key': 'mapping.complete'
+                'routing_key': 'mapping.extended'
             },
             'geo_worker_tasks.default': {
                 'queue': 'default',

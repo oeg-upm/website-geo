@@ -175,7 +175,8 @@ def initial_mapping(self):
     except Exception as e:
 
         # Print message
-        logger.error('\n * ' + e.message)
+        __message = e.message if e.message != '' else e
+        logger.error('\n * ' + str(__message))
 
         # Retry task (max 10) to wait for loading libraries
         if self.request.retries < 10:
@@ -318,8 +319,8 @@ def initial_mapping(self):
         print_worker_status(logger, __lock_status)
 
 
-@task(bind=True, name='geo_worker_tasks.partial_mapping')
-def partial_mapping(self):
+@task(bind=True, name='geo_worker_tasks.extended_mapping')
+def extended_mapping(self):
 
     # Create logger to log messages to specific log file
     logger = get_task_logger(__name__)
@@ -332,7 +333,8 @@ def partial_mapping(self):
     except Exception as e:
 
         # Print message
-        logger.error('\n * ' + e.message)
+        __message = e.message if e.message != '' else e
+        logger.error('\n * ' + str(__message))
 
         # Retry task (max 10) to wait for loading libraries
         if self.request.retries < 10:
@@ -346,7 +348,7 @@ def partial_mapping(self):
     # Lock the execution for this task. In this case we will use
     # the Redis SETNX to ensure that other remote machines won't do
     # the same task.
-    __lock_status = __redis_db.lock(__identifier, 'mapping-p')
+    __lock_status = __redis_db.lock(__identifier, 'mapping-e')
 
     # Check status of the lock
     if __lock_status == 0:
@@ -355,52 +357,7 @@ def partial_mapping(self):
         time.sleep(5)
         
         # Release lock
-        __redis_db.unlock(__identifier + ':mapping-p', True)
-
-    else:
-
-        # Log status
-        print_worker_status(logger, __lock_status)
-
-
-@task(bind=True, name='geo_worker_tasks.complete_mapping')
-def complete_mapping(self):
-
-    # Create logger to log messages to specific log file
-    logger = get_task_logger(__name__)
-
-    try:
-        
-        # Get instance of Redis and GDAL instance of Redis Database
-        __redis_db, __gdal_lib = get_libraries()
-
-    except Exception as e:
-
-        # Print message
-        logger.error('\n * ' + e.message)
-
-        # Retry task (max 10) to wait for loading libraries
-        if self.request.retries < 10:
-            raise self.retry(
-                exc='', countdown=(self.request.retries + 1) * 20
-            )
-
-    # Get identifier of the task -> file
-    __identifier = self.request.id
-
-    # Lock the execution for this task. In this case we will use
-    # the Redis SETNX to ensure that other remote machines won't do
-    # the same task.
-    __lock_status = __redis_db.lock(__identifier, 'mapping-c')
-
-    # Check status of the lock
-    if __lock_status == 0:
-
-        # Do task
-        time.sleep(5)
-        
-        # Release lock
-        __redis_db.unlock(__identifier + ':mapping-c', True)
+        __redis_db.unlock(__identifier + ':mapping-e', True)
 
     else:
 
@@ -410,4 +367,10 @@ def complete_mapping(self):
 
 @task(bind=True, name='geo_worker_tasks.default', max_retries=5)
 def default(self):
-    return
+    
+    # Create logger to log messages to specific log file
+    logger = get_task_logger(__name__)
+
+    # Print message
+    logger.warn('\n * Received task from default queue')
+

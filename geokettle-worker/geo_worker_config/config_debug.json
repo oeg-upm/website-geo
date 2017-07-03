@@ -12,12 +12,9 @@
       "mapping-i",
       "mapping-i-w",
       "mapping-i-e",
-      "mapping-p",
-      "mapping-p-w",
-      "mapping-p-e",
-      "mapping-c",
-      "mapping-c-w",
-      "mapping-c-e"
+      "mapping-e",
+      "mapping-e-w",
+      "mapping-e-e"
     ]
   },
   "celery": {
