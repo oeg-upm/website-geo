@@ -25,6 +25,5 @@
     "broker_port": 5672,
     "broker_user": "rabbitmq",
     "broker_pass": "password"
-  },
-  "resources": "/opt/geo-resources/"
+  }
 }

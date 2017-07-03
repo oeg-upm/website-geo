@@ -79,6 +79,9 @@ def get_configuration_file():
         # Return dictionary as configuration
         __dict = dict(json.load(__file_data))
         __dict['debug'] = __debug
+
+        # Get resources folder
+        __dict['resources'] = '/opt/geo-resources/'
         
         return __dict
 

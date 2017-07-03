@@ -1,7 +1,7 @@
 {
   "redis": {
     "db": {
-      "host": "localhost",
+      "host": "redishost",
       "port": 6379,
       "pass": ""
     },
@@ -21,10 +21,9 @@
     ]
   },
   "celery": {
-    "broker_host": "localhost",
+    "broker_host": "rabbithost",
     "broker_port": 5672,
-    "broker_user": "admin",
+    "broker_user": "rabbitmq",
     "broker_pass": "password"
-  },
-  "resources": "/opt/geo-resources/"
+  }
 }
