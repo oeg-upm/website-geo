@@ -25,6 +25,8 @@ Stop instance of GeoLinkeddata RabbitMQ
 ./stop
 ```
 
+---
+
 GeoLinkeddata © Copyright 2017.
 
 Alejandro F. Carrera
