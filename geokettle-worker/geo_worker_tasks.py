@@ -198,37 +198,30 @@ def initial_mapping(self):
         # Check if file was uploaded successfully
         if __redis_db.check_existence(__identifier, 'files'):
 
-            # Create a flag for warning and errors
-            __flag_error = False
-            __flag_warn = False
-
             # Get information about the specific identifier
             __file = __redis_db.redis['files'].hgetall(__identifier)
 
-            # Check if extension is not shp
-            if __file['extension'] != 'shp':
+            # Status 1 | Transform to Shapefile
+            __status = 1
 
-                # Status 1 | Transform to Shapefile
-                __status = 1
+            # Transform resource to Shapefile
+            __ogr_info = __gdal_lib.transform(
+                __identifier, __file['name'],
+                __file['extension'], 'shp'
+            )
 
-                # Transform resource to Shapefile
-                __ogr_info = __gdal_lib.transform(
-                    __identifier, __file['name'],
-                    __file['extension'], 'shp'
+            # Set flags from generated information
+            __flag_error, __flag_warn = save_worker_messages(
+                __redis_db, logger, __identifier,
+                'mapping-i', __ogr_info, __status
+            )
+
+            if __flag_error:
+
+                # Save status for tracking errors
+                __redis_db.save_record_status(
+                    __identifier, 'mapping-i', __status
                 )
-
-                # Set flags from generated information
-                __flag_error, __flag_warn = save_worker_messages(
-                    __redis_db, logger, __identifier,
-                    'mapping-i', __ogr_info, __status
-                )
-
-                if __flag_error:
-
-                    # Save status for tracking errors
-                    __redis_db.save_record_status(
-                        __identifier, 'mapping-i', __status
-                    )
 
             # Check any previous error
             if not __flag_error:

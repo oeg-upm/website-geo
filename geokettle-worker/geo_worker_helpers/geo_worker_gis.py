@@ -167,7 +167,9 @@ def cmd_ogr2ogr(arguments):
     """
 
     # Extend arguments with ogr executable
-    __arguments = ['ogr2ogr'] + arguments
+    __arguments = [
+        'ogr2ogr', '-t_srs', 'EPSG:4326', '-f'
+    ] + arguments + ['-explodecollections']
 
     # Execute GDAL commands
     __g_out, __g_err = exec_ogr_command(__arguments)
@@ -224,7 +226,7 @@ def get_ogr_driver(extension):
         return ''
 
 
-def check_ogr_fields(file_path, fields, extension):
+def validate_ogr_fields(file_path, fields, extension):
     """ This function check the fields of specific Geospatial file.
 
     Returns:
@@ -251,9 +253,11 @@ def check_ogr_fields(file_path, fields, extension):
     __file = ogr.GetDriverByName(__driver)
     __file_src = __file.Open(file_path, 1)
     __file_layer = __file_src.GetLayer()
+    __file_layer_def = __file_layer.GetLayerDefn()
 
     # Iterate over features of the layer
-    for __file_feat in __file_layer:
+    __file_feat = __file_layer.GetNextFeature()
+    while __file_feat is not None:
 
         # Set index for fields
         __index = -1
@@ -270,20 +274,97 @@ def check_ogr_fields(file_path, fields, extension):
             __fields_null[__fields[__f_index]] = \
                 __file_feat.IsFieldSetAndNotNull(__fields[__f_index])
 
-    # Remove empty fields from Shapefile
+        # Next feature
+        __file_feat = __file_layer.GetNextFeature()
+
     __f_pad = 0
+    __rem_fields = []
+    __val_fields = {}
     for __field in __fields:
+
+        # Index of the field
+        __file_field_i = __fields.index(__field) - __f_pad
+
+        # Remove empty fields from Shapefile
         if not __fields_null[__field]: 
-            __file_layer.DeleteField(
-                __fields.index(__field) - __f_pad
-            )
+            __file_layer.DeleteField(__file_field_i)
             __f_pad += 1
 
-    # Return only not empty fields
-    return [
-        __field for __field in __fields_null
-        if __fields_null[__field]
-    ]
+            # Save removed field
+            __rem_fields.append(__field)
+
+        # Rename to lowercase non-empty fields
+        else:
+
+            # Create copy of field and change name
+            __file_field = __file_layer_def.GetFieldDefn(
+                __file_field_i
+            )
+            __file_field.SetName(__field.lower())
+
+            # Replace field on the layer
+            __file_layer.AlterFieldDefn(
+                __file_field_i, __file_field, (ogr.ALTER_NAME_FLAG)
+            )
+
+            # Search kind of field
+            __val_field = [
+                __f[__f.index(':') + 2:].split(' ')[0]
+                for __f in fields if __f[:__f.index(':')] == __field
+            ][0]
+
+            # Save renamed field
+            __val_fields[__field.lower()] = __val_field
+
+    # Close file
+    __file_src = None
+
+    return __val_fields, __rem_fields
+
+
+def generate_centroids(file_path, extension):
+    """ This function create centroids for geometries
+        of specific Geospatial file.
+
+    """
+
+    # Get kind of file depending on final extension
+    __driver = get_ogr_driver(extension)
+
+    # Get layer from OGR Tools to check if
+    # there is any field is null or empty, so
+    # must be deleted, this file is opened as
+    # DataSource Read-Write (1)
+    from osgeo import ogr
+    __file = ogr.GetDriverByName(__driver)
+    __file_src = __file.Open(file_path, 1)
+    __file_layer = __file_src.GetLayer()
+
+    # Add field to layer
+    __file_field = ogr.FieldDefn('centroid', ogr.OFTString)
+    __file_layer.CreateField(__file_field)
+
+    # Iterate over features of the layer
+    __file_feat = __file_layer.GetNextFeature()
+    while __file_feat is not None:
+
+        # Get Geometry
+        __file_geom = __file_feat.GetGeometryRef()
+
+        # Get Centroid value as WKT
+        __file_cent = __file_geom.Centroid().ExportToWkt()
+
+        # Save value at new field
+        __file_feat.SetField('centroid', __file_cent)
+
+        # Save feature at layer
+        __file_layer.SetFeature(__file_feat)
+        
+        # Next feature
+        __file_feat = __file_layer.GetNextFeature()
+
+    # Close file
+    __file_src = None
 
 
 def parse_ogr_return(outputs, errors):
@@ -392,15 +473,36 @@ class WorkerGIS(object):
                 '[' + extension_src + '] to [' + extension_dst + ']'
             )
 
+        # Set flag if source extension is shp
+        __shp_source = extension_src == 'shp'
+        __shp_ext = '_shp' if __shp_source else ''
+
         # Create arguments for transforming to Shapefile
         __command = [
-            '-t_srs', 'EPSG:4326', '-f', __driver,
-            __file_path + file_name + '.' + extension_dst, 
-            __file_path + file_name + '.' + extension_src,
-            '-explodecollections'
+            __driver, __file_path + file_name + __shp_ext + '.' +
+            extension_dst, __file_path + file_name + '.' + 
+            extension_src
         ]
 
-        return cmd_ogr2ogr(__command)
+        # Execute OGR
+        __g_info = cmd_ogr2ogr(__command)
+
+        print __g_info
+
+        if __shp_source:
+
+            # Remove old files
+            self.delete(
+                identifier, file_name, extension_src
+            )
+
+            # Rename new files
+            self.rename(
+                identifier, file_name + __shp_ext, file_name,
+                extension_src
+            )
+
+        return __g_info
 
     def delete(self, identifier, file_name, extension):
 
@@ -438,6 +540,44 @@ class WorkerGIS(object):
         if self.config['debug'] and len(__path_files):
             self.logger.warn(__debug_log)
 
+    def rename(self, identifier, file_name_old, file_name_new, extension):
+
+        # Get list of extensions from kind of file
+        # TODO: extend this list for other extensions
+        if extension == 'shp':
+            __list = [
+                '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
+                '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
+            ]
+        else:
+            __list = []
+
+        # Join extensions with file name
+        __list = [file_name_old + __l for __l in __list]
+
+        # Get all nodes from directory
+        __path_files = os.listdir(self.config['resources'] + identifier)
+
+        # Get intersection between files and list of possible files
+        __path_files = set(__path_files).intersection(set(__list))
+
+        # Rename found files
+        __debug_log = ''
+        for __path_file in __path_files:
+            os.rename(
+                self.config['resources'] + identifier + '/' + __path_file,
+                self.config['resources'] + identifier + '/' + 
+                __path_file.replace(file_name_old, file_name_new)
+            )
+
+            if self.config['debug']:
+                __debug_log += '\n * RENAMED ' + self.config['resources'] + \
+                    identifier + '/' + __path_file
+
+        # Print log if debug flag
+        if self.config['debug'] and len(__path_files):
+            self.logger.warn(__debug_log)
+
     def get_info(self, identifier, file_name, extension):
 
         # Generate full path of the file
@@ -451,11 +591,29 @@ class WorkerGIS(object):
         __info = cmd_ogrinfo(__command)
 
         # Only get fields for output
-        __info['info'] = [
-            __o for __o in __info['info'] 
-            if 'Geometry:' in __o or 'Feature Count:' in __o
-            or 'Extent: (' in __o
-        ]
+        __info_fields = []
+        for __o in __info['info']:
+
+            # Save Kind of geometry
+            if 'Geometry:' in __o:
+                __info_fields.append(__o)
+
+                # Generate centroid if Geometry
+                # is Polygon or MultiPolygon
+                if 'polygon' in __o.lower():
+                    generate_centroids(
+                        __file_path, extension
+                    )
+
+            # Save count of features
+            elif 'Feature Count:' in __o:
+                __info_fields.append(__o)
+
+            # Save bounding                
+            elif 'Extent: (' in __o:
+                __info_fields.append(__o)
+
+        __info['info'] = __info_fields
 
         return __info
 
@@ -479,35 +637,21 @@ class WorkerGIS(object):
         ]
 
         # Get fields from received information
-        __old_fields = [
-            __f[:__f.index(':')] for __f in __info['info']
-        ]
-
-        # Get information about fields
-        __new_fields = check_ogr_fields(
+        __val_fields, __rem_fields = validate_ogr_fields(
             __file_path, __info['info'], extension
         )
 
         # Check if new fields is the same previous fields
-        __diff = set(__old_fields).difference(set(__new_fields))
-        if len(__diff):
-
-            # Generate new fields information
-            __info['info'] = {
-                __f[:__f.index(':')]: __f[__f.index(':') + 2:].split(' ')[0]
-                for __f in __info['info'] if __f[:__f.index(':')] in __new_fields
-            }
+        if len(__rem_fields):
 
             # Add new possible warning messages
             __info['warn'] += ['Removed field ' + __f +
-                ' because is empty' for __f in __diff]
+                ' because is empty' for __f in __rem_fields]
 
-        else:
+        # Generate new fields information
+        __info['info'] = __val_fields
 
-            # Generate new fields information
-            __info['info'] = {
-                __f[:__f.index(':')]: __f[__f.index(':') + 2:].split(' ')[0]
-                for __f in __info['info'] if __f[:__f.index(':')] in __old_fields
-            }
+        # Save Centroid field
+        __info['info']['centroid'] = 'String'
 
         return __info
