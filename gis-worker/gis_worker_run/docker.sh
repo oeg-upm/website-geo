@@ -10,15 +10,14 @@ fi
 cwd=$(pwd)
 cd ..
 
+# Suppress Warnings
+export PYTHONWARNINGS="ignore"
+
 # Remove all python temp files
 rm -rf *.egg-info
 
-# Get Debug flag
-if [[ -z "${OEG_DEBUG_MODE}" ]]; then
-    BDV=0
-else
-    BDV="${OEG_DEBUG_MODE}"
-fi
+# Set Debug flag
+BDV=1
 
 # Get Geo Resources folder path
 if [[ -z "${OEG_RESOURCES_FOLDER}" ]]; then

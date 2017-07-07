@@ -243,6 +243,15 @@ class WorkerRedis(object):
         # Save mapping fields on database
         self.redis['mapping-i'].hmset(identifier, __mapping)
 
+    def del_initial_mapping(self, identifier):
+        """ This function allows to delete the mapping for
+            specific identifier.
+        
+        """
+
+        # Delete mapping fields on database
+        self.redis['mapping-i'].delete(identifier)
+
     def save_record_properties(self, identifier, fields):
         """ This function allows to save the new parameters.
         

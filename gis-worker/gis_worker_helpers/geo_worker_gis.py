@@ -487,8 +487,6 @@ class WorkerGIS(object):
         # Execute OGR
         __g_info = cmd_ogr2ogr(__command)
 
-        print __g_info
-
         if __shp_source:
 
             # Remove old files

@@ -142,6 +142,10 @@ class Worker(object):
                 routing_key='mapping.initial'
             ),
             Queue(
+                'mapping-update', mapping_exchange,
+                routing_key='mapping.update'
+            ),
+            Queue(
                 'mapping-extended', mapping_exchange,
                 routing_key='mapping.extended'
             ),
@@ -162,6 +166,11 @@ class Worker(object):
                 'queue': 'mapping-initial',
                 'exchange': mapping_exchange,
                 'routing_key': 'mapping.initial'
+            },
+            'gis_worker_tasks.update_mapping': {
+                'queue': 'mapping-update',
+                'exchange': mapping_exchange,
+                'routing_key': 'mapping.update'
             },
             'gis_worker_tasks.extended_mapping': {
                 'queue': 'mapping-extended',

@@ -158,6 +158,135 @@ def save_worker_messages(worker_db, logger, identifier, database, messages, kind
     return __flag_error, __flag_warn
 
 
+def create_initial_mapping(identifier, logger, redis, gdal):
+    """ This function allows create or update an initial mapping
+        on the database for a specific identifier.
+
+    """
+
+    # Lock the execution for this task. In this case we will use
+    # the Redis SETNX to ensure that other remote machines won't do
+    # the same task.
+    __lock_status = redis.lock(identifier, 'mapping-i')
+
+    # Check status of the lock
+    if __lock_status == 0:
+
+        # Check if file was uploaded successfully
+        if redis.check_existence(identifier, 'files'):
+
+            # Get information about the specific identifier
+            __file = redis.redis['files'].hgetall(identifier)
+
+            # Status 1 | Transform to Shapefile
+            __status = 1
+
+            # Transform resource to Shapefile
+            __ogr_info = gdal.transform(
+                identifier, __file['name'],
+                __file['extension'], 'shp'
+            )
+
+            # Set flags from generated information
+            __flag_error, __flag_warn = save_worker_messages(
+                redis, logger, identifier, 'mapping-i',
+                __ogr_info, __status
+            )
+
+            if __flag_error:
+
+                # Save status for tracking errors
+                redis.save_record_status(
+                    identifier, 'mapping-i', __status
+                )
+
+            # Check any previous error
+            if not __flag_error:
+
+                # Status 2 | Get parameters
+                __status = 2
+
+                # Get parameters through GDAL tools
+                __ogr_info = gdal.get_info(
+                    identifier, __file['name'], 'shp'
+                )
+
+                # Set flags from generated information
+                __flag_error, __flag_warn = save_worker_messages(
+                    redis, logger, identifier, 'mapping-i',
+                    __ogr_info, __status
+                )
+
+                if __flag_error:
+
+                    # Save status for tracking errors
+                    redis.save_record_status(
+                        identifier, 'mapping-i', __status
+                    )
+
+                else:
+
+                    # Save new parameters on database
+                    redis.save_record_properties(
+                        identifier, __ogr_info['info']
+                    )
+
+            # Check any previous error
+            if not __flag_error:
+
+                # Status 3 | Get fields properties
+                __status = 3
+
+                # Get fields through GDAL tools
+                __ogr_info = gdal.get_fields(
+                    identifier, __file['name'], 'shp'
+                )
+
+                # Set flags from generated information
+                __flag_error, __flag_warn = save_worker_messages(
+                    redis, logger, identifier, 'mapping-i',
+                    __ogr_info, __status
+                )
+
+                if __flag_error:
+
+                    # Save status for tracking errors
+                    redis.save_record_status(
+                        identifier, 'mapping-i', __status
+                    )
+
+                else:
+
+                    # Save initial mapping on database
+                    redis.save_initial_mapping(
+                        identifier, __ogr_info['info']
+                    )
+
+                    # Save status for tracking success
+                    redis.save_record_status(
+                        identifier, 'mapping-i', 0
+                    )
+
+            # if there was an error, delete all files
+            if __flag_error:
+                gdal.delete(identifier, __file['name'], 'shp')
+
+        else:
+
+            logger.error(
+                '\n * Record was not found, the task was received, but '
+                'there is no saved record for this identifier'
+            )
+
+        # Release lock
+        redis.unlock(identifier + ':mapping-i', True)
+
+    else:
+
+        # Log status
+        print_worker_status(logger, __lock_status)
+
+
 ##########################################################################
 
 
@@ -184,132 +313,44 @@ def initial_mapping(self):
                 exc='', countdown=(self.request.retries + 1) * 20
             )
 
-    # Get identifier of the task -> file
+    # Create identifier from task_id
     __identifier = self.request.id
 
-    # Lock the execution for this task. In this case we will use
-    # the Redis SETNX to ensure that other remote machines won't do
-    # the same task.
-    __lock_status = __redis_db.lock(__identifier, 'mapping-i')
+    # Execute new initial mapping generation
+    create_initial_mapping(__identifier, logger, __redis_db, __gdal_lib)
 
-    # Check status of the lock
-    if __lock_status == 0:
 
-        # Check if file was uploaded successfully
-        if __redis_db.check_existence(__identifier, 'files'):
+@task(bind=True, name='gis_worker_tasks.update_mapping')
+def update_mapping(self):
 
-            # Get information about the specific identifier
-            __file = __redis_db.redis['files'].hgetall(__identifier)
+    # Create logger to log messages to specific log file
+    logger = get_task_logger(__name__)
 
-            # Status 1 | Transform to Shapefile
-            __status = 1
+    try:
+        
+        # Get instance of Redis and GDAL instance of Redis Database
+        __redis_db, __gdal_lib = get_libraries()
 
-            # Transform resource to Shapefile
-            __ogr_info = __gdal_lib.transform(
-                __identifier, __file['name'],
-                __file['extension'], 'shp'
+    except Exception as e:
+
+        # Print message
+        __message = e.message if e.message != '' else e
+        logger.error('\n * ' + str(__message))
+
+        # Retry task (max 10) to wait for loading libraries
+        if self.request.retries < 10:
+            raise self.retry(
+                exc='', countdown=(self.request.retries + 1) * 20
             )
 
-            # Set flags from generated information
-            __flag_error, __flag_warn = save_worker_messages(
-                __redis_db, logger, __identifier,
-                'mapping-i', __ogr_info, __status
-            )
+    # Create identifier from task_id
+    __identifier = self.request.id
 
-            if __flag_error:
+    # Delete previous mapping
+    __redis_db.del_initial_mapping(__identifier)
 
-                # Save status for tracking errors
-                __redis_db.save_record_status(
-                    __identifier, 'mapping-i', __status
-                )
-
-            # Check any previous error
-            if not __flag_error:
-
-                # Status 2 | Get parameters
-                __status = 2
-
-                # Get parameters through GDAL tools
-                __ogr_info = __gdal_lib.get_info(
-                    __identifier, __file['name'], 'shp'
-                )
-
-                # Set flags from generated information
-                __flag_error, __flag_warn = save_worker_messages(
-                    __redis_db, logger, __identifier,
-                    'mapping-i', __ogr_info, __status
-                )
-
-                if __flag_error:
-
-                    # Save status for tracking errors
-                    __redis_db.save_record_status(
-                        __identifier, 'mapping-i', __status
-                    )
-
-                else:
-
-                    # Save new parameters on database
-                    __redis_db.save_record_properties(
-                        __identifier, __ogr_info['info']
-                    )
-
-            # Check any previous error
-            if not __flag_error:
-
-                # Status 3 | Get fields properties
-                __status = 3
-
-                # Get fields through GDAL tools
-                __ogr_info = __gdal_lib.get_fields(
-                    __identifier, __file['name'], 'shp'
-                )
-
-                # Set flags from generated information
-                __flag_error, __flag_warn = save_worker_messages(
-                    __redis_db, logger, __identifier,
-                    'mapping-i', __ogr_info, __status
-                )
-
-                if __flag_error:
-
-                    # Save status for tracking errors
-                    __redis_db.save_record_status(
-                        __identifier, 'mapping-i', __status
-                    )
-
-                else:
-
-                    # Save initial mapping on database
-                    __redis_db.save_initial_mapping(
-                        __identifier, __ogr_info['info']
-                    )
-
-                    # Save status for tracking success
-                    __redis_db.save_record_status(
-                        __identifier, 'mapping-i', 0
-                    )
-
-            # if there was an error, delete all files
-            if __flag_error:
-                __gdal_lib.delete(
-                    __identifier, __file['name'], 'shp'
-                )
-
-        else:
-
-            logger.error(
-                '\n * Record was not found, the task was received, but '
-                'there is no saved record for this identifier'
-            )
-
-        # Release lock
-        __redis_db.unlock(__identifier + ':mapping-i', True)
-
-    else:
-
-        # Log status
-        print_worker_status(logger, __lock_status)
+    # Execute new initial mapping generation
+    create_initial_mapping(__identifier, logger, __redis_db, __gdal_lib)
 
 
 @task(bind=True, name='gis_worker_tasks.extended_mapping')
