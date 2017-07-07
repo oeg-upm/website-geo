@@ -226,6 +226,36 @@ def get_ogr_driver(extension):
         return ''
 
 
+def get_ogr_file_extensions(extension):
+    """ This function allows to get the possible linked files
+        with a specific extension file of geo-spatial data.
+
+    Returns:
+        List: Return group of extensions.
+
+    """
+
+    # Define group of extensions files
+    # TODO: extend this list of list for other extensions
+    __extensions = [
+
+        # Shapefile -> shp
+        [
+            '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
+            '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
+        ]
+    ]
+
+    # Find extensions group
+    for __ext in __extensions:
+        if '.' + extension in __ext:
+            return __ext
+
+    # Return empty list if there is no found
+    return []
+
+
+
 def validate_ogr_fields(file_path, fields, extension):
     """ This function check the fields of specific Geospatial file.
 
@@ -258,9 +288,6 @@ def validate_ogr_fields(file_path, fields, extension):
     # Iterate over features of the layer
     __file_feat = __file_layer.GetNextFeature()
     while __file_feat is not None:
-
-        # Set index for fields
-        __index = -1
 
         # Iterate over fields of the Shapefile
         for __f_index in range(len(__fields)):
@@ -304,7 +331,7 @@ def validate_ogr_fields(file_path, fields, extension):
 
             # Replace field on the layer
             __file_layer.AlterFieldDefn(
-                __file_field_i, __file_field, (ogr.ALTER_NAME_FLAG)
+                __file_field_i, __file_field, ogr.ALTER_NAME_FLAG
             )
 
             # Search kind of field
@@ -505,14 +532,7 @@ class WorkerGIS(object):
     def delete(self, identifier, file_name, extension):
 
         # Get list of extensions from kind of file
-        # TODO: extend this list for other extensions
-        if extension == 'shp':
-            __list = [
-                '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
-                '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
-            ]
-        else:
-            __list = []
+        __list = get_ogr_file_extensions(extension)
 
         # Join extensions with file name
         __list = [file_name + __l for __l in __list]
@@ -541,14 +561,7 @@ class WorkerGIS(object):
     def rename(self, identifier, file_name_old, file_name_new, extension):
 
         # Get list of extensions from kind of file
-        # TODO: extend this list for other extensions
-        if extension == 'shp':
-            __list = [
-                '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
-                '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
-            ]
-        else:
-            __list = []
+        __list = get_ogr_file_extensions(extension)
 
         # Join extensions with file name
         __list = [file_name_old + __l for __l in __list]
@@ -643,8 +656,10 @@ class WorkerGIS(object):
         if len(__rem_fields):
 
             # Add new possible warning messages
-            __info['warn'] += ['Removed field ' + __f +
-                ' because is empty' for __f in __rem_fields]
+            __info['warn'] += [
+                'Removed field ' + __f +
+                ' because is empty' for __f in __rem_fields
+            ]
 
         # Generate new fields information
         __info['info'] = __val_fields

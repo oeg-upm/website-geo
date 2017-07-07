@@ -112,7 +112,7 @@ def print_worker_errors(logger, messages):
     __log_message = '\n * ' + str(__messages_count) + ' issues were found:'
 
     for __message in messages:
-      __log_message += '\n * ' + __message
+        __log_message += '\n * ' + __message
 
     # Show messages
     logger.error(__log_message)
@@ -303,6 +303,10 @@ def initial_mapping(self):
 
     except Exception as e:
 
+        # Set none to avoid warnings
+        __redis_db = None
+        __gdal_lib = None
+
         # Print message
         __message = e.message if e.message != '' else e
         logger.error('\n * ' + str(__message))
@@ -317,7 +321,9 @@ def initial_mapping(self):
     __identifier = self.request.id
 
     # Execute new initial mapping generation
-    create_initial_mapping(__identifier, logger, __redis_db, __gdal_lib)
+    create_initial_mapping(
+        __identifier, logger, __redis_db, __gdal_lib
+    )
 
 
 @task(bind=True, name='gis_worker_tasks.update_mapping')
@@ -332,6 +338,10 @@ def update_mapping(self):
         __redis_db, __gdal_lib = get_libraries()
 
     except Exception as e:
+
+        # Set none to avoid warnings
+        __redis_db = None
+        __gdal_lib = None
 
         # Print message
         __message = e.message if e.message != '' else e
@@ -350,7 +360,9 @@ def update_mapping(self):
     __redis_db.del_initial_mapping(__identifier)
 
     # Execute new initial mapping generation
-    create_initial_mapping(__identifier, logger, __redis_db, __gdal_lib)
+    create_initial_mapping(
+        __identifier, logger, __redis_db, __gdal_lib
+    )
 
 
 @task(bind=True, name='gis_worker_tasks.extended_mapping')
@@ -365,6 +377,9 @@ def extended_mapping(self):
         __redis_db, __gdal_lib = get_libraries()
 
     except Exception as e:
+
+        # Set none to avoid warnings
+        __redis_db = None
 
         # Print message
         __message = e.message if e.message != '' else e
