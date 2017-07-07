@@ -39,7 +39,7 @@ def read(name):
     return open(os.path.join(os.path.dirname(__file__), name)).read()
 
 setup(
-    name="geokettle-worker",
+    name="gis-worker",
     version="1.0.0",
     author=__author__,
     author_email=__email__,
@@ -52,5 +52,5 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     install_requires=['celery', 'hiredis', 'redis'],
     classifiers=[],
-    scripts=['geo_worker.py']
+    scripts=['gis_worker.py']
 )

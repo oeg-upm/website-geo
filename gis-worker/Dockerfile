@@ -71,4 +71,4 @@ RUN apt-get clean -y && \
     rm -rf /tmp/*
 
 # Run celery when docker run
-ENTRYPOINT ["celery", "worker", "-A", "geo_worker.app", "-l", "info", "-Ofair"]
+ENTRYPOINT ["celery", "worker", "-A", "gis_worker.app", "-l", "info", "-Ofair"]

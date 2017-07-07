@@ -51,7 +51,7 @@ def get_configuration_file():
     """
 
     # Configuration folder
-    __config_base_path = '../geo_worker_config'
+    __config_base_path = '../gis_worker_config'
     __debug = False
 
     # Check if application is on Debug mode

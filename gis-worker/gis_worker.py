@@ -49,7 +49,7 @@ def get_configuration_file():
     """
 
     # Configuration folder
-    __config_base_path = './geo_worker_config'
+    __config_base_path = './gis_worker_config'
     __debug = False
 
     # Check if application is on Debug mode
@@ -116,7 +116,7 @@ class Worker(object):
         """
 
         # Create new Celery instance
-        celery_app = Celery('geo_worker')
+        celery_app = Celery('gis_worker')
 
         # Configure exchanges of RabbitMQ
         default_exchange = Exchange('default', type='direct')
@@ -133,7 +133,7 @@ class Worker(object):
         celery_app.conf.task_protocol = 1
 
         # Import registered tasks
-        celery_app.conf.imports = ('geo_worker_tasks',)
+        celery_app.conf.imports = ('gis_worker_tasks',)
 
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
@@ -158,17 +158,17 @@ class Worker(object):
 
         # Configure tasks of Celery - RabbitMQ
         celery_app.conf.task_routes = {
-            'geo_worker_tasks.initial_mapping': {
+            'gis_worker_tasks.initial_mapping': {
                 'queue': 'mapping-initial',
                 'exchange': mapping_exchange,
                 'routing_key': 'mapping.initial'
             },
-            'geo_worker_tasks.extended_mapping': {
+            'gis_worker_tasks.extended_mapping': {
                 'queue': 'mapping-extended',
                 'exchange': mapping_exchange,
                 'routing_key': 'mapping.extended'
             },
-            'geo_worker_tasks.default': {
+            'gis_worker_tasks.default': {
                 'queue': 'default',
                 'exchange': default_exchange,
                 'routing_key': 'default'

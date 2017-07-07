@@ -24,8 +24,8 @@ import sys
 import time
 from celery.task import task
 from celery.utils.log import get_task_logger
-from geo_worker_helpers.geo_worker_gis import WorkerGIS
-from geo_worker_helpers.geo_worker_db import WorkerRedis
+from gis_worker_helpers.geo_worker_gis import WorkerGIS
+from gis_worker_helpers.geo_worker_db import WorkerRedis
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -161,7 +161,7 @@ def save_worker_messages(worker_db, logger, identifier, database, messages, kind
 ##########################################################################
 
 
-@task(bind=True, name='geo_worker_tasks.initial_mapping')
+@task(bind=True, name='gis_worker_tasks.initial_mapping')
 def initial_mapping(self):
 
     # Create logger to log messages to specific log file
@@ -312,7 +312,7 @@ def initial_mapping(self):
         print_worker_status(logger, __lock_status)
 
 
-@task(bind=True, name='geo_worker_tasks.extended_mapping')
+@task(bind=True, name='gis_worker_tasks.extended_mapping')
 def extended_mapping(self):
 
     # Create logger to log messages to specific log file
@@ -358,7 +358,7 @@ def extended_mapping(self):
         print_worker_status(logger, __lock_status)
 
 
-@task(bind=True, name='geo_worker_tasks.default', max_retries=5)
+@task(bind=True, name='gis_worker_tasks.default', max_retries=5)
 def default(self):
     
     # Create logger to log messages to specific log file

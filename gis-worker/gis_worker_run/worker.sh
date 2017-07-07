@@ -16,7 +16,7 @@ cwd=$(pwd)
 cd ..
 
 # Init GeoLinkeddata Worker
-celery worker --app geo_worker.app -l info -Ofair &
+celery worker --app gis_worker.app -l info -Ofair &
 
 # Came back to directory
 cd $cwd

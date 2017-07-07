@@ -6,9 +6,6 @@ if [ "$cbs" -eq "1" ]; then
     docker rm geolinkeddata.worker >/dev/null 2>&1
 fi
 
-# Suppress Warnings
-export PYTHONWARNINGS="ignore"
-
 # Save directory
 cwd=$(pwd)
 cd ..
