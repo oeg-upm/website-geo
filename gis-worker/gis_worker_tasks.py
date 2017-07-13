@@ -56,7 +56,7 @@ def get_libraries():
     # Check if redis configuration is good
     if not __redis_db.status:
         raise Exception(
-            'Redis configuration is not valid or Redis '
+            'Redis configuration is not valid or\n * Redis '
             'is not running'
         )
 
@@ -66,10 +66,10 @@ def get_libraries():
     # Check if libraries are good imported
     if not __gdal_lib.status:
         raise Exception(
-            'GIS tools are not available at PATH. Please, '
-            'check your Geokettle configuration and be sure '
-            'that GDAL libraries are installed correctly and '
-            'the version is greater than 2.1.0'
+            'GIS tools are not available at PATH.\n * Please, '
+            'check your Geokettle configuration\n * and be sure '
+            'that GDAL libraries are\n * installed correctly and '
+            'the version is\n * greater than 2.1.0'
         )
 
     return __redis_db, __gdal_lib
