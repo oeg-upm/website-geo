@@ -17,6 +17,7 @@
       "mapping-e-e"
     ]
   },
+  "folder": "/opt/geo-resources",
   "celery": {
     "broker_host": "rabbithost",
     "broker_port": 5672,

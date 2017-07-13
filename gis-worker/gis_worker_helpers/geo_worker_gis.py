@@ -79,9 +79,6 @@ def get_configuration_file():
         # Return dictionary as configuration
         __dict = dict(json.load(__file_data))
         __dict['debug'] = __debug
-
-        # Get resources folder
-        __dict['resources'] = '/opt/geo-resources/'
         
         return __dict
 
@@ -492,7 +489,7 @@ class WorkerGIS(object):
         __driver = get_ogr_driver(extension_dst)
 
         # Create full path
-        __file_path = self.config['resources'] + identifier + '/'
+        __file_path = self.config['folder'] + identifier + '/'
 
         if self.config['debug']:
             self.logger.warn(
@@ -538,7 +535,7 @@ class WorkerGIS(object):
         __list = [file_name + __l for __l in __list]
 
         # Get all nodes from directory
-        __path_files = os.listdir(self.config['resources'] + identifier)
+        __path_files = os.listdir(self.config['folder'] + identifier)
 
         # Get intersection between files and list of possible files
         __path_files = set(__path_files).intersection(set(__list))
@@ -547,11 +544,11 @@ class WorkerGIS(object):
         __debug_log = ''
         for __path_file in __path_files:
             os.remove(
-                self.config['resources'] + identifier + '/' + __path_file
+                self.config['folder'] + identifier + '/' + __path_file
             )
 
             if self.config['debug']:
-                __debug_log += '\n * DELETED ' + self.config['resources'] + \
+                __debug_log += '\n * DELETED ' + self.config['folder'] + \
                     identifier + '/' + __path_file
 
         # Print log if debug flag
@@ -567,7 +564,7 @@ class WorkerGIS(object):
         __list = [file_name_old + __l for __l in __list]
 
         # Get all nodes from directory
-        __path_files = os.listdir(self.config['resources'] + identifier)
+        __path_files = os.listdir(self.config['folder'] + identifier)
 
         # Get intersection between files and list of possible files
         __path_files = set(__path_files).intersection(set(__list))
@@ -576,13 +573,13 @@ class WorkerGIS(object):
         __debug_log = ''
         for __path_file in __path_files:
             os.rename(
-                self.config['resources'] + identifier + '/' + __path_file,
-                self.config['resources'] + identifier + '/' + 
+                self.config['folder'] + identifier + '/' + __path_file,
+                self.config['folder'] + identifier + '/' +
                 __path_file.replace(file_name_old, file_name_new)
             )
 
             if self.config['debug']:
-                __debug_log += '\n * RENAMED ' + self.config['resources'] + \
+                __debug_log += '\n * RENAMED ' + self.config['folder'] + \
                     identifier + '/' + __path_file
 
         # Print log if debug flag
@@ -592,7 +589,7 @@ class WorkerGIS(object):
     def get_info(self, identifier, file_name, extension):
 
         # Generate full path of the file
-        __file_path = self.config['resources'] + \
+        __file_path = self.config['folder'] + \
             identifier + '/' + file_name + '.' + extension
 
         # Create arguments for getting information about file
@@ -631,7 +628,7 @@ class WorkerGIS(object):
     def get_fields(self, identifier, file_name, extension):
 
         # Generate full path of the file
-        __file_path = self.config['resources'] + \
+        __file_path = self.config['folder'] + \
             identifier + '/' + file_name + '.' + extension
 
         # Create arguments for getting information about file
