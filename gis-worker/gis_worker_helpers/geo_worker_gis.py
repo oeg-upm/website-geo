@@ -391,6 +391,53 @@ def generate_centroids(file_path, extension):
     __file_src = None
 
 
+def generate_areas(file_path, extension):
+    """ This function create areas for geometries
+        of specific Geospatial file.
+
+    """
+
+    # Get kind of file depending on final extension
+    __driver = get_ogr_driver(extension)
+
+    # Get layer from OGR Tools to check if
+    # there is any field is null or empty, so
+    # must be deleted, this file is opened as
+    # DataSource Read-Write (1)
+    from osgeo import ogr
+    __file = ogr.GetDriverByName(__driver)
+    __file_src = __file.Open(file_path, 1)
+    __file_layer = __file_src.GetLayer()
+
+    # Add field to layer
+    __file_field = ogr.FieldDefn('area', ogr.OFTReal)
+    __file_layer.SetWidth(32)
+    __file_layer.SetPrecision(2)
+    __file_layer.CreateField(__file_field)
+
+    # Iterate over features of the layer
+    __file_feat = __file_layer.GetNextFeature()
+    while __file_feat is not None:
+
+        # Get Geometry
+        __file_geom = __file_feat.GetGeometryRef()
+
+        # Get area value
+        __file_cent = __file_geom.GetArea() 
+
+        # Save value at new field
+        __file_feat.SetField('area', __file_cent)
+
+        # Save feature at layer
+        __file_layer.SetFeature(__file_feat)
+        
+        # Next feature
+        __file_feat = __file_layer.GetNextFeature()
+
+    # Close file
+    __file_src = None
+
+
 def parse_ogr_return(outputs, errors):
     """ This function parses the both outputs from ogr execution.
 
@@ -606,10 +653,18 @@ class WorkerGIS(object):
             if 'Geometry:' in __o:
                 __info_fields.append(__o)
 
-                # Generate centroid if Geometry
-                # is Polygon or MultiPolygon
+                # Generate centroid and Area 
+                # if Geometry is Polygon or
+                # MultiPolygon
                 if 'polygon' in __o.lower():
+                    
+                    # Execute centroids generation
                     generate_centroids(
+                        __file_path, extension
+                    )
+
+                    # Execute area generation
+                    generate_areas(
                         __file_path, extension
                     )
 
