@@ -2,7 +2,7 @@
 
 This Docker Image includes:
 
- * RabbitMQ - Alpine Version
+ * RabbitMQ - Alpine Version (shared volumes)
 
 Configuration for the Docker Container (edit [launch.sh](./launch.sh) file)
 
@@ -11,7 +11,9 @@ Configuration for the Docker Container (edit [launch.sh](./launch.sh) file)
 |GEO_RABBIT_USER|rabbitmq|
 |GEO_RABBIT_PWD|password|
 |GEO_RABBIT_PORT|5672|
-|GEO_RABBIT_MEM|512 MB|
+|GEO_RABBIT_MEM|512M ~ 512 MB|
+|GEO_RABBIT_ADMIN_PORT|15672|
+|GEO_RABBIT_ADMIN|0 ~ False|
 
 Run instance of GeoLinkeddata RabbitMQ
 
@@ -25,10 +27,24 @@ Stop instance of GeoLinkeddata RabbitMQ
 ./stop
 ```
 
+**Note**: if you need the administration panel of RabbitMQ, change ```GEO_RABBIT_ADMIN``` to 1 at [launch.sh](launch.sh) and access through the browser [localhost:15672](http://localhost:15672).
+
+**Note**: this version has two shared volumes, one for logging and other for data. If you want to persist one of them, add to [launch.sh](launch.sh) this parameters.
+
+```bash
+...
+-p $GEO_RABBIT_ADMIN_PORT:15672 \
+-v HOST_FOLDER_FOR_LOGGING:/data/log \
+-v HOST_FOLDER_FOR_DATA:/data/mnesia \
+-e RABBITMQ_DEFAULT_USER=$GEO_RABBIT_USER \
+...
+
+```
+
 ---
 
-GeoLinkeddata © Copyright 2017.
+Ontology Engineering Group © Copyright 2017.
 
-Alejandro F. Carrera
+Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 
-
+Maintainer, [Alejandro F. Carrera](https://www.github.com/alejandrofcarrera)
