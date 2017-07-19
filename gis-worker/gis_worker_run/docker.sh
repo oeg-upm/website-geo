@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Stop and Remove Docker Container
+# Stop previous worker container
 docker stop geolinkeddata.worker >/dev/null 2>&1 && cbs=1 || cbs=0
 if [ "$cbs" -eq "1" ]; then
     docker rm geolinkeddata.worker >/dev/null 2>&1
@@ -16,8 +16,12 @@ export PYTHONWARNINGS="ignore"
 # Remove all python temp files
 rm -rf *.egg-info
 
-# Set Debug flag
-BDV=1
+# Get Debug flag
+if [[ -z "${OEG_DEBUG_FLAG}" ]]; then
+    BDV="1"
+else
+    BDV="${OEG_DEBUG_FLAG}"
+fi
 
 # Get Geo Resources folder path
 if [[ -z "${OEG_RESOURCES_FOLDER}" ]]; then
@@ -58,8 +62,20 @@ then
     fi
 fi
 
-# Run docker container
-docker run -d --restart=always -v $ORFD:/opt/geo-resources/ --link geolinkeddata.redis:redishost --link geolinkeddata.rabbitmq:rabbithost -e OEG_DEBUG_MODE=$BDV --name geolinkeddata.worker oegupm/geolinkeddata-worker
+# Build image if it is necessary
+docker image inspect oegupm/geolinkeddata-worker >/dev/null 2>&1 && ibs=1 || ibs=0
+if [ "$ibs" -eq "1" ]; then
+    docker build -t oegupm/geolinkeddata-worker .
+fi
+
+# Launch docker container
+docker run -d --name geolinkeddata.worker \
+    --restart=always \
+    -v $ORFD:/opt/geo-resources/ \
+    -e OEG_DEBUG_MODE=$BDV \
+    --link geolinkeddata.redis:redishost \
+    --link geolinkeddata.rabbitmq:rabbithost \
+    oegupm/geolinkeddata-worker
 
 # Came back to directory
 cd $cwd

@@ -8,6 +8,13 @@ This Docker Image includes:
  * [Google LIBKML](https://github.com/google/libkml)
  * GIS Worker for receiving tasks from RabbitMQ and save them on Redis
 
+Configuration for the Docker Container (edit [docker.sh](./gis_worker_run/docker.sh) file)
+
+|Name|Default value|
+|----------|--------------|
+|OEG_DEBUG_FLAG|1 ~ True|
+|OEG_RESOURCES_FOLDER|/opt/geo-resources|
+
 Build the Docker Image
 
 ```bash
