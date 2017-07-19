@@ -8,6 +8,8 @@ This Docker Image includes:
  * [Google LIBKML](https://github.com/google/libkml)
  * GIS Worker for receiving tasks from RabbitMQ and save them on Redis
 
+---
+
 Configuration for the Docker Container (edit [docker.sh](./gis_worker_run/docker.sh) file)
 
 |Name|Default value|
@@ -39,6 +41,35 @@ cd ../rabbitmq-docker && ./launch.sh
 
 ```bash
 cd gis_worker_run && ./docker.sh
+```
+
+---
+
+Options for Command Line Interface
+
+```bash
+python gis_worker.py -h
+usage: gis_worker.py [-h] id [-s] [-a] [-f] [-j file] 
+
+This software allows you execute jobs and transformations from asynchronous
+way with Celery and messaging protocol as AMQP (RabbitMQ) plus Redis DB to
+save the generated information or from CLI.
+
+positional arguments:
+  id                   associated uuid geometries' folder
+
+optional arguments:
+  -h, --help           show this help message and exit
+  -s, --to-shp         transform the geometries inside the file's folder to
+                       Shapefile, also its SRS will be converted to WGS84.
+  -a, --analyse        print information from Shapefile's geometries, this
+                       option will raise an exception if geometry was not
+                       transformed to Shapefile before.
+  -f, --fields         print information from Shapefile's fields, this option
+                       will raise an exception if geometry was not transformed
+                       to Shapefile before.
+  -j file, --job file  execute a GeoKettle job.
+  -t file, --trm file  execute a GeoKettle transformation.
 ```
 
 ---

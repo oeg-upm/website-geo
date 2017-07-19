@@ -26,8 +26,11 @@ sys.setdefaultencoding('utf8')
 
 import os
 import json
+import argparse
 from celery import Celery
 from kombu import Exchange, Queue
+import gis_worker_tasks
+
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -79,9 +82,6 @@ def get_configuration_file():
         # Return dictionary as configuration
         __dict = dict(json.load(__file_data))
         __dict['debug'] = __debug
-
-        # Get resources folder
-        __dict['resources'] = '/opt/geo-resources/'
         
         return __dict
 
@@ -198,3 +198,58 @@ class Worker(object):
 # Create Celery Worker and export Celery app
 worker = Worker()
 app = worker.celery
+
+
+##########################################################################
+
+
+def main_script():
+    """ This function allows you to run the python script from command
+        line. It accepts arguments and options as you can see below these
+        comments.
+
+    """
+
+    # Create configuration for command line
+    parser = argparse.ArgumentParser(
+        description='This software allows you execute jobs and \
+            transformations from asynchronous way with Celery and \
+            messaging protocol as AMQP (RabbitMQ) plus Redis DB \
+            to save the generated information or from CLI.',
+        usage='gis_worker.py [-h] id [-s] [-a] [-f] [-j file] '
+    )
+    parser.add_argument(
+        'id', help='associated uuid geometries\' folder'
+    )
+    parser.add_argument(
+        '-s', '--to-shp', action='store_true',
+        help='transform the geometries inside the file\'s folder to\n'
+             'Shapefile, also its SRS will be converted to WGS84.'
+    )
+    parser.add_argument(
+        '-a', '--analyse', action='store_true',
+        help='print information from Shapefile\'s geometries, this\n'
+             'option will raise an exception if geometry was not\n'
+             'transformed to Shapefile before.'
+    )
+    parser.add_argument(
+        '-f', '--fields', action='store_true',
+        help='print information from Shapefile\'s fields, this\n'
+             'option will raise an exception if geometry was not\n'
+             'transformed to Shapefile before.'
+    )
+    parser.add_argument(
+        '-j', '--job', nargs=1, default=None, metavar='file',
+        help='execute a GeoKettle job.'
+    )
+    parser.add_argument(
+        '-t', '--trm', nargs=1, default=None, metavar='file',
+        help='execute a GeoKettle transformation.'
+    )
+
+    # Parse command line arguments
+    print parser.parse_args()
+
+
+if __name__ == "__main__":
+    main_script()
