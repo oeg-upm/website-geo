@@ -24,7 +24,7 @@ Run instance of GeoLinkeddata RabbitMQ
 Stop instance of GeoLinkeddata RabbitMQ
 
 ```bash
-./stop
+./stop.sh
 ```
 
 **Note**: if you need the administration panel of RabbitMQ, change ```GEO_RABBIT_ADMIN``` to 1 at [launch.sh](launch.sh) and access through the browser [localhost:15672](http://localhost:15672).
