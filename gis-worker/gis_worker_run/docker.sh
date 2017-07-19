@@ -59,7 +59,7 @@ then
 fi
 
 # Run docker container
-docker run -d --restart=always -v $ORFD:/opt/geo-resources/ --link geolinkeddata.redis:redishost --link geolinkeddata.rabbitmq:rabbithost -e OEG_DEBUG_MODE=$BDV --name geolinkeddata.worker geolinkeddata/worker
+docker run -d --restart=always -v $ORFD:/opt/geo-resources/ --link geolinkeddata.redis:redishost --link geolinkeddata.rabbitmq:rabbithost -e OEG_DEBUG_MODE=$BDV --name geolinkeddata.worker oegupm/geolinkeddata-worker
 
 # Came back to directory
 cd $cwd
