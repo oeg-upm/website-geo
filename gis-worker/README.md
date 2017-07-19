@@ -2,26 +2,27 @@
 
 This Docker Image includes:
 
- * [GeoKettle 2.5](../geokettle-docker)
+ * [GeoKettle Docker Image](https://github.com/oeg-upm/docker-geokettle)
  * [GDAL 2.2.1](http://trac.osgeo.org/gdal/wiki/DownloadingGdalBinaries)
  * [GDAL Python 2.2.1](http://gdal.org/python/)
  * [Google LIBKML](https://github.com/google/libkml)
+ * GIS Worker for receiving tasks from RabbitMQ and save them on Redis
 
 Build the Docker Image
 
 ```bash
-docker build -t geolinkeddata/worker .
+docker build -t oegupm/geolinkeddata-worker .
 ```
 
 Run container
 
-1. First, you need to run a Redis instance
+1. First, you need to configure | run a specific [Redis](../redis-docker) instance
 
 ```bash
-docker run -d --name geolinkeddata.redis redis
+cd ../redis-docker && ./launch.sh
 ```
 
-2. Second, you need to run a specific [RabbitMQ](../rabbitmq-docker) instance
+2. Second, you need to configure | run a specific [RabbitMQ](../rabbitmq-docker) instance
 
 ```bash
 cd ../rabbitmq-docker && ./launch.sh
@@ -35,7 +36,8 @@ cd gis_worker_run && ./docker.sh
 
 ---
 
-GeoLinkeddata © Copyright 2017.
+Ontology Engineering Group © Copyright 2017.
 
-Alejandro F. Carrera
+Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 
+Maintainer, [Alejandro F. Carrera](https://www.github.com/alejandrofcarrera)
