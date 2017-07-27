@@ -7,15 +7,12 @@
 # Configuration
 GEO_REDIS_PORT=6379
 
-# Get updated Docker Image
-docker pull redis:alpine
-
 # Stop previous Redis container
 ./stop.sh
 
 # Build image if it is necessary
-docker image inspect oegupm/geolinkeddata-redis >/dev/null 2>&1 && ibs=1 || ibs=0
-if [ "$ibs" -eq "1" ]; then
+docker inspect oegupm/geolinkeddata-redis >/dev/null 2>&1 && ibs=1 || ibs=0
+if [ "$ibs" -eq "0" ]; then
     docker build -t oegupm/geolinkeddata-redis .
 fi
 

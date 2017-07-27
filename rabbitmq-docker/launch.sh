@@ -16,8 +16,8 @@ GEO_RABBIT_ADMIN=0
 ./stop.sh
 
 # Build image if it is necessary
-docker image inspect oegupm/geolinkeddata-rabbitmq >/dev/null 2>&1 && ibs=1 || ibs=0
-if [ "$ibs" -eq "1" ]; then
+docker inspect oegupm/geolinkeddata-rabbitmq >/dev/null 2>&1 && ibs=1 || ibs=0
+if [ "$ibs" -eq "0" ]; then
     docker build -t oegupm/geolinkeddata-rabbitmq .
 fi
 
