@@ -216,24 +216,21 @@ def main_script():
             transformations from asynchronous way with Celery and \
             messaging protocol as AMQP (RabbitMQ) plus Redis DB \
             to save the generated information or from CLI.',
-        usage='gis_worker.py [-h] id [-s] [-a] [-f] [-j file] '
+        usage='gis_worker.py [-h] [ -c | -a | -f id ] [ -j | -t file ]'
     )
     parser.add_argument(
-        'id', help='associated uuid geometries\' folder'
-    )
-    parser.add_argument(
-        '-s', '--to-shp', action='store_true',
-        help='transform the geometries inside the file\'s folder to\n'
+        '-c', '--convert', nargs=1, default=None, metavar='id',
+        help='convert the geometries inside the file\'s folder to\n'
              'Shapefile, also its SRS will be converted to WGS84.'
     )
     parser.add_argument(
-        '-a', '--analyse', action='store_true',
+        '-a', '--analyse', nargs=1, default=None, metavar='id',
         help='print information from Shapefile\'s geometries, this\n'
              'option will raise an exception if geometry was not\n'
              'transformed to Shapefile before.'
     )
     parser.add_argument(
-        '-f', '--fields', action='store_true',
+        '-f', '--fields', nargs=1, default=None, metavar='id',
         help='print information from Shapefile\'s fields, this\n'
              'option will raise an exception if geometry was not\n'
              'transformed to Shapefile before.'
@@ -247,7 +244,6 @@ def main_script():
         help='execute a GeoKettle transformation.'
     )
 
-    # Parse command line arguments
     print parser.parse_args()
 
 

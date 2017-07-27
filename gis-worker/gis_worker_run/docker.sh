@@ -25,7 +25,7 @@ fi
 
 # Get Geo Resources folder path
 if [[ -z "${OEG_RESOURCES_FOLDER}" ]]; then
-    ORFD="/opt/geo-resources/"
+    ORFD="/opt/geo-resources"
 else
     ORFD="${OEG_RESOURCES_FOLDER}"
 fi
@@ -71,7 +71,7 @@ fi
 # Launch docker container
 docker run -d --name geolinkeddata.worker \
     --restart=always \
-    -v $ORFD:/opt/geo-resources/ \
+    -v $ORFD:/opt/resources \
     -e OEG_DEBUG_MODE=$BDV \
     --link geolinkeddata.redis:redishost \
     --link geolinkeddata.rabbitmq:rabbithost \
