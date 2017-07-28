@@ -63,8 +63,8 @@ then
 fi
 
 # Build image if it is necessary
-docker image inspect oegupm/geolinkeddata-worker >/dev/null 2>&1 && ibs=1 || ibs=0
-if [ "$ibs" -eq "1" ]; then
+docker inspect oegupm/geolinkeddata-worker >/dev/null 2>&1 && ibs=1 || ibs=0
+if [ "$ibs" -eq "0" ]; then
     docker build -t oegupm/geolinkeddata-worker .
 fi
 

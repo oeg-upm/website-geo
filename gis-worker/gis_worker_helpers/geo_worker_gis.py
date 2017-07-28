@@ -23,6 +23,8 @@
 import os
 import sys
 import json
+import logging
+from os.path import splitext
 from subprocess import Popen, PIPE
 from celery.utils.log import get_task_logger
 
@@ -217,7 +219,7 @@ def get_ogr_driver(extension):
     """
 
     # TODO: extend this list for other extensions
-    if extension == 'shp':
+    if extension == '.shp':
         return 'ESRI Shapefile'
     else:
         return ''
@@ -245,15 +247,14 @@ def get_ogr_file_extensions(extension):
 
     # Find extensions group
     for __ext in __extensions:
-        if '.' + extension in __ext:
+        if extension in __ext:
             return __ext
 
     # Return empty list if there is no found
     return []
 
 
-
-def validate_ogr_fields(file_path, fields, extension):
+def validate_ogr_fields(path, fields):
     """ This function check the fields of specific Geospatial file.
 
     Returns:
@@ -261,8 +262,13 @@ def validate_ogr_fields(file_path, fields, extension):
 
     """
 
+    # Get extension from path
+    __ext_src = '.'.join(path.split('.')[-2:]) \
+        if len(path.split('.')) > 2 \
+        else splitext(path)[1]
+
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(extension)
+    __driver = get_ogr_driver(__ext_src)
 
     # Create data structure of fields
     __fields = [
@@ -278,7 +284,7 @@ def validate_ogr_fields(file_path, fields, extension):
     # DataSource Read-Write (1)
     from osgeo import ogr
     __file = ogr.GetDriverByName(__driver)
-    __file_src = __file.Open(file_path, 1)
+    __file_src = __file.Open(path, 1)
     __file_layer = __file_src.GetLayer()
     __file_layer_def = __file_layer.GetLayerDefn()
 
@@ -346,14 +352,19 @@ def validate_ogr_fields(file_path, fields, extension):
     return __val_fields, __rem_fields
 
 
-def generate_centroids(file_path, extension):
+def generate_centroids(path):
     """ This function create centroids for geometries
         of specific Geospatial file.
 
     """
 
+    # Get extension from path
+    __ext_src = '.'.join(path.split('.')[-2:]) \
+        if len(path.split('.')) > 2 \
+        else splitext(path)[1]
+
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(extension)
+    __driver = get_ogr_driver(__ext_src)
 
     # Get layer from OGR Tools to check if
     # there is any field is null or empty, so
@@ -361,7 +372,7 @@ def generate_centroids(file_path, extension):
     # DataSource Read-Write (1)
     from osgeo import ogr
     __file = ogr.GetDriverByName(__driver)
-    __file_src = __file.Open(file_path, 1)
+    __file_src = __file.Open(path, 1)
     __file_layer = __file_src.GetLayer()
 
     # Add field to layer
@@ -391,14 +402,19 @@ def generate_centroids(file_path, extension):
     __file_src = None
 
 
-def generate_areas(file_path, extension):
+def generate_areas(path):
     """ This function create areas for geometries
         of specific Geospatial file.
 
     """
 
+    # Get extension from path
+    __ext_src = '.'.join(path.split('.')[-2:]) \
+        if len(path.split('.')) > 2 \
+        else splitext(path)[1]
+
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(extension)
+    __driver = get_ogr_driver(__ext_src)
 
     # Get layer from OGR Tools to check if
     # there is any field is null or empty, so
@@ -406,7 +422,7 @@ def generate_areas(file_path, extension):
     # DataSource Read-Write (1)
     from osgeo import ogr
     __file = ogr.GetDriverByName(__driver)
-    __file_src = __file.Open(file_path, 1)
+    __file_src = __file.Open(path, 1)
     __file_layer = __file_src.GetLayer()
 
     # Add field to layer
@@ -525,125 +541,87 @@ class WorkerGIS(object):
         # Set status of GIS configuration
         self.status = check_geokettle_path() and check_gdal_path()
 
-        if self.status:
-
-            # Create logger for this Python script
-            self.logger = get_task_logger(__name__)
-
-    def transform(self, identifier, file_name, extension_src, extension_dst):
+    def transform(self, path, extension):
 
         # Get kind of file depending on final extension
-        __driver = get_ogr_driver(extension_dst)
+        __driver = get_ogr_driver(extension)
 
-        # Create full path
-        __file_path = self.config['folder'] + identifier + '/'
-
-        if self.config['debug']:
-            self.logger.warn(
-                '\n * TRANSFORM ' + __file_path + file_name + ' ' + 
-                '[' + extension_src + '] to [' + extension_dst + ']'
-            )
+        # Get extension from path
+        __ext_src = '.'.join(path.split('.')[-2:]) \
+            if len(path.split('.')) > 2 \
+            else splitext(path)[1]
 
         # Set flag if source extension is shp
-        __shp_source = extension_src == 'shp'
-        __shp_ext = '_shp' if __shp_source else ''
+        __shp_ext = '_bis' if __ext_src == extension else ''
 
         # Create arguments for transforming to Shapefile
         __command = [
-            __driver, __file_path + file_name + __shp_ext + '.' +
-            extension_dst, __file_path + file_name + '.' + 
-            extension_src
+            __driver, path.replace(__ext_src, '') +
+            __shp_ext + extension, path
         ]
 
         # Execute OGR
         __g_info = cmd_ogr2ogr(__command)
 
-        if __shp_source:
+        # # Detect if extensions are the same
+        if __ext_src == extension:
 
-            # Remove old files
-            self.delete(
-                identifier, file_name, extension_src
-            )
+            # Get folder from path
+            __path_folder = os.path.dirname(path)
 
-            # Rename new files
-            self.rename(
-                identifier, file_name + __shp_ext, file_name,
-                extension_src
-            )
+            # Get list of extensions from kind of file
+            __path_ext = get_ogr_file_extensions(extension)
+
+            # Get all nodes from directory
+            __path_files = os.listdir(__path_folder)
+
+            # Get old and new file name from path
+            __path_name = path.replace(__path_folder + '/', '').replace(__ext_src, '')
+
+            # Generate files from file name + list of extensions
+            __path_list = [__path_name + __l for __l in __path_ext]
+
+            # Get intersection between files and list of possible files
+            __path_files = set(__path_files).intersection(set(__path_list))
+
+            for __path_file in __path_files:
+
+                # Delete old files
+                os.remove(__path_folder + '/' + __path_file)
+
+                # Rename new files
+                os.rename(
+                    __path_folder + '/' + __path_file.replace(
+                        __path_name, __path_name + '_bis'
+                    ),
+                    __path_folder + '/' + __path_file
+                )
+
+        # Set destination path
+        __path_dst = path.replace(__ext_src, '') + extension
+
+        # Get information from GDAL
+        __gi_info = self.get_info(__path_dst)
+
+        # Generate centroid and Area if Geometry is
+        # Polygon or MultiPolygon
+        if 'polygon' in [
+            __g_property for __g_property in __gi_info['info']
+            if 'Geometry:' in __g_property
+        ][0].lower():
+
+            # Execute centroids generation
+            generate_centroids(__path_dst)
+
+            # Execute area generation
+            generate_areas(__path_dst)
 
         return __g_info
 
-    def delete(self, identifier, file_name, extension):
-
-        # Get list of extensions from kind of file
-        __list = get_ogr_file_extensions(extension)
-
-        # Join extensions with file name
-        __list = [file_name + __l for __l in __list]
-
-        # Get all nodes from directory
-        __path_files = os.listdir(self.config['folder'] + identifier)
-
-        # Get intersection between files and list of possible files
-        __path_files = set(__path_files).intersection(set(__list))
-
-        # Remove found files
-        __debug_log = ''
-        for __path_file in __path_files:
-            os.remove(
-                self.config['folder'] + identifier + '/' + __path_file
-            )
-
-            if self.config['debug']:
-                __debug_log += '\n * DELETED ' + self.config['folder'] + \
-                    identifier + '/' + __path_file
-
-        # Print log if debug flag
-        if self.config['debug'] and len(__path_files):
-            self.logger.warn(__debug_log)
-
-    def rename(self, identifier, file_name_old, file_name_new, extension):
-
-        # Get list of extensions from kind of file
-        __list = get_ogr_file_extensions(extension)
-
-        # Join extensions with file name
-        __list = [file_name_old + __l for __l in __list]
-
-        # Get all nodes from directory
-        __path_files = os.listdir(self.config['folder'] + identifier)
-
-        # Get intersection between files and list of possible files
-        __path_files = set(__path_files).intersection(set(__list))
-
-        # Rename found files
-        __debug_log = ''
-        for __path_file in __path_files:
-            os.rename(
-                self.config['folder'] + identifier + '/' + __path_file,
-                self.config['folder'] + identifier + '/' +
-                __path_file.replace(file_name_old, file_name_new)
-            )
-
-            if self.config['debug']:
-                __debug_log += '\n * RENAMED ' + self.config['folder'] + \
-                    identifier + '/' + __path_file
-
-        # Print log if debug flag
-        if self.config['debug'] and len(__path_files):
-            self.logger.warn(__debug_log)
-
-    def get_info(self, identifier, file_name, extension):
-
-        # Generate full path of the file
-        __file_path = self.config['folder'] + \
-            identifier + '/' + file_name + '.' + extension
-
-        # Create arguments for getting information about file
-        __command = [__file_path]
+    def get_info(self, path):
 
         # Get information when executes
-        __info = cmd_ogrinfo(__command)
+        __info = cmd_ogrinfo([path])
 
         # Only get fields for output
         __info_fields = []
@@ -652,21 +630,6 @@ class WorkerGIS(object):
             # Save Kind of geometry
             if 'Geometry:' in __o:
                 __info_fields.append(__o)
-
-                # Generate centroid and Area 
-                # if Geometry is Polygon or
-                # MultiPolygon
-                if 'polygon' in __o.lower():
-                    
-                    # Execute centroids generation
-                    generate_centroids(
-                        __file_path, extension
-                    )
-
-                    # Execute area generation
-                    generate_areas(
-                        __file_path, extension
-                    )
 
             # Save count of features
             elif 'Feature Count:' in __o:
@@ -680,17 +643,10 @@ class WorkerGIS(object):
 
         return __info
 
-    def get_fields(self, identifier, file_name, extension):
-
-        # Generate full path of the file
-        __file_path = self.config['folder'] + \
-            identifier + '/' + file_name + '.' + extension
-
-        # Create arguments for getting information about file
-        __command = [__file_path]
+    def get_fields(self, path):
 
         # Get information when executes
-        __info = cmd_ogrinfo(__command)
+        __info = cmd_ogrinfo([path])
 
         # Remove unnecessary information
         __info['info'] = [
@@ -700,9 +656,7 @@ class WorkerGIS(object):
         ]
 
         # Get fields from received information
-        __val_fields, __rem_fields = validate_ogr_fields(
-            __file_path, __info['info'], extension
-        )
+        __val_fields, __rem_fields = validate_ogr_fields(path, __info['info'])
 
         # Check if new fields is the same previous fields
         if len(__rem_fields):
