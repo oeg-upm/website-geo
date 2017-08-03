@@ -216,7 +216,7 @@ def main_script():
             transformations from asynchronous way with Celery and \
             messaging protocol as AMQP (RabbitMQ) plus Redis DB \
             to save the generated information or from CLI.',
-        usage='gis_worker.py [-h] [ -t | -a | -f | -gj | -gt path ]'
+        usage='gis_worker.py [-h] [ -t | -i | -f | -gj | -gt path ]'
     )
     parser.add_argument(
         '-t', '--transform', nargs=1, default=None, metavar='path',
@@ -224,10 +224,8 @@ def main_script():
              'Shapefile, also its SRS will be converted to WGS84.'
     )
     parser.add_argument(
-        '-a', '--analyse', nargs=1, default=None, metavar='path',
-        help='print information from Shapefile\'s geometries, this\n'
-             'option will raise an exception if geometry was not\n'
-             'transformed to Shapefile before.'
+        '-i', '--info', nargs=1, default=None, metavar='path',
+        help='print information from geometries file.'
     )
     parser.add_argument(
         '-f', '--fields', nargs=1, default=None, metavar='path',
@@ -257,10 +255,12 @@ def main_script():
             __args.transform[0], '.shp'
         )['status'])
 
-    # Option: analyse + id
-    elif __args.analyse is not None:
-        
-        print "analyse: " + str(__args.analyse[0])
+    # Option: info + id
+    elif __args.info is not None:
+
+        sys.exit(gis_worker_tasks.info_with_path(
+            __args.info[0]
+        )['status'])
 
     # Option: fields + id
     elif __args.fields is not None:

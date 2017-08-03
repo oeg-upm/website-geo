@@ -189,6 +189,25 @@ def print_to_logger(messages, logger=None):
         print ''
 
 
+def print_not_found_message():
+    """ This function returns a message when identifier
+        is not found on the database.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            '* ------------ Errors -------------\n',
+            'Record was not found, the task was received, but '
+            'there is no saved record for this identifier.'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
 def print_worker_status(status, logger=None):
     """ This function allows to print a specific message depending on
         returned Celery worker's status.
@@ -279,7 +298,7 @@ def transform_with_path(path, ext_dst):
         other kind of geometry through GDAL libraries.
 
     Return:
-        GDAL information or None otherwise
+        Tuple, GDAL information and status code
 
     """
 
@@ -311,11 +330,11 @@ def transform_with_path(path, ext_dst):
 
 
 def transform_with_id(identifier, ext_dst, logger):
-    """ This function transforms a gis or geometries file to
+    """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
     Return:
-        GDAL information or None otherwise
+        Tuple, GDAL information and status code
 
     """
 
@@ -334,38 +353,52 @@ def transform_with_id(identifier, ext_dst, logger):
             identifier + '/' + __f_info['name'] + \
             __f_info['extension']
 
-        # Transform resource and return result
-        __t_info = __lib[1].transform(__path, ext_dst)
-
-        # Add messages to result
-        if len(__t_info['error']):
-            __t_info['error'] = [
-                '* ------------ Errors -------------\n'
-            ] + __t_info['error']
-        if len(__t_info['warn']):
-            __t_info['warn'] = [
-                '* ----------- Warnings ------------\n'
-            ] + __t_info['warn']
-        if len(__t_info['info']):
-            __t_info['info'] = [
-                '* ---- Fields of the Shapefile ----\n'
-            ] + __t_info['info']
+        # Transform resource and get result
+        return transform_with_path(__path, ext_dst)
 
     else:
 
         # Create messages structure from zero
-        __t_info = {
-            'error': [
-                '* ------------ Errors -------------\n',
-                'Record was not found, the task was received, but '
-                'there is no saved record for this identifier.'
-            ],
-            'warn': [],
-            'info': []
+        __t_info = print_not_found_message()
+
+        # Log messages from result
+        print_to_logger(__t_info, logger)
+
+        # Return status code and messages
+        return {
+            'status': 1 if len(__t_info['error']) else 0,
+            'messages': __t_info
         }
 
+
+def info_with_path(path):
+    """ This function gets information from metadata
+        gis or geometries file through GDAL libraries.
+
+    Return:
+        Tuple, GDAL information and status code
+
+    """
+
+    # Get information resource and return result
+    __t_info = get_gdal_instance().get_info(path)
+
+    # Add messages to result
+    if len(__t_info['error']):
+        __t_info['error'] = [
+            '* ------------ Errors -------------\n'
+        ] + __t_info['error']
+    if len(__t_info['warn']):
+        __t_info['warn'] = [
+            '* ----------- Warnings ------------\n'
+        ] + __t_info['warn']
+    if len(__t_info['info']):
+        __t_info['info'] = [
+            '* --------- Information -----------\n'
+        ] + __t_info['info']
+
     # Log messages from result
-    print_to_logger(__t_info, logger)
+    print_to_logger(__t_info)
 
     # Return status code and messages
     return {
@@ -374,35 +407,46 @@ def transform_with_id(identifier, ext_dst, logger):
     }
 
 
-def analyse(identifier, redis=None, gdal=None):
-    """ This function analyses a Shapefile and get
-        information from its fields and metadata
-        through GDAL libraries.
-
-        If the geometries are polygon, this function
-        will generate the centroid and dimensions area
+def info_with_id(identifier, logger):
+    """ This function gets information from metadata
+        gis or geometries file through GDAL libraries.
 
     Return:
-        GDAL information or None otherwise
+        Tuple, GDAL information and status code
 
     """
 
     # Check if redis or gdal were input
-    if redis is None or gdal is None:
-        redis, gdal = get_libraries()
+    __lib = get_libraries()
 
     # Check if database has metadata for this identifier
-    if redis.check_existence(identifier, 'files'):
+    if __lib[0].check_existence(identifier, 'files'):
 
         # Get information about the specific identifier
-        __file = redis.redis['files'].hgetall(identifier)
+        __f_info = __lib[0].redis['files'].hgetall(identifier)
 
-        # Get parameters through GDAL tools
-        return gdal.get_info(
-            identifier, __file['name'], 'shp'
-        )
+        # Generate path
+        __config = get_configuration_file()
+        __path = __config['folder'] + '/' + \
+            identifier + '/' + __f_info['name'] + \
+            __f_info['extension']
 
-    return None
+        # Transform resource and get result
+        return info_with_path(__path)
+
+    else:
+
+        # Create messages structure from zero
+        __t_info = print_not_found_message()
+
+        # Log messages from result
+        print_to_logger(__t_info, logger)
+
+        # Return status code and messages
+        return {
+            'status': 1 if len(__t_info['error']) else 0,
+            'messages': __t_info
+        }
 
 
 def fields(identifier, redis=None, gdal=None):

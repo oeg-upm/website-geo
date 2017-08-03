@@ -49,7 +49,7 @@ Options for Command Line Interface
 
 ```bash
 python gis_worker.py -h
-usage: gis_worker.py [-h] [ -t | -a | -f | -gj | -gt path ]
+usage: gis_worker.py [-h] [ -t | -i | -f | -gj | -gt path ]
 
 This software allows you execute jobs and transformations from asynchronous
 way with Celery and messaging protocol as AMQP (RabbitMQ) plus Redis DB to
@@ -60,10 +60,7 @@ optional arguments:
   -t path, --transform path
                         transform the geometries of the specific path to
                         Shapefile, also its SRS will be converted to WGS84.
-  -a path, --analyse path
-                        print information from Shapefile's geometries, this
-                        option will raise an exception if geometry was not
-                        transformed to Shapefile before.
+  -i path, --info path  print information from geometries file.
   -f path, --fields path
                         print information from Shapefile's fields, this option
                         will raise an exception if geometry was not
