@@ -216,36 +216,66 @@ def main_script():
             transformations from asynchronous way with Celery and \
             messaging protocol as AMQP (RabbitMQ) plus Redis DB \
             to save the generated information or from CLI.',
-        usage='gis_worker.py [-h] [ -c | -a | -f id ] [ -j | -t file ]'
+        usage='gis_worker.py [-h] [ -t | -a | -f | -gj | -gt path ]'
     )
     parser.add_argument(
-        '-c', '--convert', nargs=1, default=None, metavar='id',
-        help='convert the geometries inside the file\'s folder to\n'
+        '-t', '--transform', nargs=1, default=None, metavar='path',
+        help='transform the geometries of the specific path to\n'
              'Shapefile, also its SRS will be converted to WGS84.'
     )
     parser.add_argument(
-        '-a', '--analyse', nargs=1, default=None, metavar='id',
+        '-a', '--analyse', nargs=1, default=None, metavar='path',
         help='print information from Shapefile\'s geometries, this\n'
              'option will raise an exception if geometry was not\n'
              'transformed to Shapefile before.'
     )
     parser.add_argument(
-        '-f', '--fields', nargs=1, default=None, metavar='id',
+        '-f', '--fields', nargs=1, default=None, metavar='path',
         help='print information from Shapefile\'s fields, this\n'
              'option will raise an exception if geometry was not\n'
              'transformed to Shapefile before.'
     )
     parser.add_argument(
-        '-j', '--job', nargs=1, default=None, metavar='file',
+        '-gj', '--geo-job', nargs=1, default=None, metavar='path',
         help='execute a GeoKettle job.'
     )
     parser.add_argument(
-        '-t', '--trm', nargs=1, default=None, metavar='file',
+        '-gt', '--geo-transform', nargs=1, default=None, metavar='path',
         help='execute a GeoKettle transformation.'
     )
 
-    print parser.parse_args()
+    # Check parameters from CLI
+    __args = parser.parse_args()
 
+    # Import python script with real methods
+    import gis_worker_tasks
+
+    # Option: convert + id
+    if __args.transform is not None:
+
+        sys.exit(gis_worker_tasks.transform_with_path(
+            __args.transform[0], '.shp'
+        )['status'])
+
+    # Option: analyse + id
+    elif __args.analyse is not None:
+        
+        print "analyse: " + str(__args.analyse[0])
+
+    # Option: fields + id
+    elif __args.fields is not None:
+        
+        print "fields: " + str(__args.fields[0])
+
+    # Option: job + file
+    elif __args.job is not None:
+        
+        print "job: " + str(__args.job[0])
+
+    # Option: transform + file
+    else:
+
+        print "trm: " + str(__args.trm[0])
 
 if __name__ == "__main__":
     main_script()

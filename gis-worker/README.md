@@ -15,7 +15,7 @@ Configuration for the Docker Container (edit [docker.sh](./gis_worker_run/docker
 |Name|Default value|
 |----------|--------------|
 |OEG_DEBUG_FLAG|1 ~ True|
-|OEG_RESOURCES_FOLDER|/opt/geo-resources|
+|OEG_RESOURCES_FOLDER|/opt/resources|
 
 Build the Docker Image
 
@@ -49,27 +49,29 @@ Options for Command Line Interface
 
 ```bash
 python gis_worker.py -h
-usage: gis_worker.py [-h] id [-s] [-a] [-f] [-j file] 
+usage: gis_worker.py [-h] [ -t | -a | -f | -gj | -gt path ]
 
 This software allows you execute jobs and transformations from asynchronous
 way with Celery and messaging protocol as AMQP (RabbitMQ) plus Redis DB to
 save the generated information or from CLI.
 
-positional arguments:
-  id                   associated uuid geometries' folder
-
 optional arguments:
-  -h, --help           show this help message and exit
-  -s, --to-shp         transform the geometries inside the file's folder to
-                       Shapefile, also its SRS will be converted to WGS84.
-  -a, --analyse        print information from Shapefile's geometries, this
-                       option will raise an exception if geometry was not
-                       transformed to Shapefile before.
-  -f, --fields         print information from Shapefile's fields, this option
-                       will raise an exception if geometry was not transformed
-                       to Shapefile before.
-  -j file, --job file  execute a GeoKettle job.
-  -t file, --trm file  execute a GeoKettle transformation.
+  -h, --help            show this help message and exit
+  -t path, --transform path
+                        transform the geometries of the specific path to
+                        Shapefile, also its SRS will be converted to WGS84.
+  -a path, --analyse path
+                        print information from Shapefile's geometries, this
+                        option will raise an exception if geometry was not
+                        transformed to Shapefile before.
+  -f path, --fields path
+                        print information from Shapefile's fields, this option
+                        will raise an exception if geometry was not
+                        transformed to Shapefile before.
+  -gj path, --geo-job path
+                        execute a GeoKettle job.
+  -gt path, --geo-transform path
+                        execute a GeoKettle transformation.
 ```
 
 ---

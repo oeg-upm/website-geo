@@ -20,8 +20,10 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
+import os
 import sys
 import time
+import json
 from celery.task import task
 from celery.utils.log import get_task_logger
 from gis_worker_helpers.geo_worker_gis import WorkerGIS
@@ -40,13 +42,58 @@ __email__ = "alejfcarrera@mail.ru"
 
 ##########################################################################
 
-
-def get_libraries():
-    """ This function allows to configure the database and the GDAL
-        libraries to use them from the Celery workers of this project.
+def get_configuration_file():
+    """ This function allows you to load a configuration from file.
 
     Returns:
-        Tuple: Redis and GDAL object or Raise an exception.
+        Dict: Return configuration constraints.
+
+    """
+
+    # Configuration folder
+    __config_base_path = './gis_worker_config'
+    __debug = False
+
+    # Check if application is on Debug mode
+    if int(os.environ.get('OEG_DEBUG_MODE', 1)) == 1:
+
+        # Get development configuration
+        __config_path = os.environ.get(
+            'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
+        )
+
+        # Set debug flag
+        __debug = True
+
+    else:
+
+        # Get production configuration
+        __config_path = os.environ.get(
+            'OEG_CONFIG_FILE', __config_base_path + '/config_production.json'
+        )
+
+    # Load current directory of geo_worker.py
+    cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+
+    # Open file to load configuration
+    with open(cwd + __config_path) as __file_data:
+
+        # Return dictionary as configuration
+        __dict = dict(json.load(__file_data))
+        __dict['debug'] = __debug
+
+        return __dict
+
+
+##########################################################################
+
+
+def get_redis_instance():
+    """ This function allows to configure the database to use
+    it from the Celery workers of this project or CLI.
+
+    Returns:
+        Redis object or Raise an exception.
 
     """
 
@@ -60,6 +107,18 @@ def get_libraries():
             'is not running'
         )
 
+    return __redis_db
+
+
+def get_gdal_instance():
+    """ This function allows to configure the GDAL library to use
+    it from the Celery workers of this project or CLI.
+
+    Returns:
+        GDAL object or Raise an exception.
+
+    """
+
     # Create instance of GDAL methods
     __gdal_lib = WorkerGIS()
 
@@ -72,13 +131,65 @@ def get_libraries():
             'the version is\n * greater than 2.1.0'
         )
 
-    return __redis_db, __gdal_lib
+    return __gdal_lib
+
+
+def get_libraries():
+    """ This function allows to configure the database and the GDAL
+        libraries to use them from the Celery workers of this project.
+
+    Returns:
+        Tuple: Redis and GDAL object or Raise an exception.
+
+    """
+
+    return get_redis_instance(), get_gdal_instance()
 
 
 ##########################################################################
 
 
-def print_worker_status(logger, status):
+def print_to_logger(messages, logger=None):
+    """ This function allows to print messages to the logger or
+        stdout with print function.
+
+    """
+
+    # Set prefix for all messages
+    __prefix = '\n * '
+    __prefix_kind = {
+        'info': 'INFO',
+        'warn': 'WARN',
+        'error': 'ERROR'
+    }
+
+    # Iterate kind of messages
+    for __k in __prefix_kind:
+
+        # Detect if there are any messages
+        if len(messages[__k]):
+
+            # Print jump depending on logger
+            if logger is None:
+                print ''
+            else:
+                getattr(logger, __k)('')
+
+            # Log messages
+            for __m in messages[__k]:
+
+                # Print messages depending on logger
+                if logger is None:
+                    print ' * [' + __prefix_kind[__k] + '] ' + __m
+                else:
+                    getattr(logger, __k)(__prefix + __m)
+
+    # Print jump depending on logger
+    if logger is None:
+        print ''
+
+
+def print_worker_status(status, logger=None):
     """ This function allows to print a specific message depending on
         returned Celery worker's status.
 
@@ -86,39 +197,41 @@ def print_worker_status(logger, status):
 
     if status == 1:
 
-        # Log when the configuration is wrong
-        logger.warn('\n * Skipped task (redis is not running)')
+        # Create message when the configuration is wrong
+        __message = ['Skipped task (redis is not running)']
 
     elif status == 2:
 
-        # Log when the task is locked
-        logger.warn('\n * Skipped task (locked by other worker)')
+        # Create message when the task is locked
+        __message = ['Skipped task (locked by other worker)']
 
     else:
 
-        # Log when the task is finished
-        logger.warn('\n * Skipped task (finished by other worker)')
+        # Create message when the task is finished
+        __message = ['Skipped task (finished by other worker)']
+
+    # Print messages
+    print_to_logger({
+        'warn': __message,
+        'info': [],
+        'error': []
+    }, logger)
 
 
-def print_worker_errors(logger, messages):
+def print_worker_errors(messages, logger=None):
     """ This function allows print messages to Celery logger.
 
     """
 
-    # Count messages
-    __messages_count = len(messages)
-
-    # Show number of messages and messages
-    __log_message = '\n * ' + str(__messages_count) + ' issues were found:'
-
-    for __message in messages:
-        __log_message += '\n * ' + __message
-
-    # Show messages
-    logger.error(__log_message)
+    # Print messages
+    print_to_logger({
+        'error': messages,
+        'warn': [],
+        'info': []
+    }, logger)
 
 
-def save_worker_messages(worker_db, logger, identifier, database, messages, kind):
+def save_worker_messages(worker_db, identifier, database, messages, kind, logger=None):
     """ This function allows save the messages on the database and
         print the important messages (errors) through Celery logger.
 
@@ -150,12 +263,203 @@ def save_worker_messages(worker_db, logger, identifier, database, messages, kind
         )
 
         # Print important messages
-        print_worker_errors(logger, messages['error'])
+        print_worker_errors(messages['error'], logger)
 
         # Set new flag
         __flag_error = True
 
     return __flag_error, __flag_warn
+
+
+##########################################################################
+
+
+def transform_with_path(path, ext_dst):
+    """ This function transforms a gis or geometries path to
+        other kind of geometry through GDAL libraries.
+
+    Return:
+        GDAL information or None otherwise
+
+    """
+
+    # Transform resource and return result
+    __t_info = get_gdal_instance().transform(path, ext_dst)
+
+    # Add messages to result
+    if len(__t_info['error']):
+        __t_info['error'] = [
+            '* ------------ Errors -------------\n'
+        ] + __t_info['error']
+    if len(__t_info['warn']):
+        __t_info['warn'] = [
+            '* ----------- Warnings ------------\n'
+        ] + __t_info['warn']
+    if len(__t_info['info']):
+        __t_info['info'] = [
+           '* ---- Fields of the Shapefile ----\n'
+        ] + __t_info['info']
+
+    # Log messages from result
+    print_to_logger(__t_info)
+
+    # Return status code and messages
+    return {
+        'status': 1 if len(__t_info['error']) else 0,
+        'messages': __t_info
+    }
+
+
+def transform_with_id(identifier, ext_dst, logger):
+    """ This function transforms a gis or geometries file to
+        other kind of geometry through GDAL libraries.
+
+    Return:
+        GDAL information or None otherwise
+
+    """
+
+    # Check if redis or gdal were input
+    __lib = get_libraries()
+
+    # Check if database has metadata for this identifier
+    if __lib[0].check_existence(identifier, 'files'):
+
+        # Get information about the specific identifier
+        __f_info = __lib[0].redis['files'].hgetall(identifier)
+
+        # Generate path
+        __config = get_configuration_file()
+        __path = __config['folder'] + '/' + \
+            identifier + '/' + __f_info['name'] + \
+            __f_info['extension']
+
+        # Transform resource and return result
+        __t_info = __lib[1].transform(__path, ext_dst)
+
+        # Add messages to result
+        if len(__t_info['error']):
+            __t_info['error'] = [
+                '* ------------ Errors -------------\n'
+            ] + __t_info['error']
+        if len(__t_info['warn']):
+            __t_info['warn'] = [
+                '* ----------- Warnings ------------\n'
+            ] + __t_info['warn']
+        if len(__t_info['info']):
+            __t_info['info'] = [
+                '* ---- Fields of the Shapefile ----\n'
+            ] + __t_info['info']
+
+    else:
+
+        # Create messages structure from zero
+        __t_info = {
+            'error': [
+                '* ------------ Errors -------------\n',
+                'Record was not found, the task was received, but '
+                'there is no saved record for this identifier.'
+            ],
+            'warn': [],
+            'info': []
+        }
+
+    # Log messages from result
+    print_to_logger(__t_info, logger)
+
+    # Return status code and messages
+    return {
+        'status': 1 if len(__t_info['error']) else 0,
+        'messages': __t_info
+    }
+
+
+def analyse(identifier, redis=None, gdal=None):
+    """ This function analyses a Shapefile and get
+        information from its fields and metadata
+        through GDAL libraries.
+
+        If the geometries are polygon, this function
+        will generate the centroid and dimensions area
+
+    Return:
+        GDAL information or None otherwise
+
+    """
+
+    # Check if redis or gdal were input
+    if redis is None or gdal is None:
+        redis, gdal = get_libraries()
+
+    # Check if database has metadata for this identifier
+    if redis.check_existence(identifier, 'files'):
+
+        # Get information about the specific identifier
+        __file = redis.redis['files'].hgetall(identifier)
+
+        # Get parameters through GDAL tools
+        return gdal.get_info(
+            identifier, __file['name'], 'shp'
+        )
+
+    return None
+
+
+def fields(identifier, redis=None, gdal=None):
+    """ This function gets information from Shapefile's
+        fields and clean bad fields and metadata
+        through GDAL libraries.
+
+    Return:
+        GDAL information or None otherwise
+
+    """
+
+    # Check if redis or gdal were input
+    if redis is None or gdal is None:
+        redis, gdal = get_libraries()
+
+    # Check if database has metadata for this identifier
+    if redis.check_existence(identifier, 'files'):
+
+        # Get information about the specific identifier
+        __file = redis.redis['files'].hgetall(identifier)
+
+        # Get parameters through GDAL tools
+        return gdal.get_info(
+            identifier, __file['name'], 'shp'
+        )
+
+    return None
+
+
+def delete(identifier, redis=None, gdal=None):
+    """ This function deletes Shapefile's through
+        GDAL libraries.
+
+    """
+
+    # Check if redis or gdal were input
+    if redis is None or gdal is None:
+        redis, gdal = get_libraries()
+
+    # Check if database has metadata for this identifier
+    if redis.check_existence(identifier, 'files'):
+
+        # Get information about the specific identifier
+        __file = redis.redis['files'].hgetall(identifier)
+
+        # Get parameters through GDAL tools
+        gdal.delete(
+            identifier, __file['name'], 'shp'
+        )
+
+        return identifier
+
+    return None
+
+
+##########################################################################
 
 
 def create_initial_mapping(identifier, logger, redis, gdal):
@@ -172,25 +476,22 @@ def create_initial_mapping(identifier, logger, redis, gdal):
     # Check status of the lock
     if __lock_status == 0:
 
-        # Check if file was uploaded successfully
-        if redis.check_existence(identifier, 'files'):
+        # Transform to Shapefile
+        __o_info = transform_with_id(identifier, 'shp', logger)
 
-            # Get information about the specific identifier
-            __file = redis.redis['files'].hgetall(identifier)
+        # Flags for errors
+        __flag_exist = __o_info['status'] == 0
+        __flag_error = False
 
-            # Status 1 | Transform to Shapefile
+        if __flag_exist:
+
+            # Status 1 | Transform
             __status = 1
-
-            # Transform resource to Shapefile
-            __ogr_info = gdal.transform(
-                identifier, __file['name'],
-                __file['extension'], 'shp'
-            )
 
             # Set flags from generated information
             __flag_error, __flag_warn = save_worker_messages(
                 redis, logger, identifier, 'mapping-i',
-                __ogr_info, __status
+                __o_info['messages'], __status
             )
 
             if __flag_error:
@@ -200,16 +501,18 @@ def create_initial_mapping(identifier, logger, redis, gdal):
                     identifier, 'mapping-i', __status
                 )
 
-            # Check any previous error
-            if not __flag_error:
+        if __flag_exist and not __flag_error:
 
-                # Status 2 | Get parameters
+            # Get information
+            __ogr_info = analyse(identifier, redis, gdal)
+
+            # Set new value to flag
+            __flag_exist = __ogr_info is not None
+
+            if __flag_exist:
+
+                # Status 2 | Analyse
                 __status = 2
-
-                # Get parameters through GDAL tools
-                __ogr_info = gdal.get_info(
-                    identifier, __file['name'], 'shp'
-                )
 
                 # Set flags from generated information
                 __flag_error, __flag_warn = save_worker_messages(
@@ -231,52 +534,48 @@ def create_initial_mapping(identifier, logger, redis, gdal):
                         identifier, __ogr_info['info']
                     )
 
-            # Check any previous error
-            if not __flag_error:
+        if __flag_exist and not __flag_error:
 
-                # Status 3 | Get fields properties
-                __status = 3
+            # Get information
+            __ogr_info = fields(identifier, redis, gdal)
 
-                # Get fields through GDAL tools
-                __ogr_info = gdal.get_fields(
-                    identifier, __file['name'], 'shp'
-                )
+            # Status 3 | fields
+            __status = 3
 
-                # Set flags from generated information
-                __flag_error, __flag_warn = save_worker_messages(
-                    redis, logger, identifier, 'mapping-i',
-                    __ogr_info, __status
-                )
-
-                if __flag_error:
-
-                    # Save status for tracking errors
-                    redis.save_record_status(
-                        identifier, 'mapping-i', __status
-                    )
-
-                else:
-
-                    # Save initial mapping on database
-                    redis.save_initial_mapping(
-                        identifier, __ogr_info['info']
-                    )
-
-                    # Save status for tracking success
-                    redis.save_record_status(
-                        identifier, 'mapping-i', 0
-                    )
-
-            # if there was an error, delete all files
-            if __flag_error:
-                gdal.delete(identifier, __file['name'], 'shp')
-
-        else:
-
-            logger.error(
-                '\n * Record was not found, the task was received, but '
-                'there is no saved record for this identifier'
+            # Set flags from generated information
+            __flag_error, __flag_warn = save_worker_messages(
+                redis, logger, identifier, 'mapping-i',
+                __ogr_info, __status
             )
+
+            if __flag_error:
+
+                # Save status for tracking errors
+                redis.save_record_status(
+                    identifier, 'mapping-i', __status
+                )
+
+            else:
+
+                # Save initial mapping on database
+                redis.save_initial_mapping(
+                    identifier, __ogr_info['info']
+                )
+
+                # Save status for tracking success
+                redis.save_record_status(
+                    identifier, 'mapping-i', 0
+                )
+
+        # if there was an error, delete all files
+        if __flag_error:
+
+            delete(identifier)
+
+        #if not __flag_exist:
+
+            # Show error
+        #    print_not_found_error(logger)
 
         # Release lock
         redis.unlock(identifier + ':mapping-i', True)
@@ -422,4 +721,3 @@ def default(self):
 
     # Print message
     logger.warn('\n * Received task from default queue')
-

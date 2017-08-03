@@ -22,11 +22,8 @@
 
 import os
 import sys
-import json
-import logging
 from os.path import splitext
 from subprocess import Popen, PIPE
-from celery.utils.log import get_task_logger
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -37,52 +34,6 @@ __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
 __license__ = "Apache"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
-
-
-##########################################################################
-
-
-def get_configuration_file():
-    """ This function allows you to load a configuration from file.
-
-    Returns:
-        Dict: Return configuration constraints.
-
-    """
-
-    # Configuration folder
-    __config_base_path = '../gis_worker_config'
-    __debug = False
-
-    # Check if application is on Debug mode
-    if int(os.environ.get('OEG_DEBUG_MODE', 1)) == 1:
-
-        # Get development configuration
-        __config_path = os.environ.get(
-            'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
-        )
-
-        # Set debug flag
-        __debug = True
-
-    else:
-
-        # Get production configuration
-        __config_path = os.environ.get(
-            'OEG_CONFIG_FILE', __config_base_path + '/config_production.json'
-        )
-
-    # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
-
-    # Open file to load configuration
-    with open(cwd + __config_path) as __file_data:
-
-        # Return dictionary as configuration
-        __dict = dict(json.load(__file_data))
-        __dict['debug'] = __debug
-        
-        return __dict
 
 
 ##########################################################################
@@ -255,10 +206,10 @@ def get_ogr_file_extensions(extension):
 
 
 def validate_ogr_fields(path, fields):
-    """ This function check the fields of specific Geospatial file.
+    """ This function checks the fields of specific Geospatial file.
 
     Returns:
-        Dict: Return information about the fields.
+        Tuple: Return the removed or valid fields.
 
     """
 
@@ -269,11 +220,6 @@ def validate_ogr_fields(path, fields):
 
     # Get kind of file depending on final extension
     __driver = get_ogr_driver(__ext_src)
-
-    # Create data structure of fields
-    __fields = [
-        __f[:__f.index(':')] for __f in fields
-    ]
 
     # Create data structure for empty properties
     __fields_null = {}
@@ -293,27 +239,26 @@ def validate_ogr_fields(path, fields):
     while __file_feat is not None:
 
         # Iterate over fields of the Shapefile
-        for __f_index in range(len(__fields)):
+        for __f_index in range(len(fields)):
 
             # Check if field is True (has value)
-            if __fields[__f_index] in __fields_null:
-                if __fields_null[__fields[__f_index]]:
+            if fields[__f_index] in __fields_null:
+                if __fields_null[fields[__f_index]]:
                     continue
 
             # Get if the feature has value
-            __fields_null[__fields[__f_index]] = \
-                __file_feat.IsFieldSetAndNotNull(__fields[__f_index])
+            __fields_null[fields[__f_index]] = \
+                __file_feat.IsFieldSetAndNotNull(fields[__f_index])
 
         # Next feature
         __file_feat = __file_layer.GetNextFeature()
 
     __f_pad = 0
     __rem_fields = []
-    __val_fields = {}
-    for __field in __fields:
+    for __field in fields:
 
         # Index of the field
-        __file_field_i = __fields.index(__field) - __f_pad
+        __file_field_i = fields.index(__field) - __f_pad
 
         # Remove empty fields from Shapefile
         if not __fields_null[__field]: 
@@ -337,23 +282,14 @@ def validate_ogr_fields(path, fields):
                 __file_field_i, __file_field, ogr.ALTER_NAME_FLAG
             )
 
-            # Search kind of field
-            __val_field = [
-                __f[__f.index(':') + 2:].split(' ')[0]
-                for __f in fields if __f[:__f.index(':')] == __field
-            ][0]
-
-            # Save renamed field
-            __val_fields[__field.lower()] = __val_field
-
     # Close file
     __file_src = None
 
-    return __val_fields, __rem_fields
+    return __rem_fields
 
 
 def generate_centroids(path):
-    """ This function create centroids for geometries
+    """ This function calculates the centroid for geometries
         of specific Geospatial file.
 
     """
@@ -403,7 +339,7 @@ def generate_centroids(path):
 
 
 def generate_areas(path):
-    """ This function create areas for geometries
+    """ This function calculates the area for geometries
         of specific Geospatial file.
 
     """
@@ -535,9 +471,6 @@ class WorkerGIS(object):
 
     def __init__(self):
 
-        # Get current configuration
-        self.config = get_configuration_file() 
-
         # Set status of GIS configuration
         self.status = check_geokettle_path() and check_gdal_path()
 
@@ -563,7 +496,11 @@ class WorkerGIS(object):
         # Execute OGR
         __g_info = cmd_ogr2ogr(__command)
 
-        # # Detect if extensions are the same
+        # Detect if there were any errors
+        if len(__g_info['error']):
+            return __g_info
+
+        # Detect if extensions are the same
         if __ext_src == extension:
 
             # Get folder from path
@@ -603,11 +540,11 @@ class WorkerGIS(object):
         # Get information from GDAL
         __gi_info = self.get_info(__path_dst)
 
-        # Generate centroid and Area if Geometry is
-        # Polygon or MultiPolygon
+        # Generate centroid and Area if Geometry
+        # is kind of Polygon
         if 'polygon' in [
-            __g_property for __g_property in __gi_info['info']
-            if 'Geometry:' in __g_property
+            __o for __o in __gi_info['info']
+            if 'Geometry:' in __o
         ][0].lower():
 
             # Execute centroids generation
@@ -615,6 +552,16 @@ class WorkerGIS(object):
 
             # Execute area generation
             generate_areas(__path_dst)
+
+        # Join error messages
+        __g_info['error'] += __gi_info['error']
+
+        # Validate all fields and join log messages
+        __g_info['warn'] += self.validate_fields(__path_dst)
+
+        # Get information about new and old fields
+        __g_fields = self.get_fields(__path_dst, True)
+        __g_info['info'] += __g_fields['info']
 
         return __g_info
 
@@ -643,7 +590,29 @@ class WorkerGIS(object):
 
         return __info
 
-    def get_fields(self, path):
+    def validate_fields(self, path):
+
+        # Get information when executes
+        __info = self.get_fields(path)
+
+        # Validate fields from received information
+        __rem_fields = validate_ogr_fields(path, __info['info'])
+
+        # Set empty return structure
+        __log_messages = []
+
+        # Check if new fields is the same previous fields
+        if len(__rem_fields):
+
+            # Add new possible warning messages
+            __log_messages += [
+                'Removed field ' + __f +
+                ' because is empty' for __f in __rem_fields
+            ]
+
+        return __log_messages
+
+    def get_fields(self, path, extend=False):
 
         # Get information when executes
         __info = cmd_ogrinfo([path])
@@ -655,22 +624,12 @@ class WorkerGIS(object):
             and 'Extent: (' not in __o and 'Layer name:' not in __o
         ]
 
-        # Get fields from received information
-        __val_fields, __rem_fields = validate_ogr_fields(path, __info['info'])
+        if not extend:
 
-        # Check if new fields is the same previous fields
-        if len(__rem_fields):
-
-            # Add new possible warning messages
-            __info['warn'] += [
-                'Removed field ' + __f +
-                ' because is empty' for __f in __rem_fields
+            # Only show name of fields
+            __info['info'] = [
+                __f[:__f.index(':')]
+                for __f in __info['info']
             ]
-
-        # Generate new fields information
-        __info['info'] = __val_fields
-
-        # Save Centroid field
-        __info['info']['centroid'] = 'String'
 
         return __info
