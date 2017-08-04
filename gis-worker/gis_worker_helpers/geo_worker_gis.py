@@ -172,6 +172,8 @@ def get_ogr_driver(extension):
     # TODO: extend this list for other extensions
     if extension == '.shp':
         return 'ESRI Shapefile'
+    elif extension == '.kml':
+        return 'LIBKML'
     else:
         return ''
 
@@ -193,7 +195,11 @@ def get_ogr_file_extensions(extension):
         [
             '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
             '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
-        ]
+        ],
+
+        # KML -> kml
+        ['.kml'],
+
     ]
 
     # Find extensions group
@@ -203,6 +209,47 @@ def get_ogr_file_extensions(extension):
 
     # Return empty list if there is no found
     return []
+
+
+def get_projection(path):
+    """ This function gets gis projections
+        of specific Geospatial file.
+
+    """
+
+    # Get extension from path
+    __ext_src = '.'.join(path.split('.')[-2:]) \
+        if len(path.split('.')) > 2 \
+        else splitext(path)[1]
+
+    # Get kind of file depending on final extension
+    __driver = get_ogr_driver(__ext_src)
+
+    # Get layer from OGR Tools to check if
+    # there is any field is null or empty, so
+    # must be deleted, this file is opened as
+    # DataSource Read-Write (1)
+    from osgeo import ogr
+    __file = ogr.GetDriverByName(__driver)
+    __file_src = __file.Open(path, 1)
+    __file_layer = __file_src.GetLayer()
+
+    # Get Spatial reference
+    __file_spatial = __file_layer.GetSpatialRef()
+
+    # Detect GIS kind of data
+    __f_cs = 'GEOGCS' if __file_spatial.IsGeographic() == 1 else 'PROJCS'
+    __f_an = __file_spatial.GetAuthorityName(__f_cs)
+    __f_ac = __file_spatial.GetAuthorityCode(__f_cs)
+
+    # Detect if name and code are valid
+    __file_spatial = str(__f_an) + ':' + str(__f_ac) \
+        if __f_an is not None and __f_ac is not None else None
+
+    # Close file
+    __file_src = None
+
+    return __file_spatial
 
 
 def validate_ogr_fields(path, fields):
@@ -587,6 +634,11 @@ class WorkerGIS(object):
                 __info_fields.append(__o)
 
         __info['info'] = __info_fields
+
+        # Add projection to info
+        __info_proj = get_projection(path)
+        if __info_proj is not None:
+            __info['info'].append('CRS: ' + __info_proj)
 
         return __info
 
