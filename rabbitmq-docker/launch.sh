@@ -10,7 +10,6 @@ GEO_RABBIT_USER=rabbitmq
 GEO_RABBIT_PWD=password
 GEO_RABBIT_PORT=5672
 GEO_RABBIT_ADMIN_PORT=15672
-GEO_RABBIT_ADMIN=0
 
 # Stop previous RabbitMQ container
 ./stop.sh
@@ -28,5 +27,4 @@ docker run -d --name geolinkeddata.rabbitmq \
     -p $GEO_RABBIT_ADMIN_PORT:15672 \
     -e RABBITMQ_DEFAULT_USER=$GEO_RABBIT_USER \
     -e RABBITMQ_DEFAULT_PASS=$GEO_RABBIT_PWD \
-    -e RABBITMQ_ENABLE_MANAGEMENT_PLUGIN=$GEO_RABBIT_ADMIN \
     oegupm/geolinkeddata-rabbitmq

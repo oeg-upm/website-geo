@@ -13,7 +13,6 @@ Configuration for the Docker Container (edit [launch.sh](./launch.sh) file)
 |GEO_RABBIT_PORT|5672|
 |GEO_RABBIT_MEM|512M ~ 512 MB|
 |GEO_RABBIT_ADMIN_PORT|15672|
-|GEO_RABBIT_ADMIN|0 ~ False|
 
 Run instance of GeoLinkeddata RabbitMQ
 
@@ -26,8 +25,6 @@ Stop instance of GeoLinkeddata RabbitMQ
 ```bash
 ./stop.sh
 ```
-
-**Note**: if you need the administration panel of RabbitMQ, change ```GEO_RABBIT_ADMIN``` to 1 at [launch.sh](launch.sh) and access through the browser [localhost:15672](http://localhost:15672).
 
 **Note**: this version has two shared volumes, one for logging and other for data. If you want to persist one of them, add to [launch.sh](launch.sh) this parameters.
 
