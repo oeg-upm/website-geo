@@ -119,8 +119,8 @@ class Worker(object):
         celery_app = Celery('gis_worker')
 
         # Configure exchanges of RabbitMQ
-        default_exchange = Exchange('default', type='direct')
-        mapping_exchange = Exchange('mapping', type='direct')
+        default_exchange = Exchange('geo.default', type='direct')
+        mapping_exchange = Exchange('geo.mapping', type='direct')
 
         # Get RabbitMQ URL
         celery_app.conf.broker_url = 'pyamqp://' + \
@@ -138,16 +138,16 @@ class Worker(object):
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
             Queue(
-                'mapping-initial', mapping_exchange,
-                routing_key='mapping.initial'
+                'geo-mapping-initial', mapping_exchange,
+                routing_key='geo.mapping.initial'
             ),
             Queue(
-                'mapping-update', mapping_exchange,
-                routing_key='mapping.update'
+                'geo-mapping-update', mapping_exchange,
+                routing_key='geo.mapping.update'
             ),
             Queue(
-                'mapping-extended', mapping_exchange,
-                routing_key='mapping.extended'
+                'geo-mapping-extended', mapping_exchange,
+                routing_key='geo.mapping.extended'
             ),
             Queue(
                 'default', default_exchange,
@@ -163,24 +163,24 @@ class Worker(object):
         # Configure tasks of Celery - RabbitMQ
         celery_app.conf.task_routes = {
             'gis_worker_tasks.initial_mapping': {
-                'queue': 'mapping-initial',
+                'queue': 'geo-mapping-initial',
                 'exchange': mapping_exchange,
-                'routing_key': 'mapping.initial'
+                'routing_key': 'geo.mapping.initial'
             },
             'gis_worker_tasks.update_mapping': {
-                'queue': 'mapping-update',
+                'queue': 'geo-mapping-update',
                 'exchange': mapping_exchange,
-                'routing_key': 'mapping.update'
+                'routing_key': 'geo.mapping.update'
             },
             'gis_worker_tasks.extended_mapping': {
-                'queue': 'mapping-extended',
+                'queue': 'geo-mapping-extended',
                 'exchange': mapping_exchange,
-                'routing_key': 'mapping.extended'
+                'routing_key': 'geo.mapping.extended'
             },
             'gis_worker_tasks.default': {
-                'queue': 'default',
+                'queue': 'geo-default',
                 'exchange': default_exchange,
-                'routing_key': 'default'
+                'routing_key': 'geo.default'
             }
         }
 
