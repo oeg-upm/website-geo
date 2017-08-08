@@ -27,6 +27,7 @@ import json
 from celery.task import task
 from celery.utils.log import get_task_logger
 from gis_worker_helpers.geo_worker_gis import WorkerGIS
+from gis_worker_helpers.geo_worker_gis import get_ogr_file_extensions
 from gis_worker_helpers.geo_worker_db import WorkerRedis
 
 reload(sys)
@@ -354,7 +355,7 @@ def transform_with_id(identifier, ext_dst, logger):
             __f_info['extension']
 
         # Transform resource and get result
-        return transform_with_path(__path, ext_dst)
+        return transform_with_path(__path, ext_dst, logger)
 
     else:
 
@@ -449,58 +450,120 @@ def info_with_id(identifier, logger):
         }
 
 
-def fields(identifier, redis=None, gdal=None):
-    """ This function gets information from Shapefile's
-        fields and clean bad fields and metadata
-        through GDAL libraries.
-
-    Return:
-        GDAL information or None otherwise
-
-    """
-
-    # Check if redis or gdal were input
-    if redis is None or gdal is None:
-        redis, gdal = get_libraries()
-
-    # Check if database has metadata for this identifier
-    if redis.check_existence(identifier, 'files'):
-
-        # Get information about the specific identifier
-        __file = redis.redis['files'].hgetall(identifier)
-
-        # Get parameters through GDAL tools
-        return gdal.get_info(
-            identifier, __file['name'], 'shp'
-        )
-
-    return None
-
-
-def delete(identifier, redis=None, gdal=None):
-    """ This function deletes Shapefile's through
+def fields_with_path(path):
+    """ This function gets information from metadata
+        fields about gis or geometries file through
         GDAL libraries.
 
+    Return:
+        Tuple, GDAL information and status code
+
+    """
+
+    # Get information resource and return result
+    __t_info = get_gdal_instance().get_fields(path, True)
+
+    # Add messages to result
+    if len(__t_info['error']):
+        __t_info['error'] = [
+            '* ------------ Errors -------------\n'
+        ] + __t_info['error']
+    if len(__t_info['warn']):
+        __t_info['warn'] = [
+            '* ----------- Warnings ------------\n'
+        ] + __t_info['warn']
+    if len(__t_info['info']):
+        __t_info['info'] = [
+            '* ------------ Fields -------------\n'
+        ] + __t_info['info']
+
+    # Log messages from result
+    print_to_logger(__t_info)
+
+    # Return status code and messages
+    return {
+        'status': 1 if len(__t_info['error']) else 0,
+        'messages': __t_info
+    }
+
+
+def fields_with_id(identifier, logger):
+    """ This function gets information from metadata
+        fields about gis or geometries file through
+        GDAL libraries.
+
+    Return:
+        Tuple, GDAL information and status code
+
     """
 
     # Check if redis or gdal were input
-    if redis is None or gdal is None:
-        redis, gdal = get_libraries()
+    __lib = get_libraries()
 
     # Check if database has metadata for this identifier
-    if redis.check_existence(identifier, 'files'):
+    if __lib[0].check_existence(identifier, 'files'):
 
         # Get information about the specific identifier
-        __file = redis.redis['files'].hgetall(identifier)
+        __f_info = __lib[0].redis['files'].hgetall(identifier)
 
-        # Get parameters through GDAL tools
-        gdal.delete(
-            identifier, __file['name'], 'shp'
-        )
+        # Generate path
+        __config = get_configuration_file()
+        __path = __config['folder'] + '/' + \
+            identifier + '/' + __f_info['name'] + \
+            __f_info['extension']
 
-        return identifier
+        # Transform resource and get result
+        return fields_with_path(__path)
 
-    return None
+    else:
+
+        # Create messages structure from zero
+        __t_info = print_not_found_message()
+
+        # Log messages from result
+        print_to_logger(__t_info, logger)
+
+        # Return status code and messages
+        return {
+            'status': 1 if len(__t_info['error']) else 0,
+            'messages': __t_info
+        }
+
+
+def delete_with_id(identifier, extension):
+    """ This function deletes a specific folder with
+        extensions inside this folder.
+
+    """
+
+    # Generate path
+    __config = get_configuration_file()
+    __path = __config['folder'] + '/' + identifier
+
+    # Get all files from path
+    __path_files = os.listdir(__path)
+
+    # Get all extensions from base extension
+    __extensions = get_ogr_file_extensions(extension)
+
+    # Iterate over files
+    for __file in __path_files:
+
+        # Join path with file
+        __f = __path + '/' + __file
+
+        # Get extension from path
+        __file_ext = '.'.join(__f.split('.')[-2:]) \
+            if len(__f.split('.')) > 2 else os.path.splitext(__f)[1]
+
+        # Check if extension is valid
+        if __file_ext in __extensions:
+
+            # Check if path is a correct file and exists
+            if os.path.exists(__f) and os.path.isfile(__f):
+
+                # Remove path
+                os.remove(__f)
 
 
 ##########################################################################
@@ -548,10 +611,10 @@ def create_initial_mapping(identifier, logger, redis, gdal):
         if __flag_exist and not __flag_error:
 
             # Get information
-            __ogr_info = analyse(identifier, redis, gdal)
+            __o_info = fields_with_id(identifier, logger)
 
             # Set new value to flag
-            __flag_exist = __ogr_info is not None
+            __flag_exist = __o_info['status'] == 0
 
             if __flag_exist:
 
@@ -561,7 +624,7 @@ def create_initial_mapping(identifier, logger, redis, gdal):
                 # Set flags from generated information
                 __flag_error, __flag_warn = save_worker_messages(
                     redis, logger, identifier, 'mapping-i',
-                    __ogr_info, __status
+                    __o_info['messages'], __status
                 )
 
                 if __flag_error:
@@ -575,13 +638,13 @@ def create_initial_mapping(identifier, logger, redis, gdal):
 
                     # Save new parameters on database
                     redis.save_record_properties(
-                        identifier, __ogr_info['info']
+                        identifier, __o_info['messages']['info']
                     )
 
         if __flag_exist and not __flag_error:
 
             # Get information
-            __ogr_info = fields(identifier, redis, gdal)
+            __o_info = fields_with_id(identifier, logger)
 
             # Status 3 | fields
             __status = 3
@@ -589,7 +652,7 @@ def create_initial_mapping(identifier, logger, redis, gdal):
             # Set flags from generated information
             __flag_error, __flag_warn = save_worker_messages(
                 redis, logger, identifier, 'mapping-i',
-                __ogr_info, __status
+                __o_info['messages'], __status
             )
 
             if __flag_error:
@@ -603,7 +666,7 @@ def create_initial_mapping(identifier, logger, redis, gdal):
 
                 # Save initial mapping on database
                 redis.save_initial_mapping(
-                    identifier, __ogr_info['info']
+                    identifier, __o_info['messages']['info']
                 )
 
                 # Save status for tracking success
@@ -614,12 +677,15 @@ def create_initial_mapping(identifier, logger, redis, gdal):
         # if there was an error, delete all files
         if __flag_error:
 
-            delete(identifier)
+            delete_with_id(identifier, '.shp')
 
-        #if not __flag_exist:
+        if not __flag_exist:
 
             # Show error
-        #    print_not_found_error(logger)
+            print_to_logger(
+                print_not_found_message(),
+                logger
+            )
 
         # Release lock
         redis.unlock(identifier + ':mapping-i', True)

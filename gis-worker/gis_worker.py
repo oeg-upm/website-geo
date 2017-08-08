@@ -264,8 +264,10 @@ def main_script():
 
     # Option: fields + id
     elif __args.fields is not None:
-        
-        print "fields: " + str(__args.fields[0])
+
+        sys.exit(gis_worker_tasks.fields_with_path(
+            __args.fields[0]
+        )['status'])
 
     # Option: job + file
     elif __args.job is not None:
