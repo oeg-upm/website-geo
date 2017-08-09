@@ -61,10 +61,7 @@ optional arguments:
                         transform the geometries of the specific path to
                         Shapefile, also its SRS will be converted to WGS84.
   -i path, --info path  print information from geometries file.
-  -f path, --fields path
-                        print information from Shapefile's fields, this option
-                        will raise an exception if geometry was not
-                        transformed to Shapefile before.
+  -f path, --fields path print fields from geometries file.
   -gj path, --geo-job path
                         execute a GeoKettle job.
   -gt path, --geo-transform path
