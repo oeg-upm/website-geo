@@ -134,7 +134,7 @@ def configure_redis(configuration):
     for __redis_name in configuration['redis']['db_ids']:
 
         # Create new connection pool
-        __redis_pool = create_redis_pool(
+        __redis_pools[__redis_name] = create_redis_pool(
             configuration['redis']['db']['host'],
             configuration['redis']['db']['port'],
             configuration['redis']['db']['pass'],
@@ -142,7 +142,7 @@ def configure_redis(configuration):
         )
 
         # Test connection pool
-        if __redis_pool is None:
+        if __redis_pools[__redis_name] is None:
 
             # Disconnect other connection pools
             for __redis_pool_name in __redis_pools.keys():
@@ -154,13 +154,13 @@ def configure_redis(configuration):
 
             # Save connection to structure
             __redis_connections[__redis_name] = redis.Redis(
-                connection_pool=__redis_pool
+                connection_pool=__redis_pools[__redis_name]
             )
 
         # Add new number for next connection pool
         __number_redis += 1
 
-    return __redis_connections
+    return __redis_connections, __redis_pools
 
 
 ##########################################################################
@@ -195,15 +195,10 @@ class WorkerRedis(object):
         self.config = get_configuration_file()
 
         # Create configuration for Redis
-        self.redis = configure_redis(self.config)
+        self.redis, self.redis_pools = configure_redis(self.config)
 
         # Set status of Redis configuration
         self.status = self.redis is not None
-
-        if self.status:
-
-            # Create logger for this Python script
-            self.logger = get_task_logger(__name__)
 
     def check_existence(self, identifier, database):
         """ This function allows to check if key exists.
@@ -220,7 +215,7 @@ class WorkerRedis(object):
         # Return status
         return self.redis[database].exists(identifier)
 
-    def save_initial_mapping(self, identifier, mapping):
+    def save_initial_mapping(self, identifier, fields):
         """ This function allows to save the mapping for
             specific identifier. This mapping is the generated
             mapping from GDAL tools, identifying the fields from
@@ -228,14 +223,25 @@ class WorkerRedis(object):
         
         """
 
-        # Get a deep copy of the dictionary to modify it
-        __mapping = mapping.copy()
+        # Create data structure
+        __mapping = {}
 
-        # Change dictionary values to join types
-        for __m in __mapping:
-            if __mapping[__m] == 'Integer' or __mapping[__m] == 'Double':
-                __mapping[__m] = 'Number'
-            __mapping[__m] = __mapping[__m].lower() 
+        # Iterate over the fields
+        for __f in fields:
+
+            # Get position of : on field
+            __field_double_point = __f.index(':')
+
+            # Get name of field
+            __field_name = __f[:__field_double_point]
+
+            # Get kind of field
+            __field_value = str(
+                __f[__field_double_point + 2:].split(' ')[0]
+            ).lower()
+
+            # Save field on dict
+            __mapping[__field_name] = __field_value
 
         # Save mapping fields on database
         self.redis['mapping-i'].hmset(identifier, __mapping)
@@ -334,9 +340,6 @@ class WorkerRedis(object):
             if (int(self.redis['tasks'].get(identifier)) <
                     int(time.time())) or forced:
 
-                if self.config['debug']:
-                    self.logger.warn('\n * UNLOCKED %s', identifier)
-
                 # Release the identifier of the task
                 self.redis['tasks'].delete(identifier)
 
@@ -362,7 +365,7 @@ class WorkerRedis(object):
         if not self.status:
             return 1
 
-        # Create lock flag
+        # Create lock flag
         __lock_status = False
 
         # Create pseudo-identifier
@@ -375,9 +378,6 @@ class WorkerRedis(object):
             self.redis['tasks'].setnx(
                 __identifier, str(int(time.time()) + seconds)
             )
-
-            if self.config['debug']:
-                self.logger.warn('\n * LOCKED %s', __identifier)
 
             # Set new value to flag
             __lock_status = True
@@ -404,3 +404,15 @@ class WorkerRedis(object):
 
         # Return status depending previous lock
         return 0 if __lock_status else 2
+
+    def exit(self):
+
+        # Iterate over Connection Pools
+        for __redis_name in self.redis_pools.keys():
+
+            # Disconnect all clients
+            self.redis_pools[__redis_name].disconnect()
+
+        # Clear memory
+        self.redis_pools = None
+        self.redis = None

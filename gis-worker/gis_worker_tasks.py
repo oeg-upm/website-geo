@@ -158,14 +158,22 @@ def print_to_logger(messages, logger=None):
 
     # Set prefix for all messages
     __prefix = '\n * '
+    __prefix_order = ['info', 'warn', 'error']
     __prefix_kind = {
         'info': 'INFO',
         'warn': 'WARN',
         'error': 'ERROR'
     }
 
+    # Save messages to logger
+    __logger_msg = {
+        'info': '',
+        'warn': '',
+        'error': ''
+    }
+
     # Iterate kind of messages
-    for __k in __prefix_kind:
+    for __k in __prefix_order:
 
         # Detect if there are any messages
         if len(messages[__k]):
@@ -174,20 +182,30 @@ def print_to_logger(messages, logger=None):
             if logger is None:
                 print ''
             else:
-                getattr(logger, __k)('')
+                __logger_msg[__k] += '\n'
 
             # Log messages
             for __m in messages[__k]:
 
-                # Print messages depending on logger
+                # Print / save messages depending on logger
                 if logger is None:
                     print ' * [' + __prefix_kind[__k] + '] ' + __m
                 else:
-                    getattr(logger, __k)(__prefix + __m)
+                    __logger_msg[__k] += __prefix + __m
 
-    # Print jump depending on logger
+    # Print jump / messages depending on logger
     if logger is None:
         print ''
+    else:
+
+        # Iterate kind of messages
+        for __k in __prefix_order:
+
+            # Detect if there are any messages
+            if len(__logger_msg[__k]):
+
+                # Print messages
+                getattr(logger, __k)(__logger_msg[__k] + '\n')
 
 
 def print_not_found_message():
@@ -251,55 +269,15 @@ def print_worker_errors(messages, logger=None):
     }, logger)
 
 
-def save_worker_messages(worker_db, identifier, database, messages, kind, logger=None):
-    """ This function allows save the messages on the database and
-        print the important messages (errors) through Celery logger.
-
-    Return:
-        Tuple: Flags boolean values (True if there is any message)
-
-    """
-
-    __flag_error = False
-    __flag_warn = False
-
-    # Check if there is any warning
-    if len(messages['warn']):
-
-        # Save on database the messages
-        worker_db.save_record_warning(
-            identifier + ':' + str(kind), database, messages['warn']
-        )
-
-        # Set new flag
-        __flag_warn = True
-
-    # Check if there is any error
-    if len(messages['error']):
-
-        # Save on database the messages
-        worker_db.save_record_error(
-            identifier + ':' + str(kind), database, messages['error']
-        )
-
-        # Print important messages
-        print_worker_errors(messages['error'], logger)
-
-        # Set new flag
-        __flag_error = True
-
-    return __flag_error, __flag_warn
-
-
 ##########################################################################
 
 
-def transform_with_path(path, ext_dst):
+def transform_with_path(path, ext_dst, logger, ext_logger=True):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
     Return:
-        Tuple, GDAL information and status code
+        Dict, GDAL information and status code
 
     """
 
@@ -307,35 +285,35 @@ def transform_with_path(path, ext_dst):
     __t_info = get_gdal_instance().transform(path, ext_dst)
 
     # Add messages to result
-    if len(__t_info['error']):
+    if len(__t_info['error']) and ext_logger:
         __t_info['error'] = [
             '* ------------ Errors -------------\n'
         ] + __t_info['error']
-    if len(__t_info['warn']):
+    if len(__t_info['warn']) and ext_logger:
         __t_info['warn'] = [
             '* ----------- Warnings ------------\n'
         ] + __t_info['warn']
-    if len(__t_info['info']):
+    if len(__t_info['info']) and ext_logger:
         __t_info['info'] = [
            '* ---- Fields of the Shapefile ----\n'
         ] + __t_info['info']
 
     # Log messages from result
-    print_to_logger(__t_info)
+    print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
-        'status': 1 if len(__t_info['error']) else 0,
+        'status': 2 if len(__t_info['error']) else 0,
         'messages': __t_info
     }
 
 
-def transform_with_id(identifier, ext_dst, logger):
+def transform_with_id(identifier, ext_dst, logger, ext_logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
     Return:
-        Tuple, GDAL information and status code
+        Dict, GDAL information and status code
 
     """
 
@@ -354,10 +332,16 @@ def transform_with_id(identifier, ext_dst, logger):
             identifier + '/' + __f_info['name'] + \
             __f_info['extension']
 
+        # Close redis
+        __lib[0].exit()
+
         # Transform resource and get result
-        return transform_with_path(__path, ext_dst, logger)
+        return transform_with_path(__path, ext_dst, logger, ext_logger)
 
     else:
+
+        # Close redis
+        __lib[0].exit()
 
         # Create messages structure from zero
         __t_info = print_not_found_message()
@@ -372,12 +356,12 @@ def transform_with_id(identifier, ext_dst, logger):
         }
 
 
-def info_with_path(path):
+def info_with_path(path, logger, ext_logger=True):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
     Return:
-        Tuple, GDAL information and status code
+        Dict, GDAL information and status code
 
     """
 
@@ -385,35 +369,35 @@ def info_with_path(path):
     __t_info = get_gdal_instance().get_info(path)
 
     # Add messages to result
-    if len(__t_info['error']):
+    if len(__t_info['error']) and ext_logger:
         __t_info['error'] = [
             '* ------------ Errors -------------\n'
         ] + __t_info['error']
-    if len(__t_info['warn']):
+    if len(__t_info['warn']) and ext_logger:
         __t_info['warn'] = [
             '* ----------- Warnings ------------\n'
         ] + __t_info['warn']
-    if len(__t_info['info']):
+    if len(__t_info['info']) and ext_logger:
         __t_info['info'] = [
             '* --------- Information -----------\n'
         ] + __t_info['info']
 
     # Log messages from result
-    print_to_logger(__t_info)
+    print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
-        'status': 1 if len(__t_info['error']) else 0,
+        'status': 2 if len(__t_info['error']) else 0,
         'messages': __t_info
     }
 
 
-def info_with_id(identifier, logger):
+def info_with_id(identifier, logger, ext_logger):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
     Return:
-        Tuple, GDAL information and status code
+        Dict, GDAL information and status code
 
     """
 
@@ -432,10 +416,16 @@ def info_with_id(identifier, logger):
             identifier + '/' + __f_info['name'] + \
             __f_info['extension']
 
+        # Close redis
+        __lib[0].exit()
+
         # Transform resource and get result
-        return info_with_path(__path)
+        return info_with_path(__path, logger, ext_logger)
 
     else:
+
+        # Close redis
+        __lib[0].exit()
 
         # Create messages structure from zero
         __t_info = print_not_found_message()
@@ -450,13 +440,13 @@ def info_with_id(identifier, logger):
         }
 
 
-def fields_with_path(path):
+def fields_with_path(path, logger, ext_logger=True):
     """ This function gets information from metadata
         fields about gis or geometries file through
         GDAL libraries.
 
     Return:
-        Tuple, GDAL information and status code
+        Dict, GDAL information and status code
 
     """
 
@@ -464,36 +454,36 @@ def fields_with_path(path):
     __t_info = get_gdal_instance().get_fields(path, True)
 
     # Add messages to result
-    if len(__t_info['error']):
+    if len(__t_info['error']) and ext_logger:
         __t_info['error'] = [
             '* ------------ Errors -------------\n'
         ] + __t_info['error']
-    if len(__t_info['warn']):
+    if len(__t_info['warn']) and ext_logger:
         __t_info['warn'] = [
             '* ----------- Warnings ------------\n'
         ] + __t_info['warn']
-    if len(__t_info['info']):
+    if len(__t_info['info']) and ext_logger:
         __t_info['info'] = [
             '* ------------ Fields -------------\n'
         ] + __t_info['info']
 
     # Log messages from result
-    print_to_logger(__t_info)
+    print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
-        'status': 1 if len(__t_info['error']) else 0,
+        'status': 2 if len(__t_info['error']) else 0,
         'messages': __t_info
     }
 
 
-def fields_with_id(identifier, logger):
+def fields_with_id(identifier, logger, ext_logger):
     """ This function gets information from metadata
         fields about gis or geometries file through
         GDAL libraries.
 
     Return:
-        Tuple, GDAL information and status code
+        Dict, GDAL information and status code
 
     """
 
@@ -512,10 +502,16 @@ def fields_with_id(identifier, logger):
             identifier + '/' + __f_info['name'] + \
             __f_info['extension']
 
+        # Close redis
+        __lib[0].exit()
+
         # Transform resource and get result
-        return fields_with_path(__path)
+        return fields_with_path(__path, logger, ext_logger)
 
     else:
+
+        # Close redis
+        __lib[0].exit()
 
         # Create messages structure from zero
         __t_info = print_not_found_message()
@@ -540,36 +536,39 @@ def delete_with_id(identifier, extension):
     __config = get_configuration_file()
     __path = __config['folder'] + '/' + identifier
 
-    # Get all files from path
-    __path_files = os.listdir(__path)
+    # Check path exists
+    if os.path.isdir(__path):
 
-    # Get all extensions from base extension
-    __extensions = get_ogr_file_extensions(extension)
+        # Get all files from path
+        __path_files = os.listdir(__path)
 
-    # Iterate over files
-    for __file in __path_files:
+        # Get all extensions from base extension
+        __extensions = get_ogr_file_extensions(extension)
 
-        # Join path with file
-        __f = __path + '/' + __file
+        # Iterate over files
+        for __file in __path_files:
 
-        # Get extension from path
-        __file_ext = '.'.join(__f.split('.')[-2:]) \
-            if len(__f.split('.')) > 2 else os.path.splitext(__f)[1]
+            # Join path with file
+            __f = __path + '/' + __file
 
-        # Check if extension is valid
-        if __file_ext in __extensions:
+            # Get extension from path
+            __file_ext = '.'.join(__f.split('.')[-2:]) \
+                if len(__f.split('.')) > 2 else os.path.splitext(__f)[1]
 
-            # Check if path is a correct file and exists
-            if os.path.exists(__f) and os.path.isfile(__f):
+            # Check if extension is valid
+            if __file_ext in __extensions:
 
-                # Remove path
-                os.remove(__f)
+                # Check if path is a correct file and exists
+                if os.path.exists(__f) and os.path.isfile(__f):
+
+                    # Remove path
+                    os.remove(__f)
 
 
 ##########################################################################
 
 
-def create_initial_mapping(identifier, logger, redis, gdal):
+def create_initial_mapping(identifier, redis, logger):
     """ This function allows create or update an initial mapping
         on the database for a specific identifier.
 
@@ -584,107 +583,57 @@ def create_initial_mapping(identifier, logger, redis, gdal):
     if __lock_status == 0:
 
         # Transform to Shapefile
-        __o_info = transform_with_id(identifier, 'shp', logger)
+        __o_info = transform_with_id(
+            identifier, '.shp', logger, False
+        )
 
         # Flags for errors
-        __flag_exist = __o_info['status'] == 0
-        __flag_error = False
+        __flag_error = __o_info['status'] == 2
+        __flag_not_exist = __o_info['status'] == 1
 
-        if __flag_exist:
+        # Detect flags
+        if not __flag_not_exist and not __flag_error:
 
-            # Status 1 | Transform
-            __status = 1
+            # Save warn messages
+            if len(__o_info['messages']['warn']):
+                redis.save_record_warning(
+                    identifier, 'mapping-i',
+                    __o_info['messages']['warn']
+                )
 
-            # Set flags from generated information
-            __flag_error, __flag_warn = save_worker_messages(
-                redis, logger, identifier, 'mapping-i',
-                __o_info['messages'], __status
+            # Save initial mapping on database
+            redis.save_initial_mapping(
+                identifier, __o_info['messages']['info']
             )
 
-            if __flag_error:
-
-                # Save status for tracking errors
-                redis.save_record_status(
-                    identifier, 'mapping-i', __status
-                )
-
-        if __flag_exist and not __flag_error:
-
-            # Get information
-            __o_info = fields_with_id(identifier, logger)
-
-            # Set new value to flag
-            __flag_exist = __o_info['status'] == 0
-
-            if __flag_exist:
-
-                # Status 2 | Analyse
-                __status = 2
-
-                # Set flags from generated information
-                __flag_error, __flag_warn = save_worker_messages(
-                    redis, logger, identifier, 'mapping-i',
-                    __o_info['messages'], __status
-                )
-
-                if __flag_error:
-
-                    # Save status for tracking errors
-                    redis.save_record_status(
-                        identifier, 'mapping-i', __status
-                    )
-
-                else:
-
-                    # Save new parameters on database
-                    redis.save_record_properties(
-                        identifier, __o_info['messages']['info']
-                    )
-
-        if __flag_exist and not __flag_error:
-
-            # Get information
-            __o_info = fields_with_id(identifier, logger)
-
-            # Status 3 | fields
-            __status = 3
-
-            # Set flags from generated information
-            __flag_error, __flag_warn = save_worker_messages(
-                redis, logger, identifier, 'mapping-i',
-                __o_info['messages'], __status
+            # Save status for tracking success
+            redis.save_record_status(
+                identifier, 'mapping-i', 0
             )
 
-            if __flag_error:
-
-                # Save status for tracking errors
-                redis.save_record_status(
-                    identifier, 'mapping-i', __status
-                )
-
-            else:
-
-                # Save initial mapping on database
-                redis.save_initial_mapping(
-                    identifier, __o_info['messages']['info']
-                )
-
-                # Save status for tracking success
-                redis.save_record_status(
-                    identifier, 'mapping-i', 0
-                )
-
-        # if there was an error, delete all files
+        # Detect error flag
         if __flag_error:
 
+            # Save error messages
+            if len(__o_info['messages']['error']):
+                redis.save_record_error(
+                    identifier, 'mapping-i',
+                    __o_info['messages']['error']
+                )
+
+            # Save status for tracking success
+            redis.save_record_status(
+                identifier, 'mapping-i', 1
+            )
+
+            # Delete generated files
             delete_with_id(identifier, '.shp')
 
-        if not __flag_exist:
+        if __flag_not_exist:
 
-            # Show error
+            # Show not found message
             print_to_logger(
-                print_not_found_message(),
-                logger
+                print_not_found_message(), logger
             )
 
         # Release lock
@@ -699,79 +648,85 @@ def create_initial_mapping(identifier, logger, redis, gdal):
 ##########################################################################
 
 
-@task(bind=True, name='gis_worker_tasks.initial_mapping')
+@task(bind=True, name='gis_worker_tasks.initial_mapping', max_retries=5)
 def initial_mapping(self):
 
     # Create logger to log messages to specific log file
-    logger = get_task_logger(__name__)
+    __logger = get_task_logger(__name__)
 
     try:
-        
-        # Get instance of Redis and GDAL instance of Redis Database
-        __redis_db, __gdal_lib = get_libraries()
+
+        # Get instance of Redis Database and GDAL instance
+        __lib = get_libraries()
+
+        # Create identifier from task_id
+        __identifier = self.request.id
+
+        # Execute new initial mapping generation
+        create_initial_mapping(__identifier, __lib[0], __logger)
+
+        # Close redis
+        __lib[0].exit()
 
     except Exception as e:
 
-        # Set none to avoid warnings
-        __redis_db = None
-        __gdal_lib = None
+        # Print error message
+        print_to_logger({
+            'error': [
+                '* ------------ Errors -------------\n',
+                str(e.message if e.message != '' else e)
+            ],
+            'warn': [],
+            'info': []
+        }, __logger)
 
-        # Print message
-        __message = e.message if e.message != '' else e
-        logger.error('\n * ' + str(__message))
-
-        # Retry task (max 10) to wait for loading libraries
-        if self.request.retries < 10:
+        # Retry task (max 5) to wait for loading libraries
+        if self.request.retries < 5:
             raise self.retry(
                 exc='', countdown=(self.request.retries + 1) * 20
             )
 
-    # Create identifier from task_id
-    __identifier = self.request.id
 
-    # Execute new initial mapping generation
-    create_initial_mapping(
-        __identifier, logger, __redis_db, __gdal_lib
-    )
-
-
-@task(bind=True, name='gis_worker_tasks.update_mapping')
+@task(bind=True, name='gis_worker_tasks.update_mapping', max_retries=5)
 def update_mapping(self):
 
     # Create logger to log messages to specific log file
-    logger = get_task_logger(__name__)
+    __logger = get_task_logger(__name__)
 
     try:
-        
-        # Get instance of Redis and GDAL instance of Redis Database
-        __redis_db, __gdal_lib = get_libraries()
+
+        # Get instance of Redis Database and GDAL instance
+        __lib = get_libraries()
+
+        # Create identifier from task_id
+        __identifier = self.request.id
+
+        # Remove previous mapping
+        __lib[0].del_initial_mapping(__identifier)
+
+        # Execute new initial mapping generation
+        create_initial_mapping(__identifier, __lib[0], __logger)
+
+        # Close redis
+        __lib[0].exit()
 
     except Exception as e:
 
-        # Set none to avoid warnings
-        __redis_db = None
-        __gdal_lib = None
+        # Print error message
+        print_to_logger({
+            'error': [
+                '* ------------ Errors -------------\n',
+                str(e.message if e.message != '' else e)
+            ],
+            'warn': [],
+            'info': []
+        }, __logger)
 
-        # Print message
-        __message = e.message if e.message != '' else e
-        logger.error('\n * ' + str(__message))
-
-        # Retry task (max 10) to wait for loading libraries
-        if self.request.retries < 10:
+        # Retry task (max 5) to wait for loading libraries
+        if self.request.retries < 5:
             raise self.retry(
                 exc='', countdown=(self.request.retries + 1) * 20
             )
-
-    # Create identifier from task_id
-    __identifier = self.request.id
-
-    # Delete previous mapping
-    __redis_db.del_initial_mapping(__identifier)
-
-    # Execute new initial mapping generation
-    create_initial_mapping(
-        __identifier, logger, __redis_db, __gdal_lib
-    )
 
 
 @task(bind=True, name='gis_worker_tasks.extended_mapping')
