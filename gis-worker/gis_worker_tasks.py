@@ -272,7 +272,7 @@ def print_worker_errors(messages, logger=None):
 ##########################################################################
 
 
-def transform_with_path(path, ext_dst, logger, ext_logger=True):
+def transform_with_path(path, ext_dst, logger=None, ext_logger=True):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
@@ -356,7 +356,7 @@ def transform_with_id(identifier, ext_dst, logger, ext_logger):
         }
 
 
-def info_with_path(path, logger, ext_logger=True):
+def info_with_path(path, logger=None, ext_logger=True):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
@@ -440,7 +440,7 @@ def info_with_id(identifier, logger, ext_logger):
         }
 
 
-def fields_with_path(path, logger, ext_logger=True):
+def fields_with_path(path, logger=None, ext_logger=True):
     """ This function gets information from metadata
         fields about gis or geometries file through
         GDAL libraries.
