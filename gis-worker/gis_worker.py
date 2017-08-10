@@ -29,8 +29,7 @@ import json
 import argparse
 from celery import Celery
 from kombu import Exchange, Queue
-import gis_worker_tasks
-
+from gis_worker_helpers import geo_worker_xml
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -270,14 +269,14 @@ def main_script():
         )['status'])
 
     # Option: job + file
-    elif __args.job is not None:
+    elif __args.geo_job is not None:
         
-        print "job: " + str(__args.job[0])
+        print "geo job: " + str(__args.geo_job[0])
 
     # Option: transform + file
     else:
 
-        print "trm: " + str(__args.trm[0])
+        print "geo transformation: " + str(__args.geo_transform[0])
 
 if __name__ == "__main__":
     main_script()
