@@ -25,7 +25,6 @@ import sys
 import json
 import time
 import redis
-from celery.utils.log import get_task_logger
 from redis import TimeoutError, ConnectionError
 
 reload(sys)
