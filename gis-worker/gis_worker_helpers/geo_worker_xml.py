@@ -86,6 +86,86 @@ def get_configuration_file():
 ##########################################################################
 
 
+def print_error_vulnerabilities():
+    """ This function returns a message when XML file has
+        or might have vulnerabilities or exploits.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            '* ------------ Errors -------------\n',
+            'Might be vulnerabilities on this XML file.\n',
+            'Check this website: https://docs.python.org/2/'
+            'library/xml.html#xml-vulnerabilities'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
+def print_error_steps(steps):
+    """ This function returns a message when a step or steps
+        are not valid at a XML GeoKettle file.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    # Create error structure
+    __error = []
+
+    # Iterate over steps list
+    for __step in steps:
+
+        # Append message
+        __error.append('The ' + __step + ' step is not allowed.\n')
+
+    # Append last message
+    __error.append('Please, review configuration or XML file.\n')
+
+    return {
+        'error': [
+            '* ------------ Errors -------------\n'
+        ] + __error,
+        'warn': [],
+        'info': []
+    }
+
+
+def print_error_paths(paths):
+    """ This function returns a message when a path or paths
+        are not valid at a XML GeoKettle file.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    # Create error structure
+    __error = []
+
+    # Iterate over steps list
+    for __path in paths:
+
+        # Append message
+        __error.append(__path + ' is not allowed for GeoKettle.\n')
+
+    # Append last message
+    __error.append('Please, review configuration and filesystem permissions.\n')
+
+    return {
+        'error': [
+            '* ------------ Errors -------------\n'
+        ] + __error,
+        'warn': [],
+        'info': []
+    }
+
+##########################################################################
+
+
 class Singleton(type):
     """ This constructor creates only an instance of a specific type
         following the singleton pattern (software design pattern).
@@ -116,17 +196,102 @@ class WorkerXML(object):
 
     def check_issues(self, path):
 
-        # defusedxml will only be used for check XML problems
-        # because this library is slower than python library
-        # https://docs.python.org/2/library/xml.html#xml-vulnerabilities
         try:
-            defusedxml.ElementTree.parse(path)
-            return True
+
+            # defusedxml will only be used for check XML problems
+            # because this library is slower than python library
+            # https://docs.python.org/2/library/xml.html#xml-vulnerabilities
+            return defusedxml.ElementTree.parse(path) is not None
+
         except Exception:
             return False
 
-    def parse(self, path):
-        try:
-            return xml.etree.ElementTree.parse(path)
-        except Exception:
-            return None
+    def check_steps(self, xml_tree):
+
+        # Get allowed types for XML files
+        __allowed_types = self.config['xml']['steps']
+
+        # Check if there is config
+        if not len(__allowed_types):
+
+            # Empty list ~ all allowed
+            return []
+
+        # Get step from XML file
+        __steps = xml_tree.findall('step')
+
+        # Structure to save non valid steps
+        __no_steps = []
+
+        # Iterate over steps
+        for __step in __steps:
+
+            # Check if step is allowed
+            if __step not in __allowed_types:
+                __no_steps.append(__step)
+
+        return __no_steps
+
+    def check_paths(self, xml_tree):
+
+        # Get allowed folders for XML files
+        __allowed_folders = self.config['xml']['folders']
+
+        # Check if there is config
+        if not len(__allowed_folders):
+
+            # Empty list ~ all allowed
+            return []
+
+        # Get step from XML file
+        __steps = xml_tree.findall('step')
+
+        # Structure to save non valid steps
+        __no_folders = []
+
+        # Iterate over steps
+        for __step in __steps:
+
+            # Get filename if it exists
+            __folder_node = __step.find('filename')
+
+            # Get value of node
+            if __folder_node is not None:
+
+                # Value of node
+                __folder = __folder_node.text
+
+                # Get folder without file
+                __folder = os.path.dirname(__folder)
+
+                # Check folder is valid
+                if __folder not in __allowed_folders:
+
+                    # Add folder to structure
+                    __no_folders.append(__folder)
+
+            return __no_folders
+
+    def check(self, path):
+
+        # Check vulnerabilities
+        if not self.check_issues(path):
+
+            return print_error_vulnerabilities()
+
+        # Parse XML object
+        __xml_tree = xml.etree.ElementTree.parse(path)
+
+        # Check if steps are valid
+        __no_steps = self.check_steps(__xml_tree)
+        if len(__no_steps):
+
+            return print_error_steps(__no_steps)
+
+        # Check if there is any folder and they are valid
+        __no_folders = self.check_paths(__xml_tree)
+        if len(__no_folders):
+
+            return print_error_paths(__no_folders)
+
+        return None
