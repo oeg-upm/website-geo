@@ -96,10 +96,25 @@ def print_error_vulnerabilities():
 
     return {
         'error': [
-            '* ------------ Errors -------------\n',
-            'Might be vulnerabilities on this XML file.\n',
+            'Might be vulnerabilities or errors on this XML file.',
             'Check this website: https://docs.python.org/2/'
             'library/xml.html#xml-vulnerabilities'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
+def print_error_not_found():
+    """ This function returns a message when file is not found.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            'File is not found. Please, check the file path.'
         ],
         'warn': [],
         'info': []
@@ -121,15 +136,13 @@ def print_error_steps(steps):
     for __step in steps:
 
         # Append message
-        __error.append('The ' + __step + ' step is not allowed.\n')
+        __error.append('The ' + __step + ' step is not allowed.')
 
     # Append last message
-    __error.append('Please, review configuration or XML file.\n')
+    __error.append('Please, review configuration or XML file.')
 
     return {
-        'error': [
-            '* ------------ Errors -------------\n'
-        ] + __error,
+        'error': __error,
         'warn': [],
         'info': []
     }
@@ -150,15 +163,13 @@ def print_error_paths(paths):
     for __path in paths:
 
         # Append message
-        __error.append(__path + ' is not allowed for GeoKettle.\n')
+        __error.append(__path + ' is not allowed for GeoKettle.')
 
     # Append last message
-    __error.append('Please, review configuration and filesystem permissions.\n')
+    __error.append('Please, review configuration or filesystem permissions.')
 
     return {
-        'error': [
-            '* ------------ Errors -------------\n'
-        ] + __error,
+        'error': __error,
         'warn': [],
         'info': []
     }
@@ -273,6 +284,11 @@ class WorkerXML(object):
             return __no_folders
 
     def check(self, path):
+
+        # Check if path is a correct file and exists
+        if not os.path.exists(path) or not os.path.isfile(path):
+
+            return print_error_not_found()
 
         # Check vulnerabilities
         if not self.check_issues(path):
