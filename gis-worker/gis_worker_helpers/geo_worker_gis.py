@@ -20,13 +20,13 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import os
 import sys
-from os.path import splitext
-from subprocess import Popen, PIPE
-
 reload(sys)
 sys.setdefaultencoding('utf8')
+
+import os
+from os.path import splitext
+from subprocess import Popen, PIPE
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"

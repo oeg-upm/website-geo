@@ -20,14 +20,14 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import os
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+import os
 import json
 import xml.etree.ElementTree
 import defusedxml.ElementTree
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"

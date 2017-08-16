@@ -20,15 +20,15 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import os
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+import os
 import json
 import time
 import redis
 from redis import TimeoutError, ConnectionError
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"

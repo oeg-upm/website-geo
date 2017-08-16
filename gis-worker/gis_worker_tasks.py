@@ -20,18 +20,19 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import os
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+import os
 import time
 import json
 from celery.task import task
 from celery.utils.log import get_task_logger
 from gis_worker_helpers.geo_worker_gis import WorkerGIS
 from gis_worker_helpers.geo_worker_gis import get_ogr_file_extensions
+from gis_worker_helpers.geo_worker_xml import WorkerXML
 from gis_worker_helpers.geo_worker_db import WorkerRedis
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -563,6 +564,22 @@ def delete_with_id(identifier, extension):
 
                     # Remove path
                     os.remove(__f)
+
+
+def execute_geo_job_with_path(path, logger=None, ext_logger=True):
+    return None
+
+
+def execute_geo_job_with_id(identifier, logger, ext_logger):
+    return None
+
+
+def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
+    return None
+
+
+def execute_geo_transform_with_id(identifier, logger, ext_logger):
+    return None
 
 
 ##########################################################################

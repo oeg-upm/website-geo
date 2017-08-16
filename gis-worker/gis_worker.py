@@ -29,7 +29,6 @@ import json
 import argparse
 from celery import Celery
 from kombu import Exchange, Queue
-from gis_worker_helpers import geo_worker_xml
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -155,9 +154,9 @@ class Worker(object):
         )
 
         # Configure default queue of RabbitMQ
-        celery_app.conf.task_default_queue = 'default'
+        celery_app.conf.task_default_queue = 'geo-default'
         celery_app.conf.task_default_exchange_type = 'direct'
-        celery_app.conf.task_default_routing_key = 'default'
+        celery_app.conf.task_default_routing_key = 'geo.default'
 
         # Configure tasks of Celery - RabbitMQ
         celery_app.conf.task_routes = {
@@ -270,13 +269,17 @@ def main_script():
 
     # Option: job + file
     elif __args.geo_job is not None:
-        
-        print "geo job: " + str(__args.geo_job[0])
+
+        sys.exit(gis_worker_tasks.execute_geo_job_with_path(
+            __args.geo_job[0]
+        )['status'])
 
     # Option: transform + file
     else:
 
-        print "geo transformation: " + str(__args.geo_transform[0])
+        sys.exit(gis_worker_tasks.execute_geo_transform_with_path(
+            __args.geo_transform[0]
+        )['status'])
 
 if __name__ == "__main__":
     main_script()
