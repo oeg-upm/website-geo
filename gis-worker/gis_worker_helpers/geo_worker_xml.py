@@ -121,6 +121,24 @@ def print_error_not_found():
     }
 
 
+def print_error_srs():
+    """ This function returns a message when there is no
+        SRS transformation on XML GeoKettle file.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            'EPSG:4326 transformation is not found. Please, '
+            'check the file path.'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
 def print_error_steps(steps):
     """ This function returns a message when a step or steps
         are not valid at a XML GeoKettle file.
@@ -174,6 +192,7 @@ def print_error_paths(paths):
         'info': []
     }
 
+
 ##########################################################################
 
 
@@ -219,46 +238,54 @@ class WorkerXML(object):
 
     def check_steps(self, xml_tree):
 
-        # Get allowed types for XML files
-        __allowed_types = self.config['xml']['steps']
-
-        # Check if there is config
-        if not len(__allowed_types):
-
-            # Empty list ~ all allowed
-            return []
-
         # Get step from XML file
         __steps = xml_tree.findall('step')
 
         # Structure to save non valid steps
         __no_steps = []
+        __valid_steps = []
+
+        # Get allowed types for XML files
+        __allowed_types = self.config['xml']['steps']
 
         # Iterate over steps
         for __step in __steps:
 
-            # Check if step is allowed
-            if __step not in __allowed_types:
-                __no_steps.append(__step)
+            # Get type if it exists
+            __type_node = __step.find('type')
 
-        return __no_steps
+            # Get value of node
+            if __type_node is not None:
+
+                # Value of node
+                __type = __type_node.text
+
+                # Check if there is config
+                # All allowed
+                if not len(__allowed_types):
+                    __valid_steps.append(__type)
+
+                else:
+
+                    # Check type is good
+                    if __type not in __allowed_types:
+                        __no_steps.append(__type)
+                    else:
+                        __valid_steps.append(__type)
+
+        return __no_steps, __valid_steps
 
     def check_paths(self, xml_tree):
-
-        # Get allowed folders for XML files
-        __allowed_folders = self.config['xml']['folders']
-
-        # Check if there is config
-        if not len(__allowed_folders):
-
-            # Empty list ~ all allowed
-            return []
 
         # Get step from XML file
         __steps = xml_tree.findall('step')
 
         # Structure to save non valid steps
         __no_folders = []
+        __valid_folders = []
+
+        # Get allowed folders for XML files
+        __allowed_folders = self.config['xml']['folders']
 
         # Iterate over steps
         for __step in __steps:
@@ -270,20 +297,84 @@ class WorkerXML(object):
             if __folder_node is not None:
 
                 # Value of node
-                __folder = __folder_node.text
+                __folder_full = __folder_node.text
 
                 # Get folder without file
-                __folder = os.path.dirname(__folder)
+                __folder = os.path.dirname(__folder_full)
 
-                # Check folder is valid
-                if __folder not in __allowed_folders:
+                # Check if there is config
+                if not len(__allowed_folders):
+                    __valid_folders.append(__folder_full)
 
-                    # Add folder to structure
-                    __no_folders.append(__folder)
+                else:
 
-            return __no_folders
+                    # Check folder is good
+                    if __folder not in __allowed_folders:
+                        __no_folders.append(__folder_full)
 
-    def check(self, path):
+                    else:
+                        __valid_folders.append(__folder_full)
+
+        return __no_folders, __valid_folders
+
+    def check_srs(self, xml_tree):
+
+        # Get step from XML file
+        __steps = xml_tree.findall('step')
+
+        # Create variable for transformation
+        __step_t = None
+
+        # Iterate over steps
+        for __step in __steps:
+
+            # Get type if it exists
+            __step_type = __step.find('type')
+
+            # Check if type is transformation
+            if __step_type.text == 'SRSTransformation':
+                __step_t = __step
+                break
+
+        # Check if type was found
+        if __step_t is None:
+            return False
+
+        # Create variable for SRS
+        __step_s = None
+
+        # Iterate over transformation's children
+        for __step in __step_t:
+
+            # Get target if it exists
+            if __step.tag == 'target_srs':
+                __step_s = __step
+                break
+
+        # Check if target was found
+        if __step_s is None:
+            return False
+
+        # Create flags for result
+        __step_a = False
+        __step_r = False
+
+        # Iterate over SRS's children
+        for __step in __step_s:
+
+            # Check SRS's authority
+            if __step.tag == 'authority' and \
+               __step.text == 'EPSG':
+                __step_a = True
+
+            # Check SRS's code
+            if __step.tag == 'srid' and \
+               __step.text == '4326':
+                __step_r = True
+
+        return __step_a and __step_r
+
+    def check_transform(self, path):
 
         # Check if path is a correct file and exists
         if not os.path.exists(path) or not os.path.isfile(path):
@@ -299,15 +390,54 @@ class WorkerXML(object):
         __xml_tree = xml.etree.ElementTree.parse(path)
 
         # Check if steps are valid
-        __no_steps = self.check_steps(__xml_tree)
+        __no_steps, __valid_steps = self.check_steps(__xml_tree)
         if len(__no_steps):
 
             return print_error_steps(__no_steps)
 
         # Check if there is any folder and they are valid
-        __no_folders = self.check_paths(__xml_tree)
+        __no_folders, __valid_folders = self.check_paths(__xml_tree)
         if len(__no_folders):
 
             return print_error_paths(__no_folders)
 
-        return None
+        # Check if there is a mandatory target SRS
+        if not self.check_srs(__xml_tree):
+
+            return print_error_srs()
+
+        # Create return structure
+        __return = {
+            'info': [], 'warn': [], 'error': []
+        }
+
+        if len(__valid_steps):
+
+            # Add header message
+            __return['info'].append(
+                '* ------------ Steps --------------\n'
+            )
+
+            for __step in __valid_steps:
+
+                # Append message
+                __return['info'].append(
+                    'The ' + __step + ' execution was allowed.'
+                )
+
+        if len(__valid_folders):
+
+            # Add header message
+            __return['info'][-1] += '\n'
+            __return['info'].append(
+                '* ------------ Folders ------------\n'
+            )
+
+            for __folder in __valid_folders:
+
+                # Append message
+                __return['info'].append(
+                    'Access to ' + __folder + ' was allowed.'
+                )
+
+        return __return
