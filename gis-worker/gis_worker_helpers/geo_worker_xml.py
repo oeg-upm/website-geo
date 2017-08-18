@@ -277,10 +277,8 @@ class WorkerXML(object):
 
     def check_paths(self, xml_tree):
 
-        # Get step from XML file
-        __steps = xml_tree.findall('step')
-
         # Structure to save non valid steps
+        __no_steps = []
         __no_folders = []
         __valid_folders = []
 
@@ -288,34 +286,80 @@ class WorkerXML(object):
         __allowed_folders = self.config['xml']['folders']
 
         # Iterate over steps
-        for __step in __steps:
+        for __step in xml_tree.findall('step'):
 
-            # Get filename if it exists
-            __folder_node = __step.find('filename')
+            # Check kind of step and children nodes
+            __step_f = __step.find('filename')
+            if __step_f is None:
+                __step_f = __step.find('file')
+            if __step_f is None:
+                continue
 
-            # Get value of node
-            if __folder_node is not None:
+            # Get filename node
+            if __step_f.tag == 'filename':
 
-                # Value of node
-                __folder_full = __folder_node.text
+                # Check node is valid
+                if __step_f.text == '':
+                    __no_steps.append(__step.find('type').text)
+                    continue
 
                 # Get folder without file
-                __folder = os.path.dirname(__folder_full)
+                __folder = os.path.dirname(__step_f.text)
 
                 # Check if there is config
                 if not len(__allowed_folders):
-                    __valid_folders.append(__folder_full)
+                    __valid_folders.append(__step_f.text)
 
                 else:
 
                     # Check folder is good
                     if __folder not in __allowed_folders:
-                        __no_folders.append(__folder_full)
+                        __no_folders.append(__step_f.text)
 
                     else:
-                        __valid_folders.append(__folder_full)
+                        __valid_folders.append(__step_f.text)
 
-        return __no_folders, __valid_folders
+            # Get file node
+            if __step_f.tag == 'file':
+
+                # Get name node from node's children
+                __step_n = __step_f.find('name')
+
+                # Get extension node from node's children
+                __step_e = __step_f.find('extention')
+
+                print __step_n, __step_e
+
+                # Check node is valid
+                if __step_n is None or __step_e is None:
+                    __no_steps.append(__step.find('type').text)
+                    continue
+
+                # Check node is valid
+                if __step_n.text == '' or __step_e.text == '':
+                    __no_steps.append(__step.find('type').text)
+                    continue
+
+                # Create path from values
+                __step_f = __step_n.text + '.' + __step_e.text
+
+                # Get folder without file
+                __folder = os.path.dirname(__step_f)
+
+                # Check if there is config
+                if not len(__allowed_folders):
+                    __valid_folders.append(__step_f)
+
+                else:
+
+                    # Check folder is good
+                    if __folder not in __allowed_folders:
+                        __no_folders.append(__step_f)
+
+                    else:
+                        __valid_folders.append(__step_f)
+
+        return __no_steps, __no_folders, __valid_folders
 
     def check_srs(self, xml_tree):
 
@@ -396,7 +440,13 @@ class WorkerXML(object):
             return print_error_steps(__no_steps)
 
         # Check if there is any folder and they are valid
-        __no_folders, __valid_folders = self.check_paths(__xml_tree)
+        __no_steps, __no_folders, __valid_folders = \
+            self.check_paths(__xml_tree)
+
+        if len(__no_steps):
+
+            return print_error_steps(__no_steps)
+
         if len(__no_folders):
 
             return print_error_paths(__no_folders)
