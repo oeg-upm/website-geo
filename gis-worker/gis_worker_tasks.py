@@ -20,12 +20,9 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 import os
-import time
+import sys
 import json
 from celery.task import task
 from celery.utils.log import get_task_logger
@@ -33,6 +30,8 @@ from gis_worker_helpers.geo_worker_gis import WorkerGIS
 from gis_worker_helpers.geo_worker_gis import get_ogr_file_extensions
 from gis_worker_helpers.geo_worker_xml import WorkerXML
 from gis_worker_helpers.geo_worker_db import WorkerRedis
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -48,7 +47,7 @@ def get_configuration_file():
     """ This function allows you to load a configuration from file.
 
     Returns:
-        Dict: Return configuration constraints.
+         dict: configuration fields and values.
 
     """
 
@@ -92,10 +91,10 @@ def get_configuration_file():
 
 def get_redis_instance():
     """ This function allows to configure the database to use
-    it from the Celery workers of this project or CLI.
+        it from the Celery workers of this project or from CLI.
 
     Returns:
-        Redis object or Raise an exception.
+        class: Redis Worker
 
     """
 
@@ -114,10 +113,10 @@ def get_redis_instance():
 
 def get_gdal_instance():
     """ This function allows to configure the GDAL library to use
-    it from the Celery workers of this project or CLI.
+        it from the Celery workers of this project or from CLI.
 
     Returns:
-        GDAL object or Raise an exception.
+        class: GIS Worker
 
     """
 
@@ -141,7 +140,7 @@ def get_libraries():
         libraries to use them from the Celery workers of this project.
 
     Returns:
-        Tuple: Redis and GDAL object or Raise an exception.
+        tuple: Redis Worker and GIS Worker classes
 
     """
 
@@ -154,6 +153,10 @@ def get_libraries():
 def print_to_logger(messages, logger=None):
     """ This function allows to print messages to the logger or
         stdout with print function.
+
+    Args:
+        messages (dict): information from outputs
+        logger (Logger): logger class to write messages
 
     """
 
@@ -213,8 +216,9 @@ def print_not_found_message():
     """ This function returns a message when identifier
         is not found on the database.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -231,6 +235,13 @@ def print_not_found_message():
 def print_worker_status(status, logger=None):
     """ This function allows to print a specific message depending on
         returned Celery worker's status.
+
+    Args:
+        status (int): kind of task's status
+        logger (Logger): logger class to write messages
+
+    Returns:
+        dict: Information structure with error
 
     """
 
@@ -258,7 +269,14 @@ def print_worker_status(status, logger=None):
 
 
 def print_worker_errors(messages, logger=None):
-    """ This function allows print messages to Celery logger.
+    """ This function allows print errors to logger.
+
+    Args:
+        messages (dict): information from outputs
+        logger (Logger): logger class to write messages
+
+    Returns:
+        dict: Information structure with error
 
     """
 
@@ -277,8 +295,14 @@ def transform_with_path(path, ext_dst, logger=None, ext_logger=True):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
+    Args:
+        path (string): file's path
+        ext_dst (string): extension of transformation
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GDAL information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -313,8 +337,14 @@ def transform_with_id(identifier, ext_dst, logger, ext_logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
+    Args:
+        identifier (string): task internal id
+        ext_dst (string): extension of transformation
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GDAL information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -361,8 +391,13 @@ def info_with_path(path, logger=None, ext_logger=True):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
+    Args:
+        path (string): file's path
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GDAL information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -397,8 +432,13 @@ def info_with_id(identifier, logger, ext_logger):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
+    Args:
+        identifier (string): task internal id
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GDAL information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -446,8 +486,13 @@ def fields_with_path(path, logger=None, ext_logger=True):
         fields about gis or geometries file through
         GDAL libraries.
 
+    Args:
+        path (string): file's path
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GDAL information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -483,8 +528,13 @@ def fields_with_id(identifier, logger, ext_logger):
         fields about gis or geometries file through
         GDAL libraries.
 
+    Args:
+        identifier (string): task internal id
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GDAL information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -531,6 +581,10 @@ def delete_with_id(identifier, extension):
     """ This function deletes a specific folder with
         extensions inside this folder.
 
+    Args:
+        identifier (string): task internal id
+        extension (string): extension of source files
+
     """
 
     # Generate path
@@ -576,10 +630,16 @@ def execute_geo_job_with_id(identifier, logger, ext_logger):
 
 def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
     """ This function gets information from GeoKettle XML file
-        and check any possible issue.
+        transformation, executes it and throws any possible issue
+        or good information from its execution.
+
+    Args:
+        path (string): file's path
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
 
     Return:
-        Dict, GeoKettle information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -635,8 +695,13 @@ def execute_geo_transform_with_id(identifier, logger, ext_logger):
     """ This function gets information from GeoKettle XML file
         and check any possible issue.
 
+    Args:
+        identifier (string): task internal id
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
     Return:
-        Dict, GeoKettle information and status code
+        dict: information about the outputs and status code
 
     """
 
@@ -685,6 +750,11 @@ def execute_geo_transform_with_id(identifier, logger, ext_logger):
 def create_initial_mapping(identifier, redis, logger):
     """ This function allows create or update an initial mapping
         on the database for a specific identifier.
+
+    Args:
+        identifier (string): task internal id
+        redis (WorkerRedis): instance of WorkerRedis
+        logger (Logger): logger class to write messages
 
     """
 
@@ -845,51 +915,7 @@ def update_mapping(self):
 
 @task(bind=True, name='gis_worker_tasks.extended_mapping')
 def extended_mapping(self):
-
-    # Create logger to log messages to specific log file
-    logger = get_task_logger(__name__)
-
-    try:
-        
-        # Get instance of Redis and GDAL instance of Redis Database
-        __redis_db, __gdal_lib = get_libraries()
-
-    except Exception as e:
-
-        # Set none to avoid warnings
-        __redis_db = None
-
-        # Print message
-        __message = e.message if e.message != '' else e
-        logger.error('\n * ' + str(__message))
-
-        # Retry task (max 10) to wait for loading libraries
-        if self.request.retries < 10:
-            raise self.retry(
-                exc='', countdown=(self.request.retries + 1) * 20
-            )
-
-    # Get identifier of the task -> file
-    __identifier = self.request.id
-
-    # Lock the execution for this task. In this case we will use
-    # the Redis SETNX to ensure that other remote machines won't do
-    # the same task.
-    __lock_status = __redis_db.lock(__identifier, 'mapping-e')
-
-    # Check status of the lock
-    if __lock_status == 0:
-
-        # Do task
-        time.sleep(5)
-        
-        # Release lock
-        __redis_db.unlock(__identifier + ':mapping-e', True)
-
-    else:
-
-        # Log status
-        print_worker_status(logger, __lock_status)
+    return None
 
 
 @task(bind=True, name='gis_worker_tasks.default', max_retries=5)

@@ -20,15 +20,14 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import sys
-reload(sys)  
-sys.setdefaultencoding('utf8')
-
 import os
+import sys
 import json
 import argparse
 from celery import Celery
 from kombu import Exchange, Queue
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -45,7 +44,7 @@ def get_configuration_file():
     """ This function allows you to load a configuration from file.
 
     Returns:
-        Dict: Return configuration constraints.
+         dict: configuration fields and values.
 
     """
 
@@ -91,6 +90,9 @@ class Singleton(type):
     """ This constructor creates only an instance of a specific type
         following the singleton pattern (software design pattern).
 
+    Returns:
+        class: Super class of specific instance
+
     """
     
     def __call__(cls, *args, **kwargs):
@@ -103,6 +105,9 @@ class Singleton(type):
 class Worker(object):
     """ This constructor creates only an instance of a Worker
         following the singleton pattern (software design pattern).
+
+    Returns:
+        class: Worker
 
     """
 
