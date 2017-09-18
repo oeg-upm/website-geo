@@ -20,15 +20,14 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
-
 import os
+import sys
 import json
 import time
 import redis
 from redis import TimeoutError, ConnectionError
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -45,8 +44,7 @@ def get_configuration_file():
     """ This function allows you to load a configuration from file.
 
     Returns:
-        Dict: Return configuration constraints.
-
+         dict: configuration fields and values.
     """
 
     # Configuration folder
@@ -89,9 +87,14 @@ def get_configuration_file():
 
 def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
     """ This function creates a connection pool for Redis Database
-        with a specific configuration. This is important to save and get
-        information and status of the jobs and transformations for
-        Geokettle.
+        with a specific configuration. This is important to create
+        connections and execute queries easily.
+
+    Args:
+        redis_host (string): host where Redis is available
+        redis_port (int): port for Redis connection
+        redis_pass (string): password for Redis connection
+        redis_db (int): database for Redis client
 
     Returns:
         Redis Instance or None if configuration fails
@@ -121,7 +124,14 @@ def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
 
 
 def configure_redis(configuration):
-    """ This function allows to configure a Redis database.
+    """ This function creates a connection pool for any of Redis
+        configuration saved on configuration parameter.
+
+    Args:
+        configuration (dict): Redis databases configuration
+
+    Returns:
+        Tuple of Redis clients and pools
 
     """
 
@@ -166,8 +176,11 @@ def configure_redis(configuration):
 
 
 class Singleton(type):
-    """ This constructor creates only an instance of a specific type
-        following the singleton pattern (software design pattern).
+    """ This constructor creates a super class of defined type
+        from parameter.
+
+    Returns:
+        Super class of specific instance
 
     """
     
@@ -202,6 +215,10 @@ class WorkerRedis(object):
     def check_existence(self, identifier, database):
         """ This function allows to check if key exists.
 
+        Args:
+            identifier (string): key to check
+            database (string): identifier of db
+
         Returns:
             Return True if exists, False otherwise
 
@@ -219,6 +236,10 @@ class WorkerRedis(object):
             specific identifier. This mapping is the generated
             mapping from GDAL tools, identifying the fields from
             the source or raw data.
+
+        Args:
+            identifier (string): key where save information
+            fields (list): fields' information
         
         """
 
@@ -248,7 +269,10 @@ class WorkerRedis(object):
     def del_initial_mapping(self, identifier):
         """ This function allows to delete the mapping for
             specific identifier.
-        
+
+        Args:
+            identifier (string): key to delete it
+
         """
 
         # Delete mapping fields on database
@@ -256,6 +280,10 @@ class WorkerRedis(object):
 
     def save_record_properties(self, identifier, fields):
         """ This function allows to save the new parameters.
+
+        Args:
+            identifier (string): key where save information
+            fields (list): fields' information
         
         """
 
@@ -284,6 +312,11 @@ class WorkerRedis(object):
 
     def save_record_status(self, identifier, database, status):
         """ This function allows to save the status of the task.
+
+        Args:
+            identifier (string): key where save information
+            database (string): identifier of db
+            status (int): value returned from task
         
         """
 
@@ -298,6 +331,11 @@ class WorkerRedis(object):
 
     def save_record_warning(self, identifier, database, messages):
         """ This function allows to save log messages on the database.
+
+        Args:
+            identifier (string): key where save information
+            database (string): identifier of db
+            messages (list): warn messages returned from task
         
         """
 
@@ -310,6 +348,11 @@ class WorkerRedis(object):
     def save_record_error(self, identifier, database, messages):
         """ This function allows to save log messages on the database.
         
+        Args:
+            identifier (string): key where save information
+            database (string): identifier of db
+            messages (list): error messages returned from task
+
         """
 
         # Remove previous messages
@@ -320,6 +363,10 @@ class WorkerRedis(object):
 
     def unlock(self, identifier, forced=False):
         """ This function allows to remove a Redis lock.
+
+        Args:
+            identifier (string): key to unlock
+            forced (bool): flag for unlocking db hardly
 
         Returns:
             Bool: Return True if unlock, False otherwise.
@@ -351,8 +398,13 @@ class WorkerRedis(object):
     def lock(self, identifier, database, seconds=21):
         """ This function allows to create a Redis lock.
 
+        Args:
+            identifier (string): key to lock
+            database (string): identifier of db
+            seconds (int): time to lock
+
         Returns:
-            int: Return
+            int: status returned
                 0 = lock is created.
                 1 = lock is not created by redis.
                 2 = lock is not created by worker.
@@ -405,6 +457,9 @@ class WorkerRedis(object):
         return 0 if __lock_status else 2
 
     def exit(self):
+        """ This function allows to close Redis connections.
+
+        """
 
         # Iterate over Connection Pools
         for __redis_name in self.redis_pools.keys():
