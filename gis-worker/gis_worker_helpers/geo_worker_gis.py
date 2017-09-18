@@ -27,6 +27,8 @@ sys.setdefaultencoding('utf8')
 import os
 from os.path import splitext
 from subprocess import Popen, PIPE
+from geo_worker_xml import WorkerXML
+
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -108,6 +110,26 @@ def check_gdal_path():
 ##########################################################################
 
 
+def cmd_geo(arguments):
+    """ This function executes a GeoKettle command.
+
+    Returns:
+        Triple: Return parsed output, errors and exit code.
+
+    """
+
+    # Extend arguments with GeoKettle CLI options
+    __arguments = [
+        arguments[0], '-file=' + arguments[1],
+        '-level=Detailed', '-norep'
+    ]
+
+    # Execute GeoKettle command
+    __g_out, __g_err = exec_command(__arguments)
+
+    return parse_geo_return(__g_out, __g_err)
+
+
 def cmd_ogr2ogr(arguments):
     """ This function executes an ogr2ogr command.
 
@@ -122,7 +144,7 @@ def cmd_ogr2ogr(arguments):
     ] + arguments + ['-explodecollections']
 
     # Execute GDAL commands
-    __g_out, __g_err = exec_ogr_command(__arguments)
+    __g_out, __g_err = exec_command(__arguments)
 
     return parse_ogr_return(__g_out, __g_err)
 
@@ -139,12 +161,12 @@ def cmd_ogrinfo(arguments):
     __arguments = ['ogrinfo', '-al', '-so'] + arguments
 
     # Execute GDAL commands
-    __g_out, __g_err = exec_ogr_command(__arguments)
+    __g_out, __g_err = exec_command(__arguments)
     
     return parse_ogr_return(__g_out, __g_err)
 
 
-def exec_ogr_command(arguments):
+def exec_command(arguments):
     """ This function executes an ogr command through subprocess.
 
     Returns:
@@ -490,6 +512,122 @@ def parse_ogr_return(outputs, errors):
     }
 
 
+def parse_geo_return(outputs, errors):
+
+    # Create temporal output log
+    __output = outputs.split('\n')
+
+    # Check Java exception is present
+    if 'Exception in thread' in errors:
+
+        return print_error_java_exception(errors)
+
+    # Create index structure to improve performance
+    # of looking for characters in specific log string
+    __index_dash = {}
+    __index_dash_keys = ['INFO', 'WARN', 'ERROR']
+
+    # Create structure of return
+    __return = {'info': [], 'warn': [], 'error': []}
+
+    # Iterate over output
+    for __message in __output:
+
+        # Remove kind of log and date
+        for __key in __index_dash_keys:
+
+            # Check kind of log
+            if __key in __message:
+
+                # Save index to structure
+                # + 2 -> character + space
+                if __key not in __index_dash:
+                    __index_dash[__key] = find_occurrence(
+                        __message, '-', 2
+                    ) + 2
+
+                # Get message
+                __m = __message[__index_dash[__key]:]
+
+                # Save message
+                __return[__key.lower()].append(__m)
+
+    return __return
+
+
+##########################################################################
+
+
+def find_occurrence(s, x, n=0):
+    """ This function returns an index where
+        occurrence is found.
+
+        Return:
+            Integer: index
+    """
+    i = -1
+    for c in xrange(n):
+        i = s.find(x, i + 1)
+        if i < 0:
+            break
+    return i
+
+
+def print_error_information():
+    """ This function returns a message when file
+        has not valid information or steps.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            'Information is not valid. Please, check the file path '
+            'and metadata about steps and GeoKettle transformation '
+            'or job.'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
+def print_error_extension():
+    """ This function returns a message when file
+        has not valid extension.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            'Extension is not valid. Please, check the file path.'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
+def print_error_java_exception(java_message):
+    """ This function returns a message when java
+        from GeoKettle raise an exception.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            'Java Exception was raised from GeoKettle.',
+            'Check the file on GeoKettle standalone version.',
+            java_message
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
 ##########################################################################
 
 
@@ -525,6 +663,10 @@ class WorkerGIS(object):
 
         # Get kind of file depending on final extension
         __driver = get_ogr_driver(extension)
+
+        # Check driver (extension)
+        if __driver is None:
+            return print_error_extension()
 
         # Get extension from path
         __ext_src = '.'.join(path.split('.')[-2:]) \
@@ -685,3 +827,54 @@ class WorkerGIS(object):
             ]
 
         return __info
+
+    def execute_geo_transform(self, path):
+
+        # Get extension from path
+        __ext_src = '.'.join(path.split('.')[-2:]) \
+            if len(path.split('.')) > 2 \
+            else splitext(path)[1]
+
+        # Check if extension is valid
+        if __ext_src != '.ktr':
+            return print_error_extension()
+
+        # Create XML instance
+        __xml_instance = WorkerXML()
+
+        # Get XML information
+        __x_info = __xml_instance.get_steps(
+            __xml_instance.check_issues(path)
+        )
+
+        # Check information
+        if __x_info is None:
+            return print_error_information()
+
+        # Execute GeoKettle
+        __g_info = cmd_geo(['pan.sh', path])
+
+        # Create new structure
+        __gr_info = {
+            'info': [],
+            'warn': __g_info['warn'],
+            'error': __g_info['error']
+        }
+
+        # Parse information messages
+        if len(__g_info['info']):
+
+            # Iterate over messages
+            for __message in __g_info['info']:
+
+                # Iterate over steps
+                for __step in __x_info:
+
+                    # Check message template
+                    if __step in __message and 'I=' in __message:
+                        __message_copy = str(__message)
+                        __message_copy = 'Performance by ' + \
+                            __message_copy.replace('Finished processing (', '')[:-1]
+                        __gr_info['info'].append(__message_copy)
+
+        return __gr_info

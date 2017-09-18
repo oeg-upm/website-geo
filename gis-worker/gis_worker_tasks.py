@@ -575,11 +575,108 @@ def execute_geo_job_with_id(identifier, logger, ext_logger):
 
 
 def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
-    return None
+    """ This function gets information from GeoKettle XML file
+        and check any possible issue.
+
+    Return:
+        Dict, GeoKettle information and status code
+
+    """
+
+    # Get information about XML file
+    __t_info = WorkerXML().check_transform(path)
+
+    # Check if there is any error
+    if not len(__t_info['error']):
+
+        # Execute job with GeoKettle
+        __tj_info = get_gdal_instance()
+        __tj_info = __tj_info.execute_geo_transform(path)
+
+        # Check if it was some error
+        if len(__tj_info['error']):
+
+            __t_info['info'] = []
+            __t_info['warn'] = []
+            __t_info['error'] = __tj_info['error']
+
+        else:
+
+            __t_info['error'] = []
+            __t_info['info'][-1] += '\n'
+            __t_info['info'] += [
+                '* ------------- Stats -------------\n'
+            ] + __tj_info['info']
+            __t_info['warn'] += __tj_info['warn']
+
+    # Add messages to result
+    if len(__t_info['error']) and ext_logger:
+        __t_info['error'] = [
+            '* ------------ Errors -------------\n'
+        ] + __t_info['error']
+    if len(__t_info['warn']) and ext_logger:
+        __t_info['warn'] = [
+            '* ----------- Warnings ------------\n'
+        ] + __t_info['warn']
+    if len(__t_info['info']) and ext_logger:
+        __t_info['info'] = __t_info['info']
+
+    # Log messages from result
+    print_to_logger(__t_info, logger)
+
+    # Return status code and messages
+    return {
+        'status': 2 if len(__t_info['error']) else 0,
+        'messages': __t_info
+    }
 
 
 def execute_geo_transform_with_id(identifier, logger, ext_logger):
-    return None
+    """ This function gets information from GeoKettle XML file
+        and check any possible issue.
+
+    Return:
+        Dict, GeoKettle information and status code
+
+    """
+
+    # Check if redis or gdal were input
+    __lib = get_libraries()
+
+    # Check if database has metadata for this identifier
+    if __lib[0].check_existence(identifier, 'files'):
+
+        # Get information about the specific identifier
+        __f_info = __lib[0].redis['files'].hgetall(identifier)
+
+        # Generate path
+        __config = get_configuration_file()
+        __path = __config['folder'] + '/' + \
+            identifier + '/' + __f_info['name'] + \
+            __f_info['extension']
+
+        # Close redis
+        __lib[0].exit()
+
+        # Transform resource and get result
+        return execute_geo_transform_with_path(__path, logger, ext_logger)
+
+    else:
+
+        # Close redis
+        __lib[0].exit()
+
+        # Create messages structure from zero
+        __t_info = print_not_found_message()
+
+        # Log messages from result
+        print_to_logger(__t_info, logger)
+
+        # Return status code and messages
+        return {
+            'status': 1 if len(__t_info['error']) else 0,
+            'messages': __t_info
+        }
 
 
 ##########################################################################
