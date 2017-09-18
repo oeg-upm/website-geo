@@ -17,11 +17,15 @@
       "mapping-e-e"
     ]
   },
-  "folder": "/opt/geo-resources",
+  "folder": "/opt/resources",
   "celery": {
     "broker_host": "rabbithost",
     "broker_port": 5672,
     "broker_user": "rabbitmq",
     "broker_pass": "password"
+  },
+  "xml": {
+    "steps": [],
+    "folders": []
   }
 }

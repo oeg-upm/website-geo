@@ -121,6 +121,24 @@ def print_error_not_found():
     }
 
 
+def print_error_steps_not_found():
+    """ This function returns a message when there is no
+        steps on XML GeoKettle file.
+
+        Return:
+            Dict: Information structure with error
+    """
+
+    return {
+        'error': [
+            'There was an error at checking file path. Please, '
+            'review it because no steps were found.'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
 def print_error_srs():
     """ This function returns a message when there is no
         SRS transformation on XML GeoKettle file.
@@ -231,22 +249,26 @@ class WorkerXML(object):
             # defusedxml will only be used for check XML problems
             # because this library is slower than python library
             # https://docs.python.org/2/library/xml.html#xml-vulnerabilities
-            return defusedxml.ElementTree.parse(path) is not None
+            return defusedxml.ElementTree.parse(path)
 
         except Exception:
-            return False
+            return None
 
     def check_steps(self, xml_tree):
 
-        # Get step from XML file
-        __steps = xml_tree.findall('step')
-
         # Structure to save non valid steps
         __no_steps = []
-        __valid_steps = []
+        __valid_steps = set()
 
         # Get allowed types for XML files
         __allowed_types = self.config['xml']['steps']
+
+        # Get steps from XML file
+        __steps = xml_tree.findall('step')
+
+        # Check if any step exist
+        if __steps is None:
+            return __no_steps, __valid_steps
 
         # Iterate over steps
         for __step in __steps:
@@ -263,7 +285,7 @@ class WorkerXML(object):
                 # Check if there is config
                 # All allowed
                 if not len(__allowed_types):
-                    __valid_steps.append(__type)
+                    __valid_steps.add(__type)
 
                 else:
 
@@ -271,22 +293,29 @@ class WorkerXML(object):
                     if __type not in __allowed_types:
                         __no_steps.append(__type)
                     else:
-                        __valid_steps.append(__type)
+                        __valid_steps.add(__type)
 
-        return __no_steps, __valid_steps
+        return __no_steps, list(__valid_steps)
 
     def check_paths(self, xml_tree):
 
         # Structure to save non valid steps
         __no_steps = []
         __no_folders = []
-        __valid_folders = []
+        __valid_folders = set()
 
         # Get allowed folders for XML files
         __allowed_folders = self.config['xml']['folders']
 
+        # Get all steps
+        __steps = xml_tree.findall('step')
+
+        # Check if any step exist
+        if __steps is None:
+            return __no_steps, __no_folders, __valid_folders
+
         # Iterate over steps
-        for __step in xml_tree.findall('step'):
+        for __step in __steps:
 
             # Check kind of step and children nodes
             __step_f = __step.find('filename')
@@ -308,7 +337,7 @@ class WorkerXML(object):
 
                 # Check if there is config
                 if not len(__allowed_folders):
-                    __valid_folders.append(__step_f.text)
+                    __valid_folders.add(__step_f.text)
 
                 else:
 
@@ -317,7 +346,7 @@ class WorkerXML(object):
                         __no_folders.append(__step_f.text)
 
                     else:
-                        __valid_folders.append(__step_f.text)
+                        __valid_folders.add(__step_f.text)
 
             # Get file node
             if __step_f.tag == 'file':
@@ -327,8 +356,6 @@ class WorkerXML(object):
 
                 # Get extension node from node's children
                 __step_e = __step_f.find('extention')
-
-                print __step_n, __step_e
 
                 # Check node is valid
                 if __step_n is None or __step_e is None:
@@ -348,7 +375,7 @@ class WorkerXML(object):
 
                 # Check if there is config
                 if not len(__allowed_folders):
-                    __valid_folders.append(__step_f)
+                    __valid_folders.add(__step_f)
 
                 else:
 
@@ -357,14 +384,18 @@ class WorkerXML(object):
                         __no_folders.append(__step_f)
 
                     else:
-                        __valid_folders.append(__step_f)
+                        __valid_folders.add(__step_f)
 
-        return __no_steps, __no_folders, __valid_folders
+        return __no_steps, __no_folders, list(__valid_folders)
 
     def check_srs(self, xml_tree):
 
         # Get step from XML file
         __steps = xml_tree.findall('step')
+
+        # Check if any step exists
+        if __steps is None:
+            return False
 
         # Create variable for transformation
         __step_t = None
@@ -418,6 +449,34 @@ class WorkerXML(object):
 
         return __step_a and __step_r
 
+    def get_steps(self, xml_tree):
+
+        # Get steps from XML file
+        __steps = xml_tree.findall('step')
+
+        # Check if any step exist
+        if __steps is None:
+            return None
+
+        # Create structure for information
+        __info = []
+
+        # Iterate over steps
+        for __step in __steps:
+
+            # Get name if it exists
+            __step_name = __step.find('name')
+
+            # Check if name is valid
+            if __step_name is None:
+                return None
+            elif __step_name.text == '':
+                return None
+            else:
+                __info.append(__step_name.text)
+
+        return __info
+
     def check_transform(self, path):
 
         # Check if path is a correct file and exists
@@ -426,18 +485,20 @@ class WorkerXML(object):
             return print_error_not_found()
 
         # Check vulnerabilities
-        if not self.check_issues(path):
+        __xml_tree = self.check_issues(path)
+        if __xml_tree is None:
 
             return print_error_vulnerabilities()
-
-        # Parse XML object
-        __xml_tree = xml.etree.ElementTree.parse(path)
 
         # Check if steps are valid
         __no_steps, __valid_steps = self.check_steps(__xml_tree)
         if len(__no_steps):
 
             return print_error_steps(__no_steps)
+
+        elif not len(__valid_steps):
+
+            return print_error_steps_not_found()
 
         # Check if there is any folder and they are valid
         __no_steps, __no_folders, __valid_folders = \
@@ -450,6 +511,10 @@ class WorkerXML(object):
         if len(__no_folders):
 
             return print_error_paths(__no_folders)
+
+        elif not len(__valid_steps):
+
+            return print_error_steps_not_found()
 
         # Check if there is a mandatory target SRS
         if not self.check_srs(__xml_tree):
