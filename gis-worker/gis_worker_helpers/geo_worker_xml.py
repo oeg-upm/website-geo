@@ -20,14 +20,13 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
+import os
 import sys
+import json
+import defusedxml.ElementTree
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-import os
-import json
-import xml.etree.ElementTree
-import defusedxml.ElementTree
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -44,7 +43,7 @@ def get_configuration_file():
     """ This function allows you to load a configuration from file.
 
     Returns:
-        Dict: Return configuration constraints.
+         dict: configuration fields and values.
 
     """
 
@@ -87,11 +86,12 @@ def get_configuration_file():
 
 
 def print_error_vulnerabilities():
-    """ This function returns a message when XML file has
-        or might have vulnerabilities or exploits.
+    """ This function returns a message when XML file
+        has or might have vulnerabilities or exploits.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -106,10 +106,12 @@ def print_error_vulnerabilities():
 
 
 def print_error_not_found():
-    """ This function returns a message when file is not found.
+    """ This function returns a message when file is
+        not found.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -122,11 +124,12 @@ def print_error_not_found():
 
 
 def print_error_steps_not_found():
-    """ This function returns a message when there is no
-        steps on XML GeoKettle file.
+    """ This function returns a message when there is
+        no steps on XML GeoKettle file.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -140,11 +143,12 @@ def print_error_steps_not_found():
 
 
 def print_error_srs():
-    """ This function returns a message when there is no
-        SRS transformation on XML GeoKettle file.
+    """ This function returns a message when there is
+        no SRS transformation on XML GeoKettle file.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -158,11 +162,12 @@ def print_error_srs():
 
 
 def print_error_steps(steps):
-    """ This function returns a message when a step or steps
-        are not valid at a XML GeoKettle file.
+    """ This function returns a message when a step
+        or steps are not valid at a XML GeoKettle file.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     # Create error structure
@@ -185,11 +190,12 @@ def print_error_steps(steps):
 
 
 def print_error_paths(paths):
-    """ This function returns a message when a path or paths
-        are not valid at a XML GeoKettle file.
+    """ This function returns a message when a path
+        or paths are not valid at a XML GeoKettle file.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     # Create error structure
@@ -215,8 +221,12 @@ def print_error_paths(paths):
 
 
 class Singleton(type):
-    """ This constructor creates only an instance of a specific type
-        following the singleton pattern (software design pattern).
+    """ This constructor creates only an instance of a
+        specific type following the singleton pattern
+        (software design pattern).
+
+    Returns:
+        class: Super class of specific instance
 
     """
 
@@ -228,10 +238,13 @@ class Singleton(type):
 
 
 class WorkerXML(object):
-    """ This constructor creates only an instance of a Object with
-        some features and methods for XML files. These files are
-        important because are the format for GeoKettle jobs and
-        transformations.
+    """ This constructor creates only an instance of a
+        Object with some features and methods for XML files.
+        These files are important because are the format
+        for GeoKettle jobs and transformations.
+
+    Returns:
+        class: XML Worker
 
     """
 
@@ -243,6 +256,17 @@ class WorkerXML(object):
         self.config = get_configuration_file()
 
     def check_issues(self, path):
+        """ This function allows to check any issue from
+            a XML file and also vulnerabilities.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            class: XML ElementTree or None if something
+                went wrong
+
+        """
 
         try:
 
@@ -255,6 +279,17 @@ class WorkerXML(object):
             return None
 
     def check_steps(self, xml_tree):
+        """ This function allows to check if the
+            included steps on the XML file are or
+            not allowed.
+
+        Args:
+            xml_tree (ElementTree): tree to review
+
+        Returns:
+            tuple: non and valid steps
+
+        """
 
         # Structure to save non valid steps
         __no_steps = []
@@ -298,6 +333,18 @@ class WorkerXML(object):
         return __no_steps, list(__valid_steps)
 
     def check_paths(self, xml_tree):
+        """ This function allows to check if the
+            included paths on the XML file are
+            or not allowed.
+
+        Args:
+            xml_tree (ElementTree): tree to review
+
+        Returns:
+            triple: steps with non valid paths,
+                non and valid paths
+
+        """
 
         # Structure to save non valid steps
         __no_steps = []
@@ -389,6 +436,17 @@ class WorkerXML(object):
         return __no_steps, __no_folders, list(__valid_folders)
 
     def check_srs(self, xml_tree):
+        """ This function allows to check if a SRS
+            transformation to EPSG:4326 exists on
+            the XML file.
+
+        Args:
+            xml_tree (ElementTree): tree to review
+
+        Returns:
+            bool: True if transformation is good
+
+        """
 
         # Get step from XML file
         __steps = xml_tree.findall('step')
@@ -450,6 +508,16 @@ class WorkerXML(object):
         return __step_a and __step_r
 
     def get_steps(self, xml_tree):
+        """ This function allows to get all the
+            steps from the XML file.
+
+        Args:
+            xml_tree (ElementTree): tree to review
+
+        Returns:
+            list: found steps' name
+
+        """
 
         # Get steps from XML file
         __steps = xml_tree.findall('step')
@@ -478,6 +546,17 @@ class WorkerXML(object):
         return __info
 
     def check_transform(self, path):
+        """ This function allows to check all
+            the possible issues on the
+            transformation XML file.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            dict: information about the outputs.
+
+        """
 
         # Check if path is a correct file and exists
         if not os.path.exists(path) or not os.path.isfile(path):

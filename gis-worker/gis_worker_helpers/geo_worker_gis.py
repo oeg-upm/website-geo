@@ -46,7 +46,7 @@ def check_geokettle_path():
         Geokettle Image.
 
     Returns:
-        True if "kitchen" and "pan" exist, False otherwise.
+        bool: True if "kitchen" and "pan" exist, False otherwise.
 
     """
 
@@ -77,7 +77,7 @@ def check_gdal_path():
         are available to execute them.
 
     Returns:
-        True if GDAL tools exist, False otherwise.
+        bool: True if GDAL tools exist, False otherwise.
 
     """
 
@@ -704,7 +704,7 @@ class Singleton(type):
         from parameter.
 
     Returns:
-        Super class of specific instance
+        class: Super class of specific instance
 
     """
     

@@ -45,6 +45,7 @@ def get_configuration_file():
 
     Returns:
          dict: configuration fields and values.
+
     """
 
     # Configuration folder
@@ -97,7 +98,7 @@ def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
         redis_db (int): database for Redis client
 
     Returns:
-        Redis Instance or None if configuration fails
+        class: Redis Pool or None if something went wrong
 
     """
 
@@ -131,7 +132,7 @@ def configure_redis(configuration):
         configuration (dict): Redis databases configuration
 
     Returns:
-        Tuple of Redis clients and pools
+        tuple: Redis clients and pools
 
     """
 
@@ -180,7 +181,7 @@ class Singleton(type):
         from parameter.
 
     Returns:
-        Super class of specific instance
+        class: Super class of specific instance
 
     """
     
@@ -223,7 +224,7 @@ class WorkerRedis(object):
             database (string): identifier of db
 
         Returns:
-            Return True if exists, False otherwise
+            bool: True if exists, False otherwise
 
         """
 
@@ -372,7 +373,7 @@ class WorkerRedis(object):
             forced (bool): flag for unlocking db hardly
 
         Returns:
-            Bool: Return True if unlock, False otherwise.
+            bool: True if unlock, False otherwise.
 
         """
 
