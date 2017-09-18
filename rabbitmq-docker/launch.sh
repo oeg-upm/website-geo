@@ -14,11 +14,11 @@ GEO_RABBIT_ADMIN_PORT=15672
 # Stop previous RabbitMQ container
 ./stop.sh
 
-# Build image if it is necessary
-docker inspect oegupm/geolinkeddata-rabbitmq >/dev/null 2>&1 && ibs=1 || ibs=0
-if [ "$ibs" -eq "0" ]; then
-    docker build -t oegupm/geolinkeddata-rabbitmq .
-fi
+# Download new Docker image
+docker pull rabbitmq:alpine
+
+# Build image
+docker build -t oegupm/geolinkeddata-rabbitmq .
 
 # Launch docker container
 docker run -d --name geolinkeddata.rabbitmq \

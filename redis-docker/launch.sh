@@ -10,11 +10,11 @@ GEO_REDIS_PORT=6379
 # Stop previous Redis container
 ./stop.sh
 
-# Build image if it is necessary
-docker inspect oegupm/geolinkeddata-redis >/dev/null 2>&1 && ibs=1 || ibs=0
-if [ "$ibs" -eq "0" ]; then
-    docker build -t oegupm/geolinkeddata-redis .
-fi
+# Download new Docker image
+docker pull redis:alpine
+
+# Build image
+docker build -t oegupm/geolinkeddata-redis .
 
 # Launch docker container
 docker run -d --name geolinkeddata.redis \
