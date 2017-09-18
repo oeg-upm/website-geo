@@ -20,15 +20,13 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
-
 import os
+import sys
 from os.path import splitext
 from subprocess import Popen, PIPE
 from geo_worker_xml import WorkerXML
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
@@ -48,7 +46,7 @@ def check_geokettle_path():
         Geokettle Image.
 
     Returns:
-        bool: Return True if "kitchen" and "pan" exist, False otherwise.
+        True if "kitchen" and "pan" exist, False otherwise.
 
     """
 
@@ -79,7 +77,7 @@ def check_gdal_path():
         are available to execute them.
 
     Returns:
-        bool: Return True if GDAL tools exist, False otherwise.
+        True if GDAL tools exist, False otherwise.
 
     """
 
@@ -113,8 +111,11 @@ def check_gdal_path():
 def cmd_geo(arguments):
     """ This function executes a GeoKettle command.
 
+    Args:
+        arguments (list): parameters to execute
+
     Returns:
-        Triple: Return parsed output, errors and exit code.
+        triple: parsed output, errors and exit code.
 
     """
 
@@ -133,8 +134,11 @@ def cmd_geo(arguments):
 def cmd_ogr2ogr(arguments):
     """ This function executes an ogr2ogr command.
 
+    Args:
+        arguments (list): parameters to execute
+
     Returns:
-        Triple: Return parsed output, errors and exit code.
+        triple: parsed output, errors and exit code.
 
     """
 
@@ -152,8 +156,11 @@ def cmd_ogr2ogr(arguments):
 def cmd_ogrinfo(arguments):
     """ This function executes an ogrinfo command.
 
+    Args:
+        arguments (list): parameters to execute
+
     Returns:
-        Triple: Return parsed output, errors and exit code.
+        triple: parsed output, errors and exit code.
 
     """
 
@@ -167,10 +174,14 @@ def cmd_ogrinfo(arguments):
 
 
 def exec_command(arguments):
-    """ This function executes an ogr command through subprocess.
+    """ This function executes an ogr command through
+        subprocess.
+
+    Args:
+        arguments (list): parameters to execute
 
     Returns:
-        Triple: Return output, errors and exit code of the process.
+        triple: output, errors and exit code of the process.
 
     """
 
@@ -184,14 +195,20 @@ def exec_command(arguments):
 
 
 def get_ogr_driver(extension):
-    """ This function allows to get the driver by extension.
+    """ This function allows to get the driver
+        by extension.
+
+    Args:
+        extension (string): file extension to look for
 
     Returns:
-        String: Return specific driver.
+        string: GDAL driver.
+
+    Todo:
+        * Extend for other drivers ...
 
     """
 
-    # TODO: extend this list for other extensions
     if extension == '.shp':
         return 'ESRI Shapefile'
     elif extension == '.kml':
@@ -201,16 +218,22 @@ def get_ogr_driver(extension):
 
 
 def get_ogr_file_extensions(extension):
-    """ This function allows to get the possible linked files
-        with a specific extension file of geo-spatial data.
+    """ This function allows to get the possible
+        linked files with a specific extension
+        file of geo-spatial data.
+
+    Args:
+        extension (string): file extension to look for
 
     Returns:
-        List: Return group of extensions.
+        list: group of extensions.
+
+    Todo:
+        * Extend for other extensions ...
 
     """
 
     # Define group of extensions files
-    # TODO: extend this list of list for other extensions
     __extensions = [
 
         # Shapefile -> shp
@@ -235,7 +258,13 @@ def get_ogr_file_extensions(extension):
 
 def get_projection(path):
     """ This function gets gis projections
-        of specific Geospatial file.
+        of specific Geo-spatial file.
+
+    Args:
+        path (string): file's path
+
+    Returns:
+        string: OGR projection
 
     """
 
@@ -275,10 +304,15 @@ def get_projection(path):
 
 
 def validate_ogr_fields(path, fields):
-    """ This function checks the fields of specific Geospatial file.
+    """ This function checks the fields
+        of specific Geo-spatial file.
+
+    Args:
+        path (string): file's path
+        fields (list): fields' information
 
     Returns:
-        Tuple: Return the removed or valid fields.
+        list: removed bad or empty fields.
 
     """
 
@@ -358,8 +392,12 @@ def validate_ogr_fields(path, fields):
 
 
 def generate_centroids(path):
-    """ This function calculates the centroid for geometries
-        of specific Geospatial file.
+    """ This function calculates the centroid
+        for geometries of specific Geo-spatial
+        file and save them on the same file.
+
+    Args:
+        path (string): file's path
 
     """
 
@@ -408,8 +446,12 @@ def generate_centroids(path):
 
 
 def generate_areas(path):
-    """ This function calculates the area for geometries
-        of specific Geospatial file.
+    """ This function calculates the area
+        for geometries of specific Geo-spatial
+        file and save them on the same file.
+
+    Args:
+        path (string): file's path
 
     """
 
@@ -460,10 +502,15 @@ def generate_areas(path):
 
 
 def parse_ogr_return(outputs, errors):
-    """ This function parses the both outputs from ogr execution.
+    """ This function parses the both
+        outputs from ogr execution.
+
+    Args:
+        outputs (string): stdout information
+        errors (string): stderr information
 
     Returns:
-        Dict: Return information about the outputs.
+        dict: information about the outputs.
 
     """
 
@@ -513,6 +560,17 @@ def parse_ogr_return(outputs, errors):
 
 
 def parse_geo_return(outputs, errors):
+    """ This function parses the both outputs
+        from GeoKettle execution.
+
+    Args:
+        outputs (string): stdout information
+        errors (string): stderr information
+
+    Returns:
+        dict: information about the outputs.
+
+    """
 
     # Create temporal output log
     __output = outputs.split('\n')
@@ -562,9 +620,16 @@ def find_occurrence(s, x, n=0):
     """ This function returns an index where
         occurrence is found.
 
-        Return:
-            Integer: index
+    Args:
+        s (string): sentence to check
+        x (string): word or character to check
+        n (index): position to start
+
+    Returns:
+        int: index
+
     """
+
     i = -1
     for c in xrange(n):
         i = s.find(x, i + 1)
@@ -574,11 +639,12 @@ def find_occurrence(s, x, n=0):
 
 
 def print_error_information():
-    """ This function returns a message when file
-        has not valid information or steps.
+    """ This function returns a message when
+        file has not valid information or steps.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -593,11 +659,12 @@ def print_error_information():
 
 
 def print_error_extension():
-    """ This function returns a message when file
-        has not valid extension.
+    """ This function returns a message when
+        file has not valid extension.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -610,11 +677,12 @@ def print_error_extension():
 
 
 def print_error_java_exception(java_message):
-    """ This function returns a message when java
-        from GeoKettle raise an exception.
+    """ This function returns a message when
+        java from GeoKettle raise an exception.
 
-        Return:
-            Dict: Information structure with error
+    Returns:
+        dict: Information structure with error
+
     """
 
     return {
@@ -632,8 +700,11 @@ def print_error_java_exception(java_message):
 
 
 class Singleton(type):
-    """ This constructor creates only an instance of a specific type
-        following the singleton pattern (software design pattern).
+    """ This constructor creates a super class of defined type
+        from parameter.
+
+    Returns:
+        Super class of specific instance
 
     """
     
@@ -645,9 +716,13 @@ class Singleton(type):
 
 
 class WorkerGIS(object):
-    """ This constructor creates only an instance of a GIS library
-        for doing transformations or getting information from data
-        following the singleton pattern (software design pattern).
+    """ This constructor creates only an instance of a
+        GIS library for doing transformations or getting
+        information from data following the singleton pattern
+        (software design pattern).
+
+    Returns:
+        class: GIS Worker
 
     """
 
@@ -660,6 +735,17 @@ class WorkerGIS(object):
         self.status = check_geokettle_path() and check_gdal_path()
 
     def transform(self, path, extension):
+        """ This function allows to transform any geo-spatial
+            file to specific extension thanks to GDAL tools.
+
+        Args:
+            path (string): file's path
+            extension (string): extension to be transformed
+
+        Returns:
+            dict: information about the outputs
+
+        """
 
         # Get kind of file depending on final extension
         __driver = get_ogr_driver(extension)
@@ -755,6 +841,16 @@ class WorkerGIS(object):
         return __g_info
 
     def get_info(self, path):
+        """ This function allows to get information from
+            specific file thanks to GDAL tools.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            dict: information about the outputs
+
+        """
 
         # Get information when executes
         __info = cmd_ogrinfo([path])
@@ -785,6 +881,16 @@ class WorkerGIS(object):
         return __info
 
     def validate_fields(self, path):
+        """ This function allows to validate fields from
+            specific file thanks to GDAL tools.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            dict: information about the outputs
+
+        """
 
         # Get information when executes
         __info = self.get_fields(path)
@@ -807,6 +913,17 @@ class WorkerGIS(object):
         return __log_messages
 
     def get_fields(self, path, extend=False):
+        """ This function allows to get fields' information
+            from specific file thanks to GDAL tools.
+
+        Args:
+            path (string): file's path
+            extend (bool): flag to extend information
+
+        Returns:
+            dict: information about the outputs
+
+        """
 
         # Get information when executes
         __info = cmd_ogrinfo([path])
@@ -829,6 +946,17 @@ class WorkerGIS(object):
         return __info
 
     def execute_geo_transform(self, path):
+        """ This function allows to execute GeoKettle
+            transformation from specific XML file
+            thanks to GeoKettle CLI tools.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            dict: information about the outputs
+
+        """
 
         # Get extension from path
         __ext_src = '.'.join(path.split('.')[-2:]) \

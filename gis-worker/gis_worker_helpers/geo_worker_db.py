@@ -196,6 +196,9 @@ class WorkerRedis(object):
         class for saving data on Redis following the singleton
         pattern (software design pattern).
 
+    Returns:
+        class: Redis Worker
+
     """
 
     # Create singleton instance
