@@ -39,6 +39,12 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
+special_folders = [
+    '${Internal.Transformation.Filename.Directory}',
+    '${Internal.Job.Filename.Directory}'
+]
+
+
 def get_configuration_file():
     """ This function allows you to load a configuration from file.
 
@@ -80,6 +86,50 @@ def get_configuration_file():
         __dict['debug'] = __debug
 
         return __dict
+
+
+def get_true_folder(path, node_path):
+    """ This function allows you to parse and verify if
+        a path is or not a XML special variable.
+
+    Args:
+        path: file's path
+        node_path: node's value path
+
+    Returns:
+         tuple: verified path and flag of conversion
+
+    """
+
+    # Get file's path without file
+    __file_path = os.path.dirname(path)
+
+    # Generate a full copy of node path
+    __node_path = str(node_path)
+
+    # Save flag to determine if a path is a variable
+    __node_flag = False
+
+    # Iterate over XML variables
+    for folder in special_folders:
+
+        # Check if path is a variable
+        if __node_path.startswith(folder):
+
+            __node_path = __node_path.replace(
+                folder, __file_path
+            )
+            __node_flag = True
+            break
+
+    # Check if folder is the same of file's path
+    if not __node_flag:
+        __node_flag = os.path.dirname(
+            __node_path
+        ).startswith(__file_path)
+
+    # Get folder without file
+    return __node_path, __node_flag
 
 
 ##########################################################################
@@ -161,12 +211,18 @@ def print_error_srs():
     }
 
 
-def print_error_steps(steps):
-    """ This function returns a message when a step
-        or steps are not valid at a XML GeoKettle file.
+def print_error_not_allowed(nodes, tag):
+    """ This function returns a message when a node
+        or nodes are not valid at a XML GeoKettle file.
+
+    Args:
+        nodes (list): nodes not allowed
+        tag (string): kind of node
+
 
     Returns:
         dict: Information structure with error
+
 
     """
 
@@ -174,10 +230,10 @@ def print_error_steps(steps):
     __error = []
 
     # Iterate over steps list
-    for __step in steps:
+    for __node in nodes:
 
         # Append message
-        __error.append('The ' + __step + ' step is not allowed.')
+        __error.append('The ' + __node + ' ' + tag + ' is not allowed.')
 
     # Append last message
     __error.append('Please, review configuration or XML file.')
@@ -332,13 +388,15 @@ class WorkerXML(object):
 
         return __no_steps, list(__valid_steps)
 
-    def check_paths(self, xml_tree):
+    def check_paths(self, path, xml_tree, node_name):
         """ This function allows to check if the
             included paths on the XML file are
             or not allowed.
 
         Args:
+            path (string): file's path
             xml_tree (ElementTree): tree to review
+            node_name (string): name of node to review
 
         Returns:
             triple: steps with non valid paths,
@@ -347,93 +405,93 @@ class WorkerXML(object):
         """
 
         # Structure to save non valid steps
-        __no_steps = []
+        __no_nodes = []
         __no_folders = []
         __valid_folders = set()
 
         # Get allowed folders for XML files
         __allowed_folders = self.config['xml']['folders']
 
-        # Get all steps
-        __steps = xml_tree.findall('step')
+        # Get all nodes
+        __nodes = xml_tree.findall(node_name)
 
-        # Check if any step exist
-        if __steps is None:
-            return __no_steps, __no_folders, __valid_folders
+        # Check if any node exist
+        if __nodes is None:
+            return __no_nodes, __no_folders, __valid_folders
 
-        # Iterate over steps
-        for __step in __steps:
+        # Iterate over nodes
+        for __node in __nodes:
 
             # Check kind of step and children nodes
-            __step_f = __step.find('filename')
-            if __step_f is None:
-                __step_f = __step.find('file')
-            if __step_f is None:
+            __node_f = __node.find('filename')
+            if __node_f is None:
+                __node_f = __node.find('file')
+            if __node_f is None:
                 continue
 
             # Get filename node
-            if __step_f.tag == 'filename':
+            if __node_f.tag == 'filename':
 
                 # Check node is valid
-                if __step_f.text == '':
-                    __no_steps.append(__step.find('type').text)
+                if __node_f.text == '':
+                    __no_nodes.append(__node.find('type').text)
                     continue
 
-                # Get folder without file
-                __folder = os.path.dirname(__step_f.text)
-
-                # Check if there is config
-                if not len(__allowed_folders):
-                    __valid_folders.add(__step_f.text)
-
-                else:
-
-                    # Check folder is good
-                    if __folder not in __allowed_folders:
-                        __no_folders.append(__step_f.text)
-
-                    else:
-                        __valid_folders.add(__step_f.text)
+                # Get node value
+                __node_f = __node_f.text
 
             # Get file node
-            if __step_f.tag == 'file':
+            elif __node_f.tag == 'file':
 
                 # Get name node from node's children
-                __step_n = __step_f.find('name')
+                __node_n = __node_f.find('name')
 
                 # Get extension node from node's children
-                __step_e = __step_f.find('extention')
+                __node_e = __node_f.find('extention')
+
+                # Check if plugin has other field
+                if __node_e is None:
+                    __node_e = __node_f.find('extension')
 
                 # Check node is valid
-                if __step_n is None or __step_e is None:
-                    __no_steps.append(__step.find('type').text)
+                if __node_n is None or __node_e is None:
+                    __no_nodes.append(__node.find('type').text)
                     continue
 
                 # Check node is valid
-                if __step_n.text == '' or __step_e.text == '':
-                    __no_steps.append(__step.find('type').text)
+                if __node_n.text == '' or __node_e.text == '':
+                    __no_nodes.append(__node.find('type').text)
                     continue
 
                 # Create path from values
-                __step_f = __step_n.text + '.' + __step_e.text
+                __node_f = __node_n.text + '.' + __node_e.text
 
-                # Get folder without file
-                __folder = os.path.dirname(__step_f)
+            # Verify directory from value
+            __node_f, __folder_flag = get_true_folder(path, __node_f)
+
+            # Get directory from value
+            __folder = os.path.dirname(__node_f)
+
+            # Check if folder was a variable
+            if __folder_flag:
+                __valid_folders.add(__node_f)
+
+            else:
 
                 # Check if there is config
                 if not len(__allowed_folders):
-                    __valid_folders.add(__step_f)
+                    __valid_folders.add(__node_f)
 
                 else:
 
                     # Check folder is good
                     if __folder not in __allowed_folders:
-                        __no_folders.append(__step_f)
+                        __no_folders.append(__node_f)
 
                     else:
-                        __valid_folders.add(__step_f)
+                        __valid_folders.add(__node_f)
 
-        return __no_steps, __no_folders, list(__valid_folders)
+        return __no_nodes, __no_folders, list(__valid_folders)
 
     def check_srs(self, xml_tree):
         """ This function allows to check if a SRS
@@ -560,78 +618,109 @@ class WorkerXML(object):
 
         # Check if path is a correct file and exists
         if not os.path.exists(path) or not os.path.isfile(path):
-
             return print_error_not_found()
 
         # Check vulnerabilities
         __xml_tree = self.check_issues(path)
         if __xml_tree is None:
-
             return print_error_vulnerabilities()
 
         # Check if steps are valid
         __no_steps, __valid_steps = self.check_steps(__xml_tree)
         if len(__no_steps):
+            return print_error_not_allowed(__no_steps, 'step')
 
-            return print_error_steps(__no_steps)
-
-        elif not len(__valid_steps):
-
+        if not len(__valid_steps):
             return print_error_steps_not_found()
 
         # Check if there is any folder and they are valid
         __no_steps, __no_folders, __valid_folders = \
-            self.check_paths(__xml_tree)
+            self.check_paths(path, __xml_tree, 'step')
 
         if len(__no_steps):
-
-            return print_error_steps(__no_steps)
+            return print_error_not_allowed(__no_steps, 'step')
 
         if len(__no_folders):
-
             return print_error_paths(__no_folders)
-
-        elif not len(__valid_steps):
-
-            return print_error_steps_not_found()
 
         # Check if there is a mandatory target SRS
         if not self.check_srs(__xml_tree):
-
             return print_error_srs()
 
         # Create return structure
-        __return = {
-            'info': [], 'warn': [], 'error': []
+        return {
+            'error': [],
+            'warn': [],
+            'info_s': [
+                'The ' + __step + ' execution was allowed.'
+                for __step in __valid_steps
+            ],
+            'info_f': [
+                'Access to ' + __folder + ' was allowed.'
+                for __folder in __valid_folders
+            ]
         }
 
-        if len(__valid_steps):
+    def check_job(self, path):
 
-            # Add header message
-            __return['info'].append(
-                '* ------------ Steps --------------\n'
+        """ This function allows to check all
+            the possible issues on the
+            job XML file.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            dict: information about the outputs.
+
+        """
+
+        # Check if path is a correct file and exists
+        if not os.path.exists(path) or not os.path.isfile(path):
+            return print_error_not_found()
+
+        # Check vulnerabilities
+        __xml_tree = self.check_issues(path)
+        if __xml_tree is None:
+            return print_error_vulnerabilities()
+
+        # Go to entries node
+        __xml_root_tree = __xml_tree.find('entries')
+        if __xml_root_tree is None:
+            return print_error_vulnerabilities()
+
+        # Check if there is any folder and they are valid
+        __no_entries, __no_folders, __valid_folders = \
+            self.check_paths(path, __xml_root_tree, 'entry')
+
+        if len(__no_entries):
+            return print_error_not_allowed(__no_entries, 'entry')
+
+        if len(__no_folders):
+            return print_error_paths(__no_folders)
+
+        # Create return structure
+        __return = {
+            'info_s': set(), 'info_f': set(),
+            'warn': [], 'error': []
+        }
+
+        # Check transformations from job file
+        for __transform_path in __valid_folders:
+            __transform_info = self.check_transform(__transform_path)
+
+            # Check transformation errors
+            if len(__transform_info['error']):
+                __transform_info['error'] = \
+                    [__transform_path] + __transform_info['error']
+                return __transform_info
+
+            # Save messages to structure
+            __return['info_s'] = __return['info_s'].union(
+                set(__transform_info['info_s'])
             )
-
-            for __step in __valid_steps:
-
-                # Append message
-                __return['info'].append(
-                    'The ' + __step + ' execution was allowed.'
-                )
-
-        if len(__valid_folders):
-
-            # Add header message
-            __return['info'][-1] += '\n'
-            __return['info'].append(
-                '* ------------ Folders ------------\n'
+            __return['info_f'] = __return['info_f'].union(
+                set(__transform_info['info_f'])
             )
-
-            for __folder in __valid_folders:
-
-                # Append message
-                __return['info'].append(
-                    'Access to ' + __folder + ' was allowed.'
-                )
 
         return __return
