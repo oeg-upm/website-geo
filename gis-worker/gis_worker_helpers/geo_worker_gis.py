@@ -24,7 +24,6 @@ import os
 import sys
 from os.path import splitext
 from subprocess import Popen, PIPE
-from geo_worker_xml import WorkerXML
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -128,7 +127,7 @@ def cmd_geo(arguments):
     # Execute GeoKettle command
     __g_out, __g_err = exec_command(__arguments)
 
-    return parse_geo_return(__g_out, __g_err)
+    return parse_geo_return(__g_out, __g_err), __g_out
 
 
 def cmd_ogr2ogr(arguments):
@@ -638,26 +637,6 @@ def find_occurrence(s, x, n=0):
     return i
 
 
-def print_error_information():
-    """ This function returns a message when
-        file has not valid information or steps.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'Information is not valid. Please, check the file path '
-            'and metadata about steps and GeoKettle transformation '
-            'or job.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
 def print_error_extension():
     """ This function returns a message when
         file has not valid extension.
@@ -788,7 +767,7 @@ class WorkerGIS(object):
             __path_files = os.listdir(__path_folder)
 
             # Get old and new file name from path
-            __path_name = path.replace(__path_folder + '/', '').replace(__ext_src, '')
+            __path_name = path.replace(__path_folder + os.sep, '').replace(__ext_src, '')
 
             # Generate files from file name + list of extensions
             __path_list = [__path_name + __l for __l in __path_ext]
@@ -799,14 +778,14 @@ class WorkerGIS(object):
             for __path_file in __path_files:
 
                 # Delete old files
-                os.remove(__path_folder + '/' + __path_file)
+                os.remove(__path_folder + os.sep + __path_file)
 
                 # Rename new files
                 os.rename(
-                    __path_folder + '/' + __path_file.replace(
+                    __path_folder + os.sep + __path_file.replace(
                         __path_name, __path_name + '_bis'
                     ),
-                    __path_folder + '/' + __path_file
+                    __path_folder + os.sep + __path_file
                 )
 
         # Set destination path
@@ -958,29 +937,18 @@ class WorkerGIS(object):
 
         """
 
+        # Execute GeoKettle
+        __g_info, __original_info = cmd_geo(['pan.sh', path])
+
         # Get extension from path
         __ext_src = '.'.join(path.split('.')[-2:]) \
             if len(path.split('.')) > 2 \
             else splitext(path)[1]
 
-        # Check if extension is valid
-        if __ext_src != '.ktr':
-            return print_error_extension()
-
-        # Create XML instance
-        __xml_instance = WorkerXML()
-
-        # Get XML information
-        __x_info = __xml_instance.get_steps(
-            __xml_instance.check_issues(path)
-        )
-
-        # Check information
-        if __x_info is None:
-            return print_error_information()
-
-        # Execute GeoKettle
-        __g_info = cmd_geo(['pan.sh', path])
+        # Get directory path to save on log
+        __log_path = path.replace(__ext_src, '')
+        with open(__log_path, 'w') as outfile:
+            outfile.write(__original_info)
 
         # Create new structure
         __gr_info = {
@@ -995,14 +963,61 @@ class WorkerGIS(object):
             # Iterate over messages
             for __message in __g_info['info']:
 
-                # Iterate over steps
-                for __step in __x_info:
+                # Check message template
+                if 'Finished processing (' in __message:
+                    __message_list = str(__message).split(' - ')
+                    __gr_info['info'].append(
+                        'Performance by ' + __message_list[0] +
+                        ': ' + __message_list[1][21:][:-1] + '.'
+                    )
 
-                    # Check message template
-                    if __step in __message and 'I=' in __message:
-                        __message_copy = str(__message)
-                        __message_copy = 'Performance by ' + \
-                            __message_copy.replace('Finished processing (', '')[:-1]
-                        __gr_info['info'].append(__message_copy)
+        return __gr_info
+
+    def execute_geo_job(self, path):
+        """ This function allows to execute GeoKettle
+            job from specific XML file thanks to
+            GeoKettle CLI tools.
+
+        Args:
+            path (string): file's path
+
+        Returns:
+            dict: information about the outputs
+
+        """
+
+        # Execute GeoKettle
+        __g_info, __original_info = cmd_geo(['kitchen.sh', path])
+
+        # Get extension from path
+        __ext_src = '.'.join(path.split('.')[-2:]) \
+            if len(path.split('.')) > 2 \
+            else splitext(path)[1]
+
+        # Get directory path to save on log
+        __log_path = path.replace(__ext_src, '')
+        with open(__log_path, 'w') as outfile:
+            outfile.write(__original_info)
+
+        # Create new structure
+        __gr_info = {
+            'info': [],
+            'warn': __g_info['warn'],
+            'error': __g_info['error']
+        }
+
+        # Parse information messages
+        if len(__g_info['info']):
+
+            # Iterate over messages
+            for __message in __g_info['info']:
+
+                # Check message template
+                if 'Finished processing (' in __message:
+                    __message_list = str(__message).split(' - ')
+                    __gr_info['info'].append(
+                        'Performance by ' + __message_list[0] +
+                        ': ' + __message_list[1][21:][:-1] + '.'
+                    )
 
         return __gr_info

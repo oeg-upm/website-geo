@@ -71,7 +71,7 @@ def get_configuration_file():
         )
 
     # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
 
     # Open file to load configuration
     with open(cwd + __config_path) as __file_data:

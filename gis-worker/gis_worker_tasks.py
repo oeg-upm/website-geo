@@ -24,6 +24,7 @@
 import os
 import sys
 import json
+from os.path import splitext
 from celery.task import task
 from celery.utils.log import get_task_logger
 from gis_worker_helpers.geo_worker_gis import WorkerGIS
@@ -74,7 +75,7 @@ def get_configuration_file():
         )
 
     # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
 
     # Open file to load configuration
     with open(cwd + __config_path) as __file_data:
@@ -232,6 +233,24 @@ def print_not_found_message():
     }
 
 
+def print_error_extension():
+    """ This function returns a message when
+        file has not valid extension.
+
+    Returns:
+        dict: Information structure with error
+
+    """
+
+    return {
+        'error': [
+            'Extension is not valid. Please, check the file path.'
+        ],
+        'warn': [],
+        'info': []
+    }
+
+
 def print_worker_status(status, logger=None):
     """ This function allows to print a specific message depending on
         returned Celery worker's status.
@@ -359,8 +378,8 @@ def transform_with_id(identifier, ext_dst, logger, ext_logger):
 
         # Generate path
         __config = get_configuration_file()
-        __path = __config['folder'] + '/' + \
-            identifier + '/' + __f_info['name'] + \
+        __path = __config['folder'] + os.sep + \
+            identifier + os.sep + __f_info['name'] + \
             __f_info['extension']
 
         # Close redis
@@ -453,8 +472,8 @@ def info_with_id(identifier, logger, ext_logger):
 
         # Generate path
         __config = get_configuration_file()
-        __path = __config['folder'] + '/' + \
-            identifier + '/' + __f_info['name'] + \
+        __path = __config['folder'] + os.sep + \
+            identifier + os.sep + __f_info['name'] + \
             __f_info['extension']
 
         # Close redis
@@ -524,9 +543,9 @@ def fields_with_path(path, logger=None, ext_logger=True):
 
 
 def fields_with_id(identifier, logger, ext_logger):
-    """ This function gets information from metadata
-        fields about gis or geometries file through
-        GDAL libraries.
+    """ This function gets information from task identifier.
+        It gets information from metadata fields about gis
+        or geometries file through GDAL libraries.
 
     Args:
         identifier (string): task internal id
@@ -549,8 +568,8 @@ def fields_with_id(identifier, logger, ext_logger):
 
         # Generate path
         __config = get_configuration_file()
-        __path = __config['folder'] + '/' + \
-            identifier + '/' + __f_info['name'] + \
+        __path = __config['folder'] + os.sep + \
+            identifier + os.sep + __f_info['name'] + \
             __f_info['extension']
 
         # Close redis
@@ -589,7 +608,7 @@ def delete_with_id(identifier, extension):
 
     # Generate path
     __config = get_configuration_file()
-    __path = __config['folder'] + '/' + identifier
+    __path = __config['folder'] + os.sep + identifier
 
     # Check path exists
     if os.path.isdir(__path):
@@ -604,7 +623,7 @@ def delete_with_id(identifier, extension):
         for __file in __path_files:
 
             # Join path with file
-            __f = __path + '/' + __file
+            __f = __path + os.sep + __file
 
             # Get extension from path
             __file_ext = '.'.join(__f.split('.')[-2:]) \
@@ -620,38 +639,40 @@ def delete_with_id(identifier, extension):
                     os.remove(__f)
 
 
-def execute_geo_job_with_path(path, logger=None, ext_logger=True):
-    return None
-
-
-def execute_geo_job_with_id(identifier, logger, ext_logger):
-    return None
-
-
-def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
+def execute_geo_job_with_path(path, logger=None, ext_logger=True, checks=True):
     """ This function gets information from GeoKettle XML file
-        transformation, executes it and throws any possible issue
+        job, executes it and throws any possible issue
         or good information from its execution.
 
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
         ext_logger (bool): flag for CLI logger
+        checks (bool): checking flag
 
     Return:
         dict: information about the outputs and status code
 
     """
 
+    # Get extension from path
+    __ext_src = '.'.join(path.split('.')[-2:]) \
+        if len(path.split('.')) > 2 \
+        else splitext(path)[1]
+
+    # Check if extension is valid
+    if __ext_src != '.kjb':
+        return print_error_extension()
+
     # Get information about XML file
-    __t_info = WorkerXML().check_transform(path)
+    __t_info = WorkerXML().check_job(path, checks)
 
     # Check if there is any error
     if not len(__t_info['error']):
 
         # Execute job with GeoKettle
         __tj_info = get_gdal_instance()
-        __tj_info = __tj_info.execute_geo_transform(path)
+        __tj_info = __tj_info.execute_geo_job(path)
 
         # Check if it was some error
         if len(__tj_info['error']):
@@ -663,10 +684,20 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
         else:
 
             __t_info['error'] = []
-            __t_info['info'][-1] += '\n'
-            __t_info['info'] += [
-                '* ------------- Stats -------------\n'
-            ] + __tj_info['info']
+            __t_info['info_e'][-1] += '\n'
+            __t_info['info_s'][-1] += '\n'
+            __t_info['info_f'][-1] += '\n'
+            __t_info['info'] = [
+                '* ----------- Entries -------------\n'
+            ] + __t_info['info_e'] + [
+                '* ------------ Steps --------------\n'
+            ] + __t_info['info_s'] + [
+                '* ------------ Folders ------------\n'
+            ] + __t_info['info_f']
+            if len(__tj_info['info']):
+                __t_info['info'] += [
+                    '* ------------- Stats -------------\n'
+                ] + __tj_info['info']
             __t_info['warn'] += __tj_info['warn']
 
     # Add messages to result
@@ -678,8 +709,6 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
         __t_info['warn'] = [
             '* ----------- Warnings ------------\n'
         ] + __t_info['warn']
-    if len(__t_info['info']) and ext_logger:
-        __t_info['info'] = __t_info['info']
 
     # Log messages from result
     print_to_logger(__t_info, logger)
@@ -691,9 +720,11 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True):
     }
 
 
-def execute_geo_transform_with_id(identifier, logger, ext_logger):
-    """ This function gets information from GeoKettle XML file
-        and check any possible issue.
+def execute_geo_job_with_id(identifier, logger, ext_logger):
+    """ This function gets information from task identifier.
+        It executes the possible GeoKettle XML job linked to
+        this specific task and throws any possible issue
+        or good information from its execution.
 
     Args:
         identifier (string): task internal id
@@ -716,15 +747,150 @@ def execute_geo_transform_with_id(identifier, logger, ext_logger):
 
         # Generate path
         __config = get_configuration_file()
-        __path = __config['folder'] + '/' + \
-            identifier + '/' + __f_info['name'] + \
+        __path = __config['folder'] + os.sep + \
+            identifier + os.sep + __f_info['name'] + \
             __f_info['extension']
 
         # Close redis
         __lib[0].exit()
 
         # Transform resource and get result
-        return execute_geo_transform_with_path(__path, logger, ext_logger)
+        return execute_geo_transform_with_path(
+            __path, logger, ext_logger, False
+        )
+
+    else:
+
+        # Close redis
+        __lib[0].exit()
+
+        # Create messages structure from zero
+        __t_info = print_not_found_message()
+
+        # Log messages from result
+        print_to_logger(__t_info, logger)
+
+        # Return status code and messages
+        return {
+            'status': 1 if len(__t_info['error']) else 0,
+            'messages': __t_info
+        }
+
+
+def execute_geo_transform_with_path(path, logger=None, ext_logger=True, checks=True):
+    """ This function gets information from GeoKettle XML file
+        transformation, executes it and throws any possible issue
+        or good information from its execution.
+
+    Args:
+        path (string): file's path
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+        checks (bool): checking flag
+
+    Return:
+        dict: information about the outputs and status code
+
+    """
+
+    # Get extension from path
+    __ext_src = '.'.join(path.split('.')[-2:]) \
+        if len(path.split('.')) > 2 \
+        else splitext(path)[1]
+
+    # Check if extension is valid
+    if __ext_src != '.ktr':
+        return print_error_extension()
+
+    # Get information about XML file
+    __t_info = WorkerXML().check_transform(path, checks)
+
+    # Check if there is any error
+    if not len(__t_info['error']):
+
+        # Execute job with GeoKettle
+        __tj_info = get_gdal_instance()
+        __tj_info = __tj_info.execute_geo_transform(path)
+
+        # Check if it was some error
+        if len(__tj_info['error']):
+
+            __t_info['info'] = []
+            __t_info['warn'] = []
+            __t_info['error'] = __tj_info['error']
+
+        else:
+
+            __t_info['error'] = []
+            __t_info['info_s'][-1] += '\n'
+            __t_info['info_f'][-1] += '\n'
+            __t_info['info'] = [
+                '* ------------ Steps --------------\n'
+            ] + __t_info['info_s'] + [
+                '* ------------ Folders ------------\n'
+            ] + __t_info['info_f'] + [
+                '* ------------- Stats -------------\n'
+            ] + __tj_info['info']
+            __t_info['warn'] += __tj_info['warn']
+
+    # Add messages to result
+    if len(__t_info['error']) and ext_logger:
+        __t_info['error'] = [
+            '* ------------ Errors -------------\n'
+        ] + __t_info['error']
+    if len(__t_info['warn']) and ext_logger:
+        __t_info['warn'] = [
+            '* ----------- Warnings ------------\n'
+        ] + __t_info['warn']
+
+    # Log messages from result
+    print_to_logger(__t_info, logger)
+
+    # Return status code and messages
+    return {
+        'status': 2 if len(__t_info['error']) else 0,
+        'messages': __t_info
+    }
+
+
+def execute_geo_transform_with_id(identifier, logger, ext_logger):
+    """ This function gets information from task identifier.
+        It executes the possible GeoKettle XML transformation
+        linked to this specific task and throws any possible
+        issue or good information from its execution.
+
+    Args:
+        identifier (string): task internal id
+        logger (Logger): logger class to write messages
+        ext_logger (bool): flag for CLI logger
+
+    Return:
+        dict: information about the outputs and status code
+
+    """
+
+    # Check if redis or gdal were input
+    __lib = get_libraries()
+
+    # Check if database has metadata for this identifier
+    if __lib[0].check_existence(identifier, 'files'):
+
+        # Get information about the specific identifier
+        __f_info = __lib[0].redis['files'].hgetall(identifier)
+
+        # Generate path
+        __config = get_configuration_file()
+        __path = __config['folder'] + os.sep + \
+            identifier + os.sep + __f_info['name'] + \
+            __f_info['extension']
+
+        # Close redis
+        __lib[0].exit()
+
+        # Transform resource and get result
+        return execute_geo_transform_with_path(
+            __path, logger, ext_logger, False
+        )
 
     else:
 

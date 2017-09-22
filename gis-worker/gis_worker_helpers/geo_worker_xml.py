@@ -76,7 +76,7 @@ def get_configuration_file():
         )
 
     # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
 
     # Open file to load configuration
     with open(cwd + __config_path) as __file_data:
@@ -173,9 +173,12 @@ def print_error_not_found():
     }
 
 
-def print_error_steps_not_found():
+def print_error_node_not_found(tag):
     """ This function returns a message when there is
-        no steps on XML GeoKettle file.
+        no nodes on XML GeoKettle file.
+
+    Args:
+        tag (string): kind of node
 
     Returns:
         dict: Information structure with error
@@ -185,7 +188,7 @@ def print_error_steps_not_found():
     return {
         'error': [
             'There was an error at checking file path. Please, '
-            'review it because no steps were found.'
+            'review it because no ' + tag + ' were found.'
         ],
         'warn': [],
         'info': []
@@ -387,6 +390,60 @@ class WorkerXML(object):
                         __valid_steps.add(__type)
 
         return __no_steps, list(__valid_steps)
+
+    def check_entries(self, xml_tree):
+        """ This function allows to check if the
+            included entries on the XML file are or
+            not allowed.
+
+        Args:
+            xml_tree (ElementTree): tree to review
+
+        Returns:
+            tuple: non and valid entries
+
+        """
+
+        # Structure to save non valid entries
+        __no_entries = []
+        __valid_entries = set()
+
+        # Get allowed types for XML files
+        __allowed_types = self.config['xml']['entries']
+
+        # Get entries from XML file
+        __entries = xml_tree.findall('entry')
+
+        # Check if any step exist
+        if __entries is None:
+            return __no_entries, __valid_entries
+
+        # Iterate over entries
+        for __entry in __entries:
+
+            # Get type if it exists
+            __type_node = __entry.find('type')
+
+            # Get value of node
+            if __type_node is not None:
+
+                # Value of node
+                __type = __type_node.text
+
+                # Check if there is config
+                # All allowed
+                if not len(__allowed_types):
+                    __valid_entries.add(__type)
+
+                else:
+
+                    # Check type is good
+                    if __type not in __allowed_types:
+                        __no_entries.append(__type)
+                    else:
+                        __valid_entries.add(__type)
+
+        return __no_entries, list(__valid_entries)
 
     def check_paths(self, path, xml_tree, node_name):
         """ This function allows to check if the
@@ -603,13 +660,14 @@ class WorkerXML(object):
 
         return __info
 
-    def check_transform(self, path):
+    def check_transform(self, path, checks=True):
         """ This function allows to check all
             the possible issues on the
             transformation XML file.
 
         Args:
             path (string): file's path
+            checks (bool): checking flag
 
         Returns:
             dict: information about the outputs.
@@ -619,6 +677,14 @@ class WorkerXML(object):
         # Check if path is a correct file and exists
         if not os.path.exists(path) or not os.path.isfile(path):
             return print_error_not_found()
+
+        # Detect flag of checking errors
+        if not checks:
+            return {
+                'info_s': ['All the step executions were allowed.'],
+                'info_f': ['All access to folders were allowed.'],
+                'warn': [], 'error': []
+            }
 
         # Check vulnerabilities
         __xml_tree = self.check_issues(path)
@@ -631,7 +697,7 @@ class WorkerXML(object):
             return print_error_not_allowed(__no_steps, 'step')
 
         if not len(__valid_steps):
-            return print_error_steps_not_found()
+            return print_error_node_not_found('steps')
 
         # Check if there is any folder and they are valid
         __no_steps, __no_folders, __valid_folders = \
@@ -661,7 +727,7 @@ class WorkerXML(object):
             ]
         }
 
-    def check_job(self, path):
+    def check_job(self, path, checks=True):
 
         """ This function allows to check all
             the possible issues on the
@@ -669,6 +735,7 @@ class WorkerXML(object):
 
         Args:
             path (string): file's path
+            checks (bool): checking flag
 
         Returns:
             dict: information about the outputs.
@@ -684,14 +751,31 @@ class WorkerXML(object):
         if __xml_tree is None:
             return print_error_vulnerabilities()
 
-        # Go to entries node
-        __xml_root_tree = __xml_tree.find('entries')
-        if __xml_root_tree is None:
+        # Detect flag of checking errors
+        if not checks:
+            return {
+                'info_e': ['All the entries were allowed.'],
+                'info_s': ['All the step executions were allowed.'],
+                'info_f': ['All access to folders were allowed.'],
+                'warn': [], 'error': []
+            }
+
+        # Check if there is any folder and they are valid
+        __xml_tree = __xml_tree.find('entries')
+        if __xml_tree is None:
             return print_error_vulnerabilities()
+
+        # Check if entries are valid
+        __no_entries, __valid_entries = self.check_entries(__xml_tree)
+        if len(__no_entries):
+            return print_error_not_allowed(__no_entries, 'entry')
+
+        if not len(__valid_entries):
+            return print_error_node_not_found('entries')
 
         # Check if there is any folder and they are valid
         __no_entries, __no_folders, __valid_folders = \
-            self.check_paths(path, __xml_root_tree, 'entry')
+            self.check_paths(path, __xml_tree, 'entry')
 
         if len(__no_entries):
             return print_error_not_allowed(__no_entries, 'entry')
@@ -701,6 +785,10 @@ class WorkerXML(object):
 
         # Create return structure
         __return = {
+            'info_e': [
+                'The ' + __entry + ' entry was allowed.'
+                for __entry in __valid_entries
+            ],
             'info_s': set(), 'info_f': set(),
             'warn': [], 'error': []
         }
@@ -722,5 +810,8 @@ class WorkerXML(object):
             __return['info_f'] = __return['info_f'].union(
                 set(__transform_info['info_f'])
             )
+
+        __return['info_s'] = list(__return['info_s'])
+        __return['info_f'] = list(__return['info_f'])
 
         return __return
