@@ -24,8 +24,10 @@ import os
 import sys
 import json
 import defusedxml.ElementTree
-reload(sys)
-sys.setdefaultencoding('utf8')
+
+if sys.version_info < (3, 0):
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 
 __author__ = "Alejandro F. Carrera"

@@ -1,0 +1,4 @@
+celery
+hiredis
+redis
+defusedxml

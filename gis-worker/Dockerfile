@@ -9,7 +9,7 @@ MAINTAINER Alejandro F. Carrera
 USER root
 
 # Set environment to download GDAL
-ENV GDAL_VERSION=2.2.1 \
+ENV GDAL_VERSION=2.2.2 \
     GDAL_URL=http://download.osgeo.org/gdal \
     LIBKML_URL=https://github.com/google/libkml/trunk
 
@@ -77,14 +77,22 @@ RUN cd /opt && \
 # Create directory for worker
 ENV HOME /opt/worker
 WORKDIR /opt/worker
-COPY . /opt/worker
+COPY requirements.txt requirements.txt
 
-# Install worker and fix permissions
-RUN python setup.py install && \
-    chown -R geo:geo /opt
+# Install dependencies
+RUN pip install -r requirements.txt
+
+# Copy files of project
+COPY . $HOME
+
+# Create links and fix permissions
+RUN chown -R geo:geo /opt
 
 # Use non-root user
 USER geo
+
+# Expose geo-resources volumes
+VOLUME ["/opt/resources"]
 
 # Run celery when docker run
 ENTRYPOINT ["celery", "worker", "-A", "gis_worker.app", "-l", "info", "-Ofair"]

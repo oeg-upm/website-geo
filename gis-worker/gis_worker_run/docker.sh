@@ -16,13 +16,6 @@ export PYTHONWARNINGS="ignore"
 # Remove all python temp files
 rm -rf *.egg-info
 
-# Get Debug flag
-if [[ -z "${OEG_DEBUG_FLAG}" ]]; then
-    BDV="1"
-else
-    BDV="${OEG_DEBUG_FLAG}"
-fi
-
 # Get Geo Resources folder path
 if [[ -z "${OEG_RESOURCES_FOLDER}" ]]; then
     ORFD="/opt/geo-resources"
@@ -72,7 +65,7 @@ fi
 docker run -d --name geolinkeddata.worker \
     --restart=always \
     -v $ORFD:/opt/resources \
-    -e OEG_DEBUG_MODE=$BDV \
+    -e OEG_DEBUG_MODE=0 \
     --link geolinkeddata.redis:redishost \
     --link geolinkeddata.rabbitmq:rabbithost \
     oegupm/geolinkeddata-worker

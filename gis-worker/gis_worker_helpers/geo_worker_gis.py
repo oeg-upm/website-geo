@@ -24,8 +24,10 @@ import os
 import sys
 from os.path import splitext
 from subprocess import Popen, PIPE
-reload(sys)
-sys.setdefaultencoding('utf8')
+
+if sys.version_info < (3, 0):
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
