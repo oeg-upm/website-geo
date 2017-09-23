@@ -185,7 +185,7 @@ def print_to_logger(messages, logger=None):
 
             # Print jump depending on logger
             if logger is None:
-                print ''
+                print('')
             else:
                 __logger_msg[__k] += '\n'
 
@@ -194,13 +194,13 @@ def print_to_logger(messages, logger=None):
 
                 # Print / save messages depending on logger
                 if logger is None:
-                    print ' * [' + __prefix_kind[__k] + '] ' + __m
+                    print(' * [' + __prefix_kind[__k] + '] ' + __m)
                 else:
                     __logger_msg[__k] += __prefix + __m
 
     # Print jump / messages depending on logger
     if logger is None:
-        print ''
+        print('')
     else:
 
         # Iterate kind of messages

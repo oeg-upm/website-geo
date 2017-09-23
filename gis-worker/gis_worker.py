@@ -155,8 +155,8 @@ class Worker(object):
                 routing_key='geo.mapping.extended'
             ),
             Queue(
-                'default', default_exchange,
-                routing_key='default'
+                'geo-default', default_exchange,
+                routing_key='geo.default'
             )
         )
 
