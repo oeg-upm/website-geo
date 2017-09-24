@@ -310,7 +310,7 @@ def print_worker_errors(messages, logger=None):
 ##########################################################################
 
 
-def transform_with_path(path, ext_dst, logger=None, ext_logger=True):
+def transform_with_path(path, ext_dst, logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
@@ -318,7 +318,6 @@ def transform_with_path(path, ext_dst, logger=None, ext_logger=True):
         path (string): file's path
         ext_dst (string): extension of transformation
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -328,22 +327,23 @@ def transform_with_path(path, ext_dst, logger=None, ext_logger=True):
     # Transform resource and return result
     __t_info = get_gdal_instance().transform(path, ext_dst)
 
-    # Add messages to result
-    if len(__t_info['error']) and ext_logger:
-        __t_info['error'] = [
-            '* ------------ Errors -------------\n'
-        ] + __t_info['error']
-    if len(__t_info['warn']) and ext_logger:
-        __t_info['warn'] = [
-            '* ----------- Warnings ------------\n'
-        ] + __t_info['warn']
-    if len(__t_info['info']) and ext_logger:
-        __t_info['info'] = [
-           '* ---- Fields of the Shapefile ----\n'
-        ] + __t_info['info']
+    # Detect if external logger was activated
+    if logger is None:
+        if len(__t_info['error']):
+            __t_info['error'] = [
+                '* ------------ Errors -------------\n'
+            ] + __t_info['error']
+        if len(__t_info['warn']):
+            __t_info['warn'] = [
+                '* ----------- Warnings ------------\n'
+            ] + __t_info['warn']
+        if len(__t_info['info']):
+            __t_info['info'] = [
+               '* ---- Fields of the Shapefile ----\n'
+            ] + __t_info['info']
 
-    # Log messages from result
-    print_to_logger(__t_info, logger)
+        # Log messages to stdout
+        print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
@@ -352,7 +352,7 @@ def transform_with_path(path, ext_dst, logger=None, ext_logger=True):
     }
 
 
-def transform_with_id(identifier, ext_dst, logger, ext_logger):
+def transform_with_id(identifier, ext_dst, logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
@@ -360,7 +360,6 @@ def transform_with_id(identifier, ext_dst, logger, ext_logger):
         identifier (string): task internal id
         ext_dst (string): extension of transformation
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -386,34 +385,24 @@ def transform_with_id(identifier, ext_dst, logger, ext_logger):
         __lib[0].exit()
 
         # Transform resource and get result
-        return transform_with_path(__path, ext_dst, logger, ext_logger)
+        return transform_with_path(__path, ext_dst, logger)
 
     else:
 
         # Close redis
         __lib[0].exit()
 
-        # Create messages structure from zero
-        __t_info = print_not_found_message()
-
-        # Log messages from result
-        print_to_logger(__t_info, logger)
-
-        # Return status code and messages
-        return {
-            'status': 1 if len(__t_info['error']) else 0,
-            'messages': __t_info
-        }
+        # Return not found message
+        return {'status': 1, 'messages': print_not_found_message()}
 
 
-def info_with_path(path, logger=None, ext_logger=True):
+def info_with_path(path, logger):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -423,22 +412,23 @@ def info_with_path(path, logger=None, ext_logger=True):
     # Get information resource and return result
     __t_info = get_gdal_instance().get_info(path)
 
-    # Add messages to result
-    if len(__t_info['error']) and ext_logger:
-        __t_info['error'] = [
-            '* ------------ Errors -------------\n'
-        ] + __t_info['error']
-    if len(__t_info['warn']) and ext_logger:
-        __t_info['warn'] = [
-            '* ----------- Warnings ------------\n'
-        ] + __t_info['warn']
-    if len(__t_info['info']) and ext_logger:
-        __t_info['info'] = [
-            '* --------- Information -----------\n'
-        ] + __t_info['info']
+    # Detect if external logger was activated
+    if logger is None:
+        if len(__t_info['error']):
+            __t_info['error'] = [
+                '* ------------ Errors -------------\n'
+            ] + __t_info['error']
+        if len(__t_info['warn']):
+            __t_info['warn'] = [
+                '* ----------- Warnings ------------\n'
+            ] + __t_info['warn']
+        if len(__t_info['info']):
+            __t_info['info'] = [
+                '* --------- Information -----------\n'
+            ] + __t_info['info']
 
-    # Log messages from result
-    print_to_logger(__t_info, logger)
+        # Log messages to stdout
+        print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
@@ -447,14 +437,13 @@ def info_with_path(path, logger=None, ext_logger=True):
     }
 
 
-def info_with_id(identifier, logger, ext_logger):
+def info_with_id(identifier, logger):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
     Args:
         identifier (string): task internal id
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -480,27 +469,18 @@ def info_with_id(identifier, logger, ext_logger):
         __lib[0].exit()
 
         # Transform resource and get result
-        return info_with_path(__path, logger, ext_logger)
+        return info_with_path(__path, logger)
 
     else:
 
         # Close redis
         __lib[0].exit()
 
-        # Create messages structure from zero
-        __t_info = print_not_found_message()
-
-        # Log messages from result
-        print_to_logger(__t_info, logger)
-
-        # Return status code and messages
-        return {
-            'status': 1 if len(__t_info['error']) else 0,
-            'messages': __t_info
-        }
+        # Return not found message
+        return {'status': 1, 'messages': print_not_found_message()}
 
 
-def fields_with_path(path, logger=None, ext_logger=True):
+def fields_with_path(path, logger):
     """ This function gets information from metadata
         fields about gis or geometries file through
         GDAL libraries.
@@ -508,7 +488,6 @@ def fields_with_path(path, logger=None, ext_logger=True):
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -518,22 +497,23 @@ def fields_with_path(path, logger=None, ext_logger=True):
     # Get information resource and return result
     __t_info = get_gdal_instance().get_fields(path, True)
 
-    # Add messages to result
-    if len(__t_info['error']) and ext_logger:
-        __t_info['error'] = [
-            '* ------------ Errors -------------\n'
-        ] + __t_info['error']
-    if len(__t_info['warn']) and ext_logger:
-        __t_info['warn'] = [
-            '* ----------- Warnings ------------\n'
-        ] + __t_info['warn']
-    if len(__t_info['info']) and ext_logger:
-        __t_info['info'] = [
-            '* ------------ Fields -------------\n'
-        ] + __t_info['info']
+    # Detect if external logger was activated
+    if logger is None:
+        if len(__t_info['error']):
+            __t_info['error'] = [
+                '* ------------ Errors -------------\n'
+            ] + __t_info['error']
+        if len(__t_info['warn']):
+            __t_info['warn'] = [
+                '* ----------- Warnings ------------\n'
+            ] + __t_info['warn']
+        if len(__t_info['info']):
+            __t_info['info'] = [
+                '* ------------ Fields -------------\n'
+            ] + __t_info['info']
 
-    # Log messages from result
-    print_to_logger(__t_info, logger)
+        # Log messages to stdout
+        print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
@@ -542,7 +522,7 @@ def fields_with_path(path, logger=None, ext_logger=True):
     }
 
 
-def fields_with_id(identifier, logger, ext_logger):
+def fields_with_id(identifier, logger):
     """ This function gets information from task identifier.
         It gets information from metadata fields about gis
         or geometries file through GDAL libraries.
@@ -550,7 +530,6 @@ def fields_with_id(identifier, logger, ext_logger):
     Args:
         identifier (string): task internal id
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -576,24 +555,15 @@ def fields_with_id(identifier, logger, ext_logger):
         __lib[0].exit()
 
         # Transform resource and get result
-        return fields_with_path(__path, logger, ext_logger)
+        return fields_with_path(__path, logger)
 
     else:
 
         # Close redis
         __lib[0].exit()
 
-        # Create messages structure from zero
-        __t_info = print_not_found_message()
-
-        # Log messages from result
-        print_to_logger(__t_info, logger)
-
-        # Return status code and messages
-        return {
-            'status': 1 if len(__t_info['error']) else 0,
-            'messages': __t_info
-        }
+        # Return not found message
+        return {'status': 1, 'messages': print_not_found_message()}
 
 
 def delete_with_id(identifier, extension):
@@ -639,7 +609,7 @@ def delete_with_id(identifier, extension):
                     os.remove(__f)
 
 
-def execute_geo_job_with_path(path, logger=None, ext_logger=True, checks=True):
+def execute_geo_job_with_path(path, logger, checks):
     """ This function gets information from GeoKettle XML file
         job, executes it and throws any possible issue
         or good information from its execution.
@@ -647,7 +617,6 @@ def execute_geo_job_with_path(path, logger=None, ext_logger=True, checks=True):
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
         checks (bool): checking flag
 
     Return:
@@ -660,12 +629,9 @@ def execute_geo_job_with_path(path, logger=None, ext_logger=True, checks=True):
         if len(path.split('.')) > 2 \
         else splitext(path)[1]
 
-    # Check if extension is valid
-    if __ext_src != '.kjb':
-        return print_error_extension()
-
     # Get information about XML file
-    __t_info = WorkerXML().check_job(path, checks)
+    __t_info = WorkerXML().check_job(path, checks) \
+        if __ext_src == '.kjb' else print_error_extension()
 
     # Check if there is any error
     if not len(__t_info['error']):
@@ -700,18 +666,19 @@ def execute_geo_job_with_path(path, logger=None, ext_logger=True, checks=True):
                 ] + __tj_info['info']
             __t_info['warn'] += __tj_info['warn']
 
-    # Add messages to result
-    if len(__t_info['error']) and ext_logger:
-        __t_info['error'] = [
-            '* ------------ Errors -------------\n'
-        ] + __t_info['error']
-    if len(__t_info['warn']) and ext_logger:
-        __t_info['warn'] = [
-            '* ----------- Warnings ------------\n'
-        ] + __t_info['warn']
+    # Detect if external logger was activated
+    if logger is None:
+        if len(__t_info['error']):
+            __t_info['error'] = [
+                '* ------------ Errors -------------\n'
+            ] + __t_info['error']
+        if len(__t_info['warn']):
+            __t_info['warn'] = [
+                '* ----------- Warnings ------------\n'
+            ] + __t_info['warn']
 
-    # Log messages from result
-    print_to_logger(__t_info, logger)
+        # Log messages to stdout
+        print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
@@ -720,7 +687,7 @@ def execute_geo_job_with_path(path, logger=None, ext_logger=True, checks=True):
     }
 
 
-def execute_geo_job_with_id(identifier, logger, ext_logger):
+def execute_geo_job_with_id(identifier, logger):
     """ This function gets information from task identifier.
         It executes the possible GeoKettle XML job linked to
         this specific task and throws any possible issue
@@ -729,7 +696,6 @@ def execute_geo_job_with_id(identifier, logger, ext_logger):
     Args:
         identifier (string): task internal id
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -756,7 +722,7 @@ def execute_geo_job_with_id(identifier, logger, ext_logger):
 
         # Transform resource and get result
         return execute_geo_transform_with_path(
-            __path, logger, ext_logger, False
+            __path, logger, False
         )
 
     else:
@@ -764,20 +730,11 @@ def execute_geo_job_with_id(identifier, logger, ext_logger):
         # Close redis
         __lib[0].exit()
 
-        # Create messages structure from zero
-        __t_info = print_not_found_message()
-
-        # Log messages from result
-        print_to_logger(__t_info, logger)
-
-        # Return status code and messages
-        return {
-            'status': 1 if len(__t_info['error']) else 0,
-            'messages': __t_info
-        }
+        # Return not found message
+        return {'status': 1, 'messages': print_not_found_message()}
 
 
-def execute_geo_transform_with_path(path, logger=None, ext_logger=True, checks=True):
+def execute_geo_transform_with_path(path, logger, checks):
     """ This function gets information from GeoKettle XML file
         transformation, executes it and throws any possible issue
         or good information from its execution.
@@ -785,7 +742,6 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True, checks=T
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
         checks (bool): checking flag
 
     Return:
@@ -798,12 +754,9 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True, checks=T
         if len(path.split('.')) > 2 \
         else splitext(path)[1]
 
-    # Check if extension is valid
-    if __ext_src != '.ktr':
-        return print_error_extension()
-
     # Get information about XML file
-    __t_info = WorkerXML().check_transform(path, checks)
+    __t_info = WorkerXML().check_transform(path, checks) \
+        if __ext_src == '.ktr' else print_error_extension()
 
     # Check if there is any error
     if not len(__t_info['error']):
@@ -833,18 +786,19 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True, checks=T
             ] + __tj_info['info']
             __t_info['warn'] += __tj_info['warn']
 
-    # Add messages to result
-    if len(__t_info['error']) and ext_logger:
-        __t_info['error'] = [
-            '* ------------ Errors -------------\n'
-        ] + __t_info['error']
-    if len(__t_info['warn']) and ext_logger:
-        __t_info['warn'] = [
-            '* ----------- Warnings ------------\n'
-        ] + __t_info['warn']
+    # Detect if external logger was activated
+    if logger is None:
+        if len(__t_info['error']):
+            __t_info['error'] = [
+                '* ------------ Errors -------------\n'
+            ] + __t_info['error']
+        if len(__t_info['warn']):
+            __t_info['warn'] = [
+                '* ----------- Warnings ------------\n'
+            ] + __t_info['warn']
 
-    # Log messages from result
-    print_to_logger(__t_info, logger)
+        # Log messages to stdout
+        print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
@@ -853,7 +807,7 @@ def execute_geo_transform_with_path(path, logger=None, ext_logger=True, checks=T
     }
 
 
-def execute_geo_transform_with_id(identifier, logger, ext_logger):
+def execute_geo_transform_with_id(identifier, logger):
     """ This function gets information from task identifier.
         It executes the possible GeoKettle XML transformation
         linked to this specific task and throws any possible
@@ -862,7 +816,6 @@ def execute_geo_transform_with_id(identifier, logger, ext_logger):
     Args:
         identifier (string): task internal id
         logger (Logger): logger class to write messages
-        ext_logger (bool): flag for CLI logger
 
     Return:
         dict: information about the outputs and status code
@@ -889,7 +842,7 @@ def execute_geo_transform_with_id(identifier, logger, ext_logger):
 
         # Transform resource and get result
         return execute_geo_transform_with_path(
-            __path, logger, ext_logger, False
+            __path, logger, False
         )
 
     else:
@@ -897,17 +850,8 @@ def execute_geo_transform_with_id(identifier, logger, ext_logger):
         # Close redis
         __lib[0].exit()
 
-        # Create messages structure from zero
-        __t_info = print_not_found_message()
-
-        # Log messages from result
-        print_to_logger(__t_info, logger)
-
-        # Return status code and messages
-        return {
-            'status': 1 if len(__t_info['error']) else 0,
-            'messages': __t_info
-        }
+        # Return not found message
+        return {'status': 1, 'messages': print_not_found_message()}
 
 
 ##########################################################################
@@ -934,7 +878,7 @@ def create_initial_mapping(identifier, redis, logger):
 
         # Transform to Shapefile
         __o_info = transform_with_id(
-            identifier, '.shp', logger, False
+            identifier, '.shp', logger
         )
 
         # Flags for errors
@@ -1000,6 +944,10 @@ def create_initial_mapping(identifier, redis, logger):
 
 @task(bind=True, name='gis_worker_tasks.initial_mapping', max_retries=5)
 def initial_mapping(self):
+    """ This function allows create an initial mapping
+        from a specific task from AMQP messages.
+
+    """
 
     # Create logger to log messages to specific log file
     __logger = get_task_logger(__name__)
@@ -1020,6 +968,8 @@ def initial_mapping(self):
 
     except Exception as e:
 
+        __logger.info(e)
+
         # Print error message
         print_to_logger({
             'error': [
@@ -1039,6 +989,11 @@ def initial_mapping(self):
 
 @task(bind=True, name='gis_worker_tasks.update_mapping', max_retries=5)
 def update_mapping(self):
+    """ This function allows to update an initial mapping
+        that was saved previously on Worker Database from
+        a specific task from AMQP messages.
+
+    """
 
     # Create logger to log messages to specific log file
     __logger = get_task_logger(__name__)
@@ -1086,6 +1041,10 @@ def extended_mapping(self):
 
 @task(bind=True, name='gis_worker_tasks.default', max_retries=5)
 def default(self):
+    """ This function allows to receive the messages from
+        the default queue from AMQP messages.
+
+    """
     
     # Create logger to log messages to specific log file
     logger = get_task_logger(__name__)

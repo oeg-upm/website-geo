@@ -257,35 +257,35 @@ def main_script():
     if __args.transform is not None:
 
         sys.exit(gis_worker_tasks.transform_with_path(
-            __args.transform[0], '.shp'
+            __args.transform[0], '.shp', None
         )['status'])
 
     # Option: info + id
     elif __args.info is not None:
 
         sys.exit(gis_worker_tasks.info_with_path(
-            __args.info[0]
+            __args.info[0], None
         )['status'])
 
     # Option: fields + id
     elif __args.fields is not None:
 
         sys.exit(gis_worker_tasks.fields_with_path(
-            __args.fields[0]
+            __args.fields[0], None
         )['status'])
 
     # Option: job + file
     elif __args.geo_job is not None:
 
         sys.exit(gis_worker_tasks.execute_geo_job_with_path(
-            __args.geo_job[0]
+            __args.geo_job[0], None, True
         )['status'])
 
     # Option: transform + file
     else:
 
         sys.exit(gis_worker_tasks.execute_geo_transform_with_path(
-            __args.geo_transform[0]
+            __args.geo_transform[0], None, True
         )['status'])
 
 if __name__ == "__main__":
