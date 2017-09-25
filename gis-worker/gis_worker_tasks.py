@@ -130,7 +130,7 @@ def get_gdal_instance():
             'GIS tools are not available at PATH.\n * Please, '
             'check your Geokettle configuration\n * and be sure '
             'that GDAL libraries are\n * installed correctly and '
-            'the version is\n * greater than 2.1.0'
+            'the version is\n * greater than 2.2.0'
         )
 
     return __gdal_lib

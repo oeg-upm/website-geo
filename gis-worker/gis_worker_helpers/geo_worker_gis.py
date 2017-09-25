@@ -60,12 +60,15 @@ def check_geokettle_path():
     # Iterate over folders
     for path_dir in path_dirs:
 
-        # Get all nodes from directory
-        path_files = os.listdir(path_dir)
+        # Check if folder exists
+        if os.path.isdir(path_dir):
 
-        # Return if kitchen and pan exists at the same folder
-        if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
-            return True
+            # Get all nodes from directory
+            path_files = os.listdir(path_dir)
+
+            # Return if kitchen and pan exists at the same folder
+            if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
+                return True
 
     # executables were not found
     return False
@@ -91,16 +94,19 @@ def check_gdal_path():
     # Iterate over folders
     for path_dir in path_dirs:
 
-        # Get all nodes from directory
-        path_files = os.listdir(path_dir)
+        # Check if folder exists
+        if os.path.isdir(path_dir):
 
-        # Return if kitchen and pan exists at the same folder
-        if 'ogr2ogr' in path_files and 'ogrinfo' in path_files:
+            # Get all nodes from directory
+            path_files = os.listdir(path_dir)
 
-            # Check GDAL 2.1.0 version
-            from osgeo import gdal
-            version_num = int(gdal.VersionInfo('VERSION_NUM'))
-            return version_num > 2000000
+            # Return if kitchen and pan exists at the same folder
+            if 'ogr2ogr' in path_files and 'ogrinfo' in path_files:
+
+                # Check GDAL 2.2.0 version
+                from osgeo import gdal
+                version_num = int(gdal.VersionInfo('VERSION_NUM'))
+                return version_num > 2020000
 
     # executables were not found
     return False
@@ -475,8 +481,8 @@ def generate_areas(path):
 
     # Add field to layer
     __file_field = ogr.FieldDefn('area', ogr.OFTReal)
-    __file_layer.SetWidth(32)
-    __file_layer.SetPrecision(2)
+    __file_field.SetWidth(32)
+    __file_field.SetPrecision(2)
     __file_layer.CreateField(__file_field)
 
     # Iterate over features of the layer

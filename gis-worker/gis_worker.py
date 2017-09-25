@@ -282,11 +282,15 @@ def main_script():
         )['status'])
 
     # Option: transform + file
-    else:
+    elif __args.geo_transform is not None:
 
         sys.exit(gis_worker_tasks.execute_geo_transform_with_path(
             __args.geo_transform[0], None, True
         )['status'])
+
+    else:
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main_script()
