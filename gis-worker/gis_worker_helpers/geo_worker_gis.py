@@ -20,8 +20,10 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
+import re
 import os
 import sys
+import unicodedata
 from os.path import splitext
 from subprocess import Popen, PIPE
 
@@ -66,6 +68,25 @@ def parse_path(path):
         'extension': __path_ext,
         'folder': __path_dir
     }
+
+
+def remove_bad_characters(value):
+    """ This function allows you to remove
+        latin characters and spaces or from any string.
+
+    Args:
+        value (string): value to be parsed
+
+    Returns:
+        string: parsed value
+
+    """
+
+    uni_value = value.decode("utf-8")
+    form = unicodedata.normalize('NFKD', uni_value)
+    return re.sub(r'[^a-zA-Z0-9]', '', u"".join(
+        [c for c in form if not unicodedata.combining(c)]
+    )).lower()
 
 
 def check_geokettle_path():
@@ -413,7 +434,8 @@ def validate_ogr_fields(path, fields):
 
             # Create copy of field and change name
             __file_field = __file_layer_def.GetFieldDefn(__index)
-            __file_field.SetName(__field.lower())
+            __file_name = remove_bad_characters(__field)
+            __file_field.SetName(__file_name)
 
             # Replace field on the layer
             __file_layer.AlterFieldDefn(
