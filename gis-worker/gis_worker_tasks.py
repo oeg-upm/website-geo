@@ -199,9 +199,7 @@ def print_to_logger(messages, logger=None):
                     __logger_msg[__k] += __prefix + __m
 
     # Print jump / messages depending on logger
-    if logger is None:
-        print('')
-    else:
+    if logger is not None:
 
         # Iterate kind of messages
         for __k in __prefix_order:

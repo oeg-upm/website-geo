@@ -40,6 +40,34 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
+def parse_path(path):
+    """ This function allows you to parse a path.
+
+    Args:
+        path (string): file's path
+
+    Returns:
+        dict: Information about the path.
+
+    """
+
+    # Get folder from path
+    __path_dir = os.path.dirname(path) + os.sep
+
+    # Get extension of the file
+    __path_ext = splitext(path)[1]
+
+    # Get file name
+    __path_name = path.replace(__path_dir, '')
+    __path_name = __path_name.replace(__path_ext, '')
+
+    return {
+        'name': __path_name,
+        'extension': __path_ext,
+        'folder': __path_dir
+    }
+
+
 def check_geokettle_path():
     """ This function detects if Geokettle executables are included
         on the current environment (PATH variable). This is important
@@ -70,7 +98,7 @@ def check_geokettle_path():
             if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
                 return True
 
-    # executables were not found
+    # Executables were not found
     return False
 
 
@@ -108,7 +136,7 @@ def check_gdal_path():
                 version_num = int(gdal.VersionInfo('VERSION_NUM'))
                 return version_num > 2020000
 
-    # executables were not found
+    # Executables were not found
     return False
 
 
@@ -220,6 +248,8 @@ def get_ogr_driver(extension):
         return 'ESRI Shapefile'
     elif extension == '.kml':
         return 'LIBKML'
+    elif extension == '.geojson':
+        return 'GeoJSON'
     else:
         return ''
 
@@ -252,6 +282,9 @@ def get_ogr_file_extensions(extension):
         # KML -> kml
         ['.kml'],
 
+        # GeoJSON -> geojson
+        ['.geojson']
+
     ]
 
     # Find extensions group
@@ -275,13 +308,11 @@ def get_projection(path):
 
     """
 
-    # Get extension from path
-    __ext_src = '.'.join(path.split('.')[-2:]) \
-        if len(path.split('.')) > 2 \
-        else splitext(path)[1]
+    # Get information from path
+    __path = parse_path(path)
 
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(__ext_src)
+    __driver = get_ogr_driver(__path['extension'])
 
     # Get layer from OGR Tools to check if
     # there is any field is null or empty, so
@@ -323,16 +354,14 @@ def validate_ogr_fields(path, fields):
 
     """
 
-    # Get extension from path
-    __ext_src = '.'.join(path.split('.')[-2:]) \
-        if len(path.split('.')) > 2 \
-        else splitext(path)[1]
+    # Get information from path
+    __path = parse_path(path)
 
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(__ext_src)
+    __driver = get_ogr_driver(__path['extension'])
 
-    # Create data structure for empty properties
-    __fields_null = {}
+    # Create data structure for checking fields
+    __fields_flags = {}
 
     # Get layer from OGR Tools to check if
     # there is any field is null or empty, so
@@ -349,30 +378,31 @@ def validate_ogr_fields(path, fields):
     while __file_feat is not None:
 
         # Iterate over fields of the Shapefile
-        for __f_index in range(len(fields)):
+        for __index in range(len(fields)):
 
             # Check if field is True (has value)
-            if fields[__f_index] in __fields_null:
-                if __fields_null[fields[__f_index]]:
+            if fields[__index] in __fields_flags:
+                if __fields_flags[fields[__index]]:
                     continue
 
             # Get if the feature has value
-            __fields_null[fields[__f_index]] = \
-                __file_feat.IsFieldSetAndNotNull(fields[__f_index])
+            __fields_flags[fields[__index]] = \
+                __file_feat.IsFieldSetAndNotNull(fields[__index])
 
-        # Next feature
+        # Go to Next feature
         __file_feat = __file_layer.GetNextFeature()
 
+    # Set structures for removing fields
     __f_pad = 0
     __rem_fields = []
     for __field in fields:
 
         # Index of the field
-        __file_field_i = fields.index(__field) - __f_pad
+        __index = fields.index(__field) - __f_pad
 
         # Remove empty fields from Shapefile
-        if not __fields_null[__field]: 
-            __file_layer.DeleteField(__file_field_i)
+        if not __fields_flags[__field]:
+            __file_layer.DeleteField(__index)
             __f_pad += 1
 
             # Save removed field
@@ -382,14 +412,12 @@ def validate_ogr_fields(path, fields):
         else:
 
             # Create copy of field and change name
-            __file_field = __file_layer_def.GetFieldDefn(
-                __file_field_i
-            )
+            __file_field = __file_layer_def.GetFieldDefn(__index)
             __file_field.SetName(__field.lower())
 
             # Replace field on the layer
             __file_layer.AlterFieldDefn(
-                __file_field_i, __file_field, ogr.ALTER_NAME_FLAG
+                __index, __file_field, ogr.ALTER_NAME_FLAG
             )
 
     # Close file
@@ -408,13 +436,11 @@ def generate_centroids(path):
 
     """
 
-    # Get extension from path
-    __ext_src = '.'.join(path.split('.')[-2:]) \
-        if len(path.split('.')) > 2 \
-        else splitext(path)[1]
+    # Get information from path
+    __path = parse_path(path)
 
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(__ext_src)
+    __driver = get_ogr_driver(__path['extension'])
 
     # Get layer from OGR Tools to check if
     # there is any field is null or empty, so
@@ -462,13 +488,11 @@ def generate_areas(path):
 
     """
 
-    # Get extension from path
-    __ext_src = '.'.join(path.split('.')[-2:]) \
-        if len(path.split('.')) > 2 \
-        else splitext(path)[1]
+    # Get information from path
+    __path = parse_path(path)
 
     # Get kind of file depending on final extension
-    __driver = get_ogr_driver(__ext_src)
+    __driver = get_ogr_driver(__path['extension'])
 
     # Get layer from OGR Tools to check if
     # there is any field is null or empty, so
@@ -506,6 +530,50 @@ def generate_areas(path):
 
     # Close file
     __file_src = None
+
+
+def generate_vrt(path, paths, files, deleted):
+    """ This function generates the VRT file
+        to create a good conversion for GeoJSON
+        geo-spatial file.
+
+    Args:
+        path (dict): path's information
+        paths (list): list of file's path
+        files (list): list of files
+        deleted (list): list of index to be deleted
+
+    Returns:
+        string: path of vrt path writed to disk
+
+    """
+
+    # Start template for VRT
+    __vrt_template = '<OGRVRTDataSource>' \
+        '<OGRVRTUnionLayer name="' + path['name'] + '">'
+
+    # Iterate over files
+    for __file_i in range(0, len(paths)):
+
+        # Check if index needs to be included
+        if __file_i not in deleted:
+
+            __vrt_template += '<OGRVRTLayer name="' + \
+                files[__file_i] + '">'
+            __vrt_template += '<SrcDataSource>' + \
+                paths[__file_i] + '</SrcDataSource>'
+            __vrt_template += '</OGRVRTLayer>'
+
+    # End template for VRT
+    __vrt_template += '</OGRVRTUnionLayer>' \
+        '</OGRVRTDataSource>'
+
+    # Write VRT file to disk
+    __vrt_path = path['folder'] + path['name'] + '.vrt'
+    with open(__vrt_path, 'w') as __vrt_file:
+        __vrt_file.write(__vrt_template)
+
+    return __vrt_path
 
 
 def parse_ogr_return(outputs, errors):
@@ -741,19 +809,13 @@ class WorkerGIS(object):
         if __driver is None:
             return print_error_extension()
 
-        # Get extension from path
-        __ext_src = '.'.join(path.split('.')[-2:]) \
-            if len(path.split('.')) > 2 \
-            else splitext(path)[1]
-
-        # Set flag if source extension is shp
-        __shp_ext = '_bis' if __ext_src == extension else ''
+        # Get information from path
+        __path = parse_path(path)
+        __path_shp = __path['folder'] + 'shp' + os.sep
+        __path_trs = __path['folder'] + 'trs' + os.sep
 
         # Create arguments for transforming to Shapefile
-        __command = [
-            __driver, path.replace(__ext_src, '') +
-            __shp_ext + extension, path
-        ]
+        __command = [__driver, __path_shp, path]
 
         # Execute OGR
         __g_info = cmd_ogr2ogr(__command)
@@ -762,68 +824,127 @@ class WorkerGIS(object):
         if len(__g_info['error']):
             return __g_info
 
-        # Detect if extensions are the same
-        if __ext_src == extension:
+        # Detect warnings
+        if len(__g_info['warn']):
+            __g_info['warn'][-1] += '\n'
+            __g_info['warn'] = [
+                'GDAL transformation\n'
+            ] + __g_info['warn']
 
-            # Get folder from path
-            __path_folder = os.path.dirname(path)
+        # Get all nodes from directory
+        __path_files = os.listdir(__path_shp)
 
-            # Get list of extensions from kind of file
-            __path_ext = get_ogr_file_extensions(extension)
+        # Fill structure with Shapefiles (paths)
+        __paths_review = [
+            __path_shp + __path_rev
+            for __path_rev in __path_files if
+            splitext(__path_rev)[1] == '.shp'
+        ]
 
-            # Get all nodes from directory
-            __path_files = os.listdir(__path_folder)
+        # Fill structure with Shapefiles (filenames)
+        __paths_file_review = [
+            parse_path(__path_rev)['name']
+            for __path_rev in __paths_review
+        ]
 
-            # Get old and new file name from path
-            __path_name = path.replace(__path_folder + os.sep, '').replace(__ext_src, '')
+        # Structure for deleted Shapefiles
+        __paths_index_delete = []
 
-            # Generate files from file name + list of extensions
-            __path_list = [__path_name + __l for __l in __path_ext]
+        for __path_rev_i in range(0, len(__paths_review)):
 
-            # Get intersection between files and list of possible files
-            __path_files = set(__path_files).intersection(set(__path_list))
+            # Get path to review
+            __path_rev = __paths_review[__path_rev_i]
 
-            for __path_file in __path_files:
+            # Get information from GDAL
+            __gi_info = self.get_info(__path_rev)
 
-                # Delete old files
-                os.remove(__path_folder + os.sep + __path_file)
+            # Check if file has not features, so we
+            # will proceed to delete it
+            if int([
+                o for o in __gi_info['info'] if
+                'Feature' in o
+            ][0].split(': ')[1]) == 0:
 
-                # Rename new files
-                os.rename(
-                    __path_folder + os.sep + __path_file.replace(
-                        __path_name, __path_name + '_bis'
-                    ),
-                    __path_folder + os.sep + __path_file
-                )
+                # Add paths for deletion
+                __paths_index_delete.append(__path_rev_i)
 
-        # Set destination path
-        __path_dst = path.replace(__ext_src, '') + extension
+                # Delete all possible extensions
+                for __path_ext in get_ogr_file_extensions(extension):
 
-        # Get information from GDAL
-        __gi_info = self.get_info(__path_dst)
+                    # Get real path
+                    __path_delete = __path_rev.replace(
+                        extension, __path_ext
+                    )
 
-        # Generate centroid and Area if Geometry
-        # is kind of Polygon
-        if 'polygon' in [
-            __o for __o in __gi_info['info']
-            if 'Geometry:' in __o
-        ][0].lower():
+                    # Delete if exists
+                    if os.path.isfile(__path_delete):
+                        os.remove(__path_delete)
 
-            # Execute centroids generation
-            generate_centroids(__path_dst)
+                # Next file to review
+                continue
 
-            # Execute area generation
-            generate_areas(__path_dst)
+            # Generate centroid and Area if Geometry
+            # is kind of Polygon
+            if 'polygon' in [
+                __o for __o in __gi_info['info']
+                if 'Geometry:' in __o
+            ][0].lower():
 
-        # Join error messages
-        __g_info['error'] += __gi_info['error']
+                # Execute centroids generation
+                generate_centroids(__path_rev)
 
-        # Validate all fields and join log messages
-        __g_info['warn'] += self.validate_fields(__path_dst)
+                # Execute area generation
+                generate_areas(__path_rev)
 
-        # Get information about new and old fields
-        __g_fields = self.get_fields(__path_dst, True)
-        __g_info['info'] += __g_fields['info']
+            # Join error messages
+            if len(__gi_info['error']):
+                if __path_rev_i < len(__paths_review) - 1:
+                    __gi_info['error'][-1] += '\n'
+                __g_info['error'] += [
+                    'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
+                ]
+                __g_info['error'] += __gi_info['error']
+
+            # Validate all fields and join log messages
+            __gv_fields = self.validate_fields(__path_rev)
+            if len(__gv_fields):
+                if __path_rev_i < len(__paths_review) - 1:
+                    __gv_fields[-1] += '\n'
+                __g_info['warn'] += [
+                    'Layer - ' + __paths_file_review[__path_rev_i] +
+                    '\n'
+                ]
+                __g_info['warn'] += __gv_fields
+
+            # Get information about new and old fields
+            __g_fields = self.get_fields(__path_rev, True)
+            if len(__g_fields['info']):
+                if __path_rev_i < len(__paths_review) - 1:
+                    __g_fields['info'][-1] += '\n'
+                __g_info['info'] += [
+                    'Layer - ' + __paths_file_review[__path_rev_i] +
+                    '\n'
+                ]
+                __g_info['info'] += __g_fields['info']
+
+        # Generate VRT for GeoJSON transformation
+        __vrt_path = generate_vrt(
+            __path, __paths_review,
+            __paths_file_review,
+            __paths_index_delete
+        )
+
+        # Get driver for geojson properly
+        __driver = get_ogr_driver('.geojson')
+
+        # Check folder of transformations
+        if not os.path.exists(__path_trs) or \
+           not os.path.isdir(__path_trs):
+            os.mkdir(__path_trs)
+
+        # Execute transformation to GeoJSON
+        __geo_path = __path_trs + __path['name'] + '.geojson'
+        cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
 
         return __g_info
 
