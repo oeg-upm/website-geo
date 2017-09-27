@@ -284,37 +284,32 @@ class WorkerRedis(object):
         # Delete mapping fields on database
         self.redis['mapping-i'].delete(identifier)
 
-    def save_record_properties(self, identifier, fields):
+    def save_record_info(self, identifier, information):
         """ This function allows to save the new parameters.
 
         Args:
             identifier (string): key where save information
-            fields (list): fields' information
+            information (list): files' information
         
         """
 
-        # Create dictionary from fields
-        __fields = {
-            __f[:__f.index(':')].lower(): __f[__f.index(':') + 2:]
-            for __f in fields
-        }
+        # Remove previous messages
+        self.redis['files'].delete(
+            identifier + ':information'
+        )
 
-        # Get previous values
-        __values = self.redis['files'].hgetall(identifier)
-
-        # Join dictionaries
-        __values.update(__fields)
-
-        # Rename fields
-        if 'extent' in __values:
-            __values['bounding'] = __values['extent']
-            del __values['extent']
-        if 'feature count' in __values:
-            __values['features'] = __values['feature count']
-            del __values['feature count']
+        # Create new structure of messages
+        __messages = [
+            __message.strip(' \t\n\r')
+            for __message in information
+            if __message != '\n'
+        ]
 
         # Save new dictionary with information
-        self.redis['files'].hmset(identifier, __values)
+        self.redis['files'].rpush(
+            identifier + ':information',
+            *__messages
+        )
 
     def save_record_status(self, identifier, database, status):
         """ This function allows to save the status of the task.
@@ -326,46 +321,43 @@ class WorkerRedis(object):
         
         """
 
-        # Create new value with join of parameters
-        __value = database + ':' + str(status)
-
-        # Get current timestamp
-        __time = str(int(time.time()))
-
         # Save new status on the database
-        self.redis['status'].zadd(identifier, __value, __time)
+        self.redis['status'].zadd(
+            identifier,
+            database + ':' + str(status),
+            str(int(time.time()))
+        )
 
-    def save_record_warning(self, identifier, database, messages):
-        """ This function allows to save log messages on the database.
+    def save_record_log(self, identifier, database, kind, messages):
+        """ This function allows to save the status of the task.
 
         Args:
             identifier (string): key where save information
             database (string): identifier of db
-            messages (list): warn messages returned from task
-        
-        """
-
-        # Remove previous messages
-        self.redis[database + '-w'].delete(identifier)
-
-        # Save new messages
-        self.redis[database + '-w'].sadd(identifier, *messages)
-
-    def save_record_error(self, identifier, database, messages):
-        """ This function allows to save log messages on the database.
-        
-        Args:
-            identifier (string): key where save information
-            database (string): identifier of db
-            messages (list): error messages returned from task
+            kind (string): kind of logger
+            messages (list): info messages returned from task
 
         """
 
-        # Remove previous messages
-        self.redis[database + '-e'].delete(identifier)
+        # Set dash for new identifier
+        __kind = '-' + kind
 
-        # Save new messages
-        self.redis[database + '-e'].sadd(identifier, *messages)
+        # Remove previous messages
+        self.redis[database + '-m'].delete(
+            identifier + __kind
+        )
+
+        # Create new structure of messages
+        __messages = [
+            __message.strip(' \t\n\r')
+            for __message in messages
+            if __message != '\n'
+        ]
+
+        # Save structure
+        self.redis[database + '-m'].rpush(
+            identifier + __kind, *__messages
+        )
 
     def unlock(self, identifier, forced=False):
         """ This function allows to remove a Redis lock.

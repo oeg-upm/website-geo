@@ -161,6 +161,49 @@ def check_gdal_path():
     return False
 
 
+def check_geo_has_features(information):
+    """ This function allows you to check if the
+        information has any features
+
+    Args:
+        information (list): files' information
+
+    Returns:
+        bool: True or False
+
+    """
+
+    return int([
+        o for o in information if
+        'Feature' in o
+    ][0].split(': ')[1]) > 0
+
+
+def check_geo_has_extent(information):
+    """ This function allows you to check if the
+        information has good extent
+
+    Args:
+        information (list): files' information
+
+    Returns:
+        bool: True or False
+
+    """
+
+    # Get Extent value from information
+    __value = [
+        o for o in information if 'Extent' in o
+    ][0].split(': ')[1]
+
+    # Check if Extent is good
+    __value = __value.replace('(', '').\
+        replace(')', '').replace(' - ', ', ').split(', ')
+
+    # Return check
+    return all(float(s) != 0.0 for s in __value)
+
+
 ##########################################################################
 
 
@@ -434,7 +477,7 @@ def validate_ogr_fields(path, fields):
 
             # Create copy of field and change name
             __file_field = __file_layer_def.GetFieldDefn(__index)
-            __file_name = remove_bad_characters(__field)
+            __file_name = remove_bad_characters(__field).encode('utf-8')
             __file_field.SetName(__file_name)
 
             # Replace field on the layer
@@ -872,6 +915,9 @@ class WorkerGIS(object):
         # Structure for deleted Shapefiles
         __paths_index_delete = []
 
+        # Structure for information
+        __paths_information = []
+
         for __path_rev_i in range(0, len(__paths_review)):
 
             # Get path to review
@@ -882,10 +928,8 @@ class WorkerGIS(object):
 
             # Check if file has not features, so we
             # will proceed to delete it
-            if int([
-                o for o in __gi_info['info'] if
-                'Feature' in o
-            ][0].split(': ')[1]) == 0:
+            if not check_geo_has_features(__gi_info['info']) or \
+               not check_geo_has_extent(__gi_info['info']):
 
                 # Add paths for deletion
                 __paths_index_delete.append(__path_rev_i)
@@ -917,6 +961,13 @@ class WorkerGIS(object):
 
                 # Execute area generation
                 generate_areas(__path_rev)
+
+            # Join information
+            __gi_info['info'][-1] += '\n'
+            __paths_information += [
+                'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
+            ]
+            __paths_information += __gi_info['info']
 
             # Join error messages
             if len(__gi_info['error']):
@@ -968,7 +1019,7 @@ class WorkerGIS(object):
         __geo_path = __path_trs + __path['name'] + '.geojson'
         cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
 
-        return __g_info
+        return __g_info, __paths_information
 
     def get_info(self, path):
         """ This function allows to get information from

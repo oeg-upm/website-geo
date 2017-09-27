@@ -61,7 +61,8 @@ def get_configuration_file():
 
         # Get development configuration
         __config_path = os.environ.get(
-            'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
+            'OEG_CONFIG_DEBUG_FILE',
+            __config_base_path + '/config_debug.json'
         )
 
         # Set debug flag
@@ -71,7 +72,8 @@ def get_configuration_file():
 
         # Get production configuration
         __config_path = os.environ.get(
-            'OEG_CONFIG_FILE', __config_base_path + '/config_production.json'
+            'OEG_CONFIG_FILE',
+            __config_base_path + '/config_production.json'
         )
 
     # Load current directory of geo_worker.py
@@ -323,7 +325,7 @@ def transform_with_path(path, ext_dst, logger):
     """
 
     # Transform resource and return result
-    __t_info = get_gdal_instance().transform(path, ext_dst)
+    __t_info, __ti_info = get_gdal_instance().transform(path, ext_dst)
 
     # Detect if external logger was activated
     if logger is None:
@@ -346,7 +348,8 @@ def transform_with_path(path, ext_dst, logger):
     # Return status code and messages
     return {
         'status': 2 if len(__t_info['error']) else 0,
-        'messages': __t_info
+        'messages': __t_info,
+        'information': __ti_info
     }
 
 
@@ -888,15 +891,24 @@ def create_initial_mapping(identifier, redis, logger):
 
             # Save warn messages
             if len(__o_info['messages']['warn']):
-                redis.save_record_warning(
-                    identifier, 'mapping-i',
+                redis.save_record_log(
+                    identifier, 'mapping-i', 'warn',
                     __o_info['messages']['warn']
                 )
 
-            # Save initial mapping on database
-            redis.save_initial_mapping(
-                identifier, __o_info['messages']['info']
+            # Save info messages
+            redis.save_record_log(
+                identifier, 'mapping-i', 'info',
+                __o_info['messages']['info']
             )
+
+            # Save information from new files
+            redis.save_record_info(
+                identifier,
+                __o_info['information']
+            )
+
+            # TODO: save fields
 
             # Save status for tracking success
             redis.save_record_status(
@@ -908,8 +920,8 @@ def create_initial_mapping(identifier, redis, logger):
 
             # Save error messages
             if len(__o_info['messages']['error']):
-                redis.save_record_error(
-                    identifier, 'mapping-i',
+                redis.save_record_log(
+                    identifier, 'mapping-i', 'error',
                     __o_info['messages']['error']
                 )
 
@@ -918,8 +930,7 @@ def create_initial_mapping(identifier, redis, logger):
                 identifier, 'mapping-i', 1
             )
 
-            # Delete generated files
-            delete_with_id(identifier, '.shp')
+            # TODO: remove generated files
 
         if __flag_not_exist:
 

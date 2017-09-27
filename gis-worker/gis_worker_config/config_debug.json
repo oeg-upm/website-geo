@@ -10,11 +10,9 @@
       "status",
       "files",
       "mapping-i",
-      "mapping-i-w",
-      "mapping-i-e",
+      "mapping-i-m",
       "mapping-e",
-      "mapping-e-w",
-      "mapping-e-e"
+      "mapping-e-m"
     ]
   },
   "folder": "/opt/resources",
