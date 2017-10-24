@@ -915,16 +915,22 @@ class WorkerGIS(object):
         # Structure for deleted Shapefiles
         __paths_index_delete = []
 
-        # Structure for information
-        __paths_information = []
+        # Structure for layers' name
+        __paths_names = []
 
-        # Structure for fields
-        __paths_fields = []
+        # Structure for layers' information
+        __paths_layers = {'raw': [], 'info': []}
+
+        # Structure for fields'
+        __paths_fields = {'raw': [], 'info': []}
 
         for __path_rev_i in range(0, len(__paths_review)):
 
             # Get path to review
             __path_rev = __paths_review[__path_rev_i]
+
+            # Get layer name
+            __layer_name = __paths_file_review[__path_rev_i]
 
             # Get information from GDAL
             __gi_info = self.get_info(__path_rev)
@@ -975,33 +981,37 @@ class WorkerGIS(object):
                 # Execute area generation
                 generate_areas(__path_rev)
 
-            # Join layers' information
-            __gi_info['info'][-1] += '\n'
-            __paths_information += [
-                'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
-            ]
-            __paths_information += __gi_info['info']
+            # Save layers' name
+            __paths_names.append(__layer_name)
 
-            # Validate all fields and join messages
-            __gv_fields = self.validate_fields(__path_rev)
-            if len(__gv_fields):
+            # Save layers' information
+            __raw_layer_info = __gi_info['info']
+            if __path_rev_i < len(__paths_review) - 1:
+                __raw_layer_info[-1] += '\n'
+            __raw_layer_info = ['Layer - ' + __layer_name + '\n'] + \
+                __raw_layer_info
+            __paths_layers['raw'].append(__raw_layer_info)
+            __paths_layers['info'].append(__gi_info['info_values'])
+
+            # Validate and save messages
+            __raw_validate_info = self.validate_fields(__path_rev)
+            if len(__raw_validate_info):
                 if __path_rev_i < len(__paths_review) - 1:
-                    __gv_fields[-1] += '\n'
-                __g_info['warn'] += [
-                    'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
-                ]
-                __g_info['warn'] += __gv_fields
+                    __raw_validate_info[-1] += '\n'
+                __raw_validate_info = ['Layer - ' + __layer_name + '\n'] + \
+                    __raw_validate_info
+                __g_info['warn'] += __raw_validate_info
 
             # Get information about new and old fields
-            __g_fields = self.get_fields(__path_rev, True)
-            if len(__g_fields['info']):
+            __raw_fields_info = self.get_fields(__path_rev)
+            if len(__raw_fields_info['info']):
+                __paths_fields['info'].append(__raw_fields_info['info_values'])
+                __raw_fields_info = __raw_fields_info['info']
                 if __path_rev_i < len(__paths_review) - 1:
-                    __g_fields['info'][-1] += '\n'
-                __g_info['info'] += [
-                    'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
-                ]
-                __g_info['info'] += __g_fields['info']
-                __paths_fields.append(__g_fields['fields'])
+                    __raw_fields_info[-1] += '\n'
+                __raw_fields_info = ['Layer - ' + __layer_name + '\n'] + \
+                    __raw_fields_info
+                __paths_fields['raw'].append(__raw_fields_info)
 
         # Generate VRT for GeoJSON transformation
         __vrt_path = generate_vrt(
@@ -1022,7 +1032,8 @@ class WorkerGIS(object):
         __geo_path = __path_trs + __path['name'] + '.geojson'
         cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
 
-        return __g_info, __paths_information, __paths_fields
+        return __g_info, __paths_names, \
+            __paths_fields, __paths_layers
 
     def get_info(self, path):
         """ This function allows to get information from
@@ -1039,28 +1050,46 @@ class WorkerGIS(object):
         # Get information when executes
         __info = cmd_ogrinfo([path])
 
-        # Only get fields for output
-        __info_fields = []
+        # Structures for information
+        __values = {}
+        __messages = []
+
+        # Information to save
+        __names = {
+            'Geometry': 'geometry',
+            'Feature Count': 'features',
+            'Extent': 'bounding'
+        }
+
+        # Iterate over information
         for __o in __info['info']:
 
-            # Save Kind of geometry
-            if 'Geometry:' in __o:
-                __info_fields.append(__o)
+            # Get value and name
+            __name = __o[:__o.index(':')]
+            __value = __o[__o.index(':') + 2:]
 
-            # Save count of features
-            elif 'Feature Count:' in __o:
-                __info_fields.append(__o)
+            # Check if name is a counter
+            if __name == 'Feature Count':
+                __value = int(__value)
 
-            # Save bounding                
-            elif 'Extent: (' in __o:
-                __info_fields.append(__o)
+            # Check if name is valid
+            if __name in __names.keys():
 
-        __info['info'] = __info_fields
+                # Save value info
+                __values[__names[__name]] = __value
+
+                # Save raw info
+                __messages.append(__o)
 
         # Add projection to info
         __info_proj = get_projection(path)
         if __info_proj is not None:
-            __info['info'].append('CRS: ' + __info_proj)
+            __values['crs'] = __info_proj
+            __messages.append('CRS: ' + __info_proj)
+
+        # Save information to structure
+        __info['info'] = __messages
+        __info['info_values'] = __values
 
         return __info
 
@@ -1072,15 +1101,21 @@ class WorkerGIS(object):
             path (string): file's path
 
         Returns:
-            dict: information about the outputs
+            list: information about the outputs
 
         """
 
         # Get information when executes
         __info = self.get_fields(path)
 
+        # Check if any error exist
+        if len(__info['error']):
+            return []
+
         # Validate fields from received information
-        __rem_fields = validate_ogr_fields(path, __info['info'])
+        __rem_fields = validate_ogr_fields(
+            path, __info['info_values'].keys()
+        )
 
         # Set empty return structure
         __log_messages = []
@@ -1096,13 +1131,12 @@ class WorkerGIS(object):
 
         return __log_messages
 
-    def get_fields(self, path, extend=False):
+    def get_fields(self, path):
         """ This function allows to get fields' information
             from specific file thanks to GDAL tools.
 
         Args:
             path (string): file's path
-            extend (bool): flag to extend information
 
         Returns:
             dict: information about the outputs
@@ -1117,8 +1151,7 @@ class WorkerGIS(object):
             return __info
 
         # Structures for fields
-        __fields = []
-        __fields_names = []
+        __values = {}
 
         # Remove unnecessary information
         __info['info'] = [
@@ -1133,9 +1166,6 @@ class WorkerGIS(object):
             # Get field name
             __field_name = __f[:__f.index(':')]
 
-            # Save field name
-            __fields_names.append(__field_name)
-
             # Save field info
             __field_type = __f.replace(__field_name, '')[2:]
             __field_type = __field_type[:__field_type.index('(') - 1]
@@ -1146,17 +1176,10 @@ class WorkerGIS(object):
                 __field_type = 'double'
 
             # Save field structure
-            __fields.append({
-                'name': __field_name,
-                'type': __field_type
-            })
+            __values[__field_name] = __field_type
 
         # Save structure
-        __info['fields'] = __fields
-
-        # Save fields names
-        if not extend:
-            __info['info'] = __fields_names
+        __info['info_values'] = __values
 
         return __info
 
