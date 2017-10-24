@@ -247,7 +247,12 @@ def main_script():
         help='execute a GeoKettle transformation.'
     )
 
-    # Check parameters from CLI
+    # Check there at least one parameter
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    # Get parameters from CLI
     __args = parser.parse_args()
 
     # Import python script with real methods
