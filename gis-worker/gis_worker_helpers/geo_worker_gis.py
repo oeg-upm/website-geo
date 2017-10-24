@@ -918,6 +918,9 @@ class WorkerGIS(object):
         # Structure for information
         __paths_information = []
 
+        # Structure for fields
+        __paths_fields = []
+
         for __path_rev_i in range(0, len(__paths_review)):
 
             # Get path to review
@@ -926,10 +929,11 @@ class WorkerGIS(object):
             # Get information from GDAL
             __gi_info = self.get_info(__path_rev)
 
-            # Check if file has not features, so we
-            # will proceed to delete it
+            # Check if file has not features, bad
+            # extend or any previous issue
             if not check_geo_has_features(__gi_info['info']) or \
-               not check_geo_has_extent(__gi_info['info']):
+               not check_geo_has_extent(__gi_info['info']) or \
+               len(__gi_info['error']):
 
                 # Add paths for deletion
                 __paths_index_delete.append(__path_rev_i)
@@ -945,6 +949,15 @@ class WorkerGIS(object):
                     # Delete if exists
                     if os.path.isfile(__path_delete):
                         os.remove(__path_delete)
+
+                # Join error messages if they exist
+                if len(__gi_info['error']):
+                    if __path_rev_i < len(__paths_review) - 1:
+                        __gi_info['error'][-1] += '\n'
+                    __g_info['error'] += [
+                        'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
+                    ]
+                    __g_info['error'] += __gi_info['error']
 
                 # Next file to review
                 continue
@@ -962,30 +975,20 @@ class WorkerGIS(object):
                 # Execute area generation
                 generate_areas(__path_rev)
 
-            # Join information
+            # Join layers' information
             __gi_info['info'][-1] += '\n'
             __paths_information += [
                 'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
             ]
             __paths_information += __gi_info['info']
 
-            # Join error messages
-            if len(__gi_info['error']):
-                if __path_rev_i < len(__paths_review) - 1:
-                    __gi_info['error'][-1] += '\n'
-                __g_info['error'] += [
-                    'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
-                ]
-                __g_info['error'] += __gi_info['error']
-
-            # Validate all fields and join log messages
+            # Validate all fields and join messages
             __gv_fields = self.validate_fields(__path_rev)
             if len(__gv_fields):
                 if __path_rev_i < len(__paths_review) - 1:
                     __gv_fields[-1] += '\n'
                 __g_info['warn'] += [
-                    'Layer - ' + __paths_file_review[__path_rev_i] +
-                    '\n'
+                    'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
                 ]
                 __g_info['warn'] += __gv_fields
 
@@ -995,10 +998,10 @@ class WorkerGIS(object):
                 if __path_rev_i < len(__paths_review) - 1:
                     __g_fields['info'][-1] += '\n'
                 __g_info['info'] += [
-                    'Layer - ' + __paths_file_review[__path_rev_i] +
-                    '\n'
+                    'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
                 ]
                 __g_info['info'] += __g_fields['info']
+                __paths_fields.append(__g_fields['fields'])
 
         # Generate VRT for GeoJSON transformation
         __vrt_path = generate_vrt(
@@ -1019,7 +1022,7 @@ class WorkerGIS(object):
         __geo_path = __path_trs + __path['name'] + '.geojson'
         cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
 
-        return __g_info, __paths_information
+        return __g_info, __paths_information, __paths_fields
 
     def get_info(self, path):
         """ This function allows to get information from
@@ -1109,6 +1112,14 @@ class WorkerGIS(object):
         # Get information when executes
         __info = cmd_ogrinfo([path])
 
+        # Check if error messages exist
+        if len(__info['error']):
+            return __info
+
+        # Structures for fields
+        __fields = []
+        __fields_names = []
+
         # Remove unnecessary information
         __info['info'] = [
             __o for __o in __info['info'] 
@@ -1116,13 +1127,36 @@ class WorkerGIS(object):
             and 'Extent: (' not in __o and 'Layer name:' not in __o
         ]
 
-        if not extend:
+        # Iterate over fields information
+        for __f in __info['info']:
 
-            # Only show name of fields
-            __info['info'] = [
-                __f[:__f.index(':')]
-                for __f in __info['info']
-            ]
+            # Get field name
+            __field_name = __f[:__f.index(':')]
+
+            # Save field name
+            __fields_names.append(__field_name)
+
+            # Save field info
+            __field_type = __f.replace(__field_name, '')[2:]
+            __field_type = __field_type[:__field_type.index('(') - 1]
+            __field_type = str(__field_type).lower()
+
+            # Check field info
+            if __field_type == 'real' or __field_type == 'float':
+                __field_type = 'double'
+
+            # Save field structure
+            __fields.append({
+                'name': __field_name,
+                'type': __field_type
+            })
+
+        # Save structure
+        __info['fields'] = __fields
+
+        # Save fields names
+        if not extend:
+            __info['info'] = __fields_names
 
         return __info
 
