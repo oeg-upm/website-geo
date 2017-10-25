@@ -434,30 +434,46 @@ def validate_ogr_fields(path, fields):
     while __file_feat is not None:
 
         # Iterate over fields of the Shapefile
-        for __index in range(len(fields)):
+        for __field in fields:
+
+            # Get real index
+            __index = __file_feat.GetFieldIndex(__field)
+
+            # Check if field is checking at least once
+            if __field not in __fields_flags:
+                __fields_flags[__field] = {'b': False}
 
             # Check if field is True (has value)
-            if fields[__index] in __fields_flags:
-                if __fields_flags[fields[__index]]:
-                    continue
+            if __fields_flags[__field]['b']:
+                continue
 
             # Get if the feature has value
-            __fields_flags[fields[__index]] = \
-                __file_feat.IsFieldSetAndNotNull(fields[__index])
+            __fields_flags[__field]['b'] = \
+                not __file_feat.IsFieldNull(__index) and \
+                __file_feat.IsFieldSet(__index)
+            __fields_flags[__field]['i'] = __index
 
         # Go to Next feature
         __file_feat = __file_layer.GetNextFeature()
 
     # Set structures for removing fields
+    __sorted_fields = sorted(
+        __fields_flags.items(),
+        key=lambda x: x[1]['i']
+    )
+    __sorted_fields = [
+        __f[0] for __f in __sorted_fields
+    ]
     __f_pad = 0
+    __f_counter = 0
     __rem_fields = []
-    for __field in fields:
+    for __field in __sorted_fields:
 
         # Index of the field
-        __index = fields.index(__field) - __f_pad
+        __index = __f_counter - __f_pad
 
         # Remove empty fields from Shapefile
-        if not __fields_flags[__field]:
+        if not __fields_flags[__field]['b']:
             __file_layer.DeleteField(__index)
             __f_pad += 1
 
@@ -467,15 +483,20 @@ def validate_ogr_fields(path, fields):
         # Rename to lowercase non-empty fields
         else:
 
-            # Create copy of field and change name
+            # Clean name of the field
             __file_field = __file_layer_def.GetFieldDefn(__index)
             __file_name = clean_string(__field).encode('utf-8')
-            __file_field.SetName(__file_name)
 
-            # Replace field on the layer
-            __file_layer.AlterFieldDefn(
-                __index, __file_field, ogr.ALTER_NAME_FLAG
-            )
+            # Check if new name is equals to old
+            if __file_name != __field:
+                __file_field.SetName(__file_name)
+                __file_layer.AlterFieldDefn(
+                    __index, __file_field,
+                    ogr.ALTER_NAME_FLAG
+                )
+
+        # Increase counter
+        __f_counter += 1
 
     # Close file
     __file_src = None
