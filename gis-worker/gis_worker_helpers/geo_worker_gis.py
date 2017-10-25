@@ -23,6 +23,7 @@
 import re
 import os
 import sys
+import hashlib
 import unicodedata
 from os.path import splitext
 from subprocess import Popen, PIPE
@@ -70,23 +71,59 @@ def parse_path(path):
     }
 
 
-def remove_bad_characters(value):
+def md5_string(string):
+    try:
+        string_encode = string.encode()
+    except Exception:
+        string_encode = string
+    return hashlib.md5(
+        string_encode +
+        's4lt_g30_l1nk3d_d4t4'
+    ).hexdigest()
+
+
+def clean_string(string):
     """ This function allows you to remove
         latin characters and spaces or from any string.
 
     Args:
-        value (string): value to be parsed
+        string (string): value to be parsed
 
     Returns:
         string: parsed value
 
     """
 
-    uni_value = value.decode("utf-8")
+    uni_value = string.decode("utf-8")
     form = unicodedata.normalize('NFKD', uni_value)
     return re.sub(r'[^a-zA-Z0-9]', '', u"".join(
         [c for c in form if not unicodedata.combining(c)]
     )).lower()
+
+
+def find_string(string, piece, n=0):
+    """ This function returns an index where
+        occurrence is found.
+
+    Args:
+        string (string): sentence to check
+        piece (string): word or character to check
+        n (index): position to start
+
+    Returns:
+        int: index
+
+    """
+
+    i = -1
+    for c in xrange(n):
+        i = string.find(piece, i + 1)
+        if i < 0:
+            break
+    return i
+
+
+##########################################################################
 
 
 def check_geokettle_path():
@@ -360,51 +397,6 @@ def get_ogr_file_extensions(extension):
     return []
 
 
-def get_projection(path):
-    """ This function gets gis projections
-        of specific Geo-spatial file.
-
-    Args:
-        path (string): file's path
-
-    Returns:
-        string: OGR projection
-
-    """
-
-    # Get information from path
-    __path = parse_path(path)
-
-    # Get kind of file depending on final extension
-    __driver = get_ogr_driver(__path['extension'])
-
-    # Get layer from OGR Tools to check if
-    # there is any field is null or empty, so
-    # must be deleted, this file is opened as
-    # DataSource Read-Write (1)
-    from osgeo import ogr
-    __file = ogr.GetDriverByName(__driver)
-    __file_src = __file.Open(path, 1)
-    __file_layer = __file_src.GetLayer()
-
-    # Get Spatial reference
-    __file_spatial = __file_layer.GetSpatialRef()
-
-    # Detect GIS kind of data
-    __f_cs = 'GEOGCS' if __file_spatial.IsGeographic() == 1 else 'PROJCS'
-    __f_an = __file_spatial.GetAuthorityName(__f_cs)
-    __f_ac = __file_spatial.GetAuthorityCode(__f_cs)
-
-    # Detect if name and code are valid
-    __file_spatial = str(__f_an) + ':' + str(__f_ac) \
-        if __f_an is not None and __f_ac is not None else None
-
-    # Close file
-    __file_src = None
-
-    return __file_spatial
-
-
 def validate_ogr_fields(path, fields):
     """ This function checks the fields
         of specific Geo-spatial file.
@@ -477,7 +469,7 @@ def validate_ogr_fields(path, fields):
 
             # Create copy of field and change name
             __file_field = __file_layer_def.GetFieldDefn(__index)
-            __file_name = remove_bad_characters(__field).encode('utf-8')
+            __file_name = clean_string(__field).encode('utf-8')
             __file_field.SetName(__file_name)
 
             # Replace field on the layer
@@ -491,7 +483,52 @@ def validate_ogr_fields(path, fields):
     return __rem_fields
 
 
-def generate_centroids(path):
+def get_projection(path):
+    """ This function gets gis projections
+        of specific Geo-spatial file.
+
+    Args:
+        path (string): file's path
+
+    Returns:
+        string: OGR projection
+
+    """
+
+    # Get information from path
+    __path = parse_path(path)
+
+    # Get kind of file depending on final extension
+    __driver = get_ogr_driver(__path['extension'])
+
+    # Get layer from OGR Tools to check if
+    # there is any field is null or empty, so
+    # must be deleted, this file is opened as
+    # DataSource Read-Write (1)
+    from osgeo import ogr
+    __file = ogr.GetDriverByName(__driver)
+    __file_src = __file.Open(path, 1)
+    __file_layer = __file_src.GetLayer()
+
+    # Get Spatial reference
+    __file_spatial = __file_layer.GetSpatialRef()
+
+    # Detect GIS kind of data
+    __f_cs = 'GEOGCS' if __file_spatial.IsGeographic() == 1 else 'PROJCS'
+    __f_an = __file_spatial.GetAuthorityName(__f_cs)
+    __f_ac = __file_spatial.GetAuthorityCode(__f_cs)
+
+    # Detect if name and code are valid
+    __file_spatial = str(__f_an) + ':' + str(__f_ac) \
+        if __f_an is not None and __f_ac is not None else None
+
+    # Close file
+    __file_src = None
+
+    return __file_spatial
+
+
+def set_centroids(path):
     """ This function calculates the centroid
         for geometries of specific Geo-spatial
         file and save them on the same file.
@@ -543,7 +580,7 @@ def generate_centroids(path):
     __file_src = None
 
 
-def generate_areas(path):
+def set_areas(path):
     """ This function calculates the area
         for geometries of specific Geo-spatial
         file and save them on the same file.
@@ -597,36 +634,37 @@ def generate_areas(path):
     __file_src = None
 
 
-def generate_vrt(path, paths, files, deleted):
+def set_vrt(path, layers_path, layers_name, deleted):
     """ This function generates the VRT file
         to create a good conversion for GeoJSON
         geo-spatial file.
 
     Args:
         path (dict): path's information
-        paths (list): list of file's path
-        files (list): list of files
+        layers_path (list): list of file's path
+        layers_name (dict): md5 and names
         deleted (list): list of index to be deleted
 
     Returns:
-        string: path of vrt path writed to disk
+        string: path of vrt path written to disk
 
     """
 
     # Start template for VRT
     __vrt_template = '<OGRVRTDataSource>' \
-        '<OGRVRTUnionLayer name="' + path['name'] + '">'
+        '<OGRVRTUnionLayer name="GeoLinkedData Features">'
 
     # Iterate over files
-    for __file_i in range(0, len(paths)):
+    for __file_i in range(0, len(layers_path)):
 
         # Check if index needs to be included
         if __file_i not in deleted:
-
             __vrt_template += '<OGRVRTLayer name="' + \
-                files[__file_i] + '">'
+                layers_path[__file_i] + '">'
             __vrt_template += '<SrcDataSource>' + \
-                paths[__file_i] + '</SrcDataSource>'
+                path['folder'] + 'shp/' + \
+                layers_path[__file_i] + '.shp' + \
+                '</SrcDataSource>'
             __vrt_template += '</OGRVRTLayer>'
 
     # End template for VRT
@@ -740,7 +778,7 @@ def parse_geo_return(outputs, errors):
                 # Save index to structure
                 # + 2 -> character + space
                 if __key not in __index_dash:
-                    __index_dash[__key] = find_occurrence(
+                    __index_dash[__key] = find_string(
                         __message, '-', 2
                     ) + 2
 
@@ -754,28 +792,6 @@ def parse_geo_return(outputs, errors):
 
 
 ##########################################################################
-
-
-def find_occurrence(s, x, n=0):
-    """ This function returns an index where
-        occurrence is found.
-
-    Args:
-        s (string): sentence to check
-        x (string): word or character to check
-        n (index): position to start
-
-    Returns:
-        int: index
-
-    """
-
-    i = -1
-    for c in xrange(n):
-        i = s.find(x, i + 1)
-        if i < 0:
-            break
-    return i
 
 
 def print_error_extension():
@@ -899,38 +915,51 @@ class WorkerGIS(object):
         # Get all nodes from directory
         __path_files = os.listdir(__path_shp)
 
-        # Fill structure with Shapefiles (paths)
-        __paths_review = [
-            __path_shp + __path_rev
-            for __path_rev in __path_files if
-            splitext(__path_rev)[1] == '.shp'
-        ]
+        # Rename and generate SHP structure
+        __layers_name = []
+        __layers_md5 = {}
+        for __path_rev in __path_files:
 
-        # Fill structure with Shapefiles (filenames)
-        __paths_file_review = [
-            parse_path(__path_rev)['name']
-            for __path_rev in __paths_review
-        ]
+            # Get information from file
+            __path_info = parse_path(__path_rev)
+
+            # Check if md5 is saved
+            if __path_info['name'] not in __layers_md5:
+                __layers_md5[__path_info['name']] = \
+                    md5_string(__path_info['name'])
+                __layers_name.append(
+                    __layers_md5[__path_info['name']]
+                )
+            __layer_md5 = __layers_md5[__path_info['name']]
+
+            # Execute rename
+            os.rename(
+                __path_shp + __path_rev,
+                __path_shp + __path_rev.replace(
+                    __path_info['name'], __layer_md5
+                )
+            )
+
+        # Convert keys to values
+        __layers_md5 = {
+            __v: __k for __k, __v in
+            __layers_md5.items()
+        }
 
         # Structure for deleted Shapefiles
         __paths_index_delete = []
 
-        # Structure for layers' name
-        __paths_names = []
-
         # Structure for layers' information
-        __paths_layers = {'raw': [], 'info': []}
+        __layers_info = {'raw': [], 'info': []}
 
         # Structure for fields'
-        __paths_fields = {'raw': [], 'info': []}
+        __layers_fields_info = {'raw': [], 'info': []}
 
-        for __path_rev_i in range(0, len(__paths_review)):
+        for __path_rev_i in range(0, len(__layers_name)):
 
-            # Get path to review
-            __path_rev = __paths_review[__path_rev_i]
-
-            # Get layer name
-            __layer_name = __paths_file_review[__path_rev_i]
+            # Get completed path
+            __path_rev = __path_shp + \
+                __layers_name[__path_rev_i] + extension
 
             # Get information from GDAL
             __gi_info = self.get_info(__path_rev)
@@ -947,7 +976,7 @@ class WorkerGIS(object):
                 # Delete all possible extensions
                 for __path_ext in get_ogr_file_extensions(extension):
 
-                    # Get real path
+                    # Get real path to delete
                     __path_delete = __path_rev.replace(
                         extension, __path_ext
                     )
@@ -958,14 +987,14 @@ class WorkerGIS(object):
 
                 # Join error messages if they exist
                 if len(__gi_info['error']):
-                    if __path_rev_i < len(__paths_review) - 1:
+                    if __path_rev_i < len(__layers_name) - 1:
                         __gi_info['error'][-1] += '\n'
                     __g_info['error'] += [
-                        'Layer - ' + __paths_file_review[__path_rev_i] + '\n'
+                        'Layer - ' + __layers_name[__path_rev_i] + '\n'
                     ]
                     __g_info['error'] += __gi_info['error']
 
-                # Next file to review
+                # Next file
                 continue
 
             # Generate centroid and Area if Geometry
@@ -976,48 +1005,61 @@ class WorkerGIS(object):
             ][0].lower():
 
                 # Execute centroids generation
-                generate_centroids(__path_rev)
+                set_centroids(__path_rev)
 
                 # Execute area generation
-                generate_areas(__path_rev)
-
-            # Save layers' name
-            __paths_names.append(__layer_name)
+                set_areas(__path_rev)
 
             # Save layers' information
             __raw_layer_info = __gi_info['info']
-            if __path_rev_i < len(__paths_review) - 1:
+            if __path_rev_i < len(__layers_name) - 1:
                 __raw_layer_info[-1] += '\n'
-            __raw_layer_info = ['Layer - ' + __layer_name + '\n'] + \
-                __raw_layer_info
-            __paths_layers['raw'].append(__raw_layer_info)
-            __paths_layers['info'].append(__gi_info['info_values'])
+            __raw_layer_info = [
+                    'Layer - ' + __layers_md5[
+                        __layers_name[__path_rev_i]
+                    ] + ' - ' + __layers_name[
+                        __path_rev_i
+                    ] + '\n'
+                ] + __raw_layer_info
+            __layers_info['raw'].append(__raw_layer_info)
+            __layers_info['info'].append(__gi_info['info_values'])
 
             # Validate and save messages
             __raw_validate_info = self.validate_fields(__path_rev)
             if len(__raw_validate_info):
-                if __path_rev_i < len(__paths_review) - 1:
+                if __path_rev_i < len(__layers_name) - 1:
                     __raw_validate_info[-1] += '\n'
-                __raw_validate_info = ['Layer - ' + __layer_name + '\n'] + \
-                    __raw_validate_info
+                __raw_validate_info = [
+                    'Layer - ' + __layers_md5[
+                        __layers_name[__path_rev_i]
+                    ] + ' - ' + __layers_name[
+                        __path_rev_i
+                    ] + '\n'
+                ] + __raw_validate_info
                 __g_info['warn'] += __raw_validate_info
 
             # Get information about new and old fields
             __raw_fields_info = self.get_fields(__path_rev)
             if len(__raw_fields_info['info']):
-                __paths_fields['info'].append(__raw_fields_info['info_values'])
+                __layers_fields_info['info'].append(
+                    __raw_fields_info['info_values']
+                )
                 __raw_fields_info = __raw_fields_info['info']
-                if __path_rev_i < len(__paths_review) - 1:
+                if __path_rev_i < len(__layers_name) - 1:
                     __raw_fields_info[-1] += '\n'
-                __raw_fields_info = ['Layer - ' + __layer_name + '\n'] + \
-                    __raw_fields_info
-                __paths_fields['raw'].append(__raw_fields_info)
+                __raw_fields_info = [
+                    'Layer - ' + __layers_md5[
+                        __layers_name[__path_rev_i]
+                    ] + ' - ' + __layers_name[
+                        __path_rev_i
+                    ] + '\n'
+                ] + __raw_fields_info
+                __layers_fields_info['raw'].append(__raw_fields_info)
 
         # Generate VRT for GeoJSON transformation
-        __vrt_path = generate_vrt(
-            __path, __paths_review,
-            __paths_file_review,
-            __paths_index_delete
+        __vrt_path = set_vrt(
+            __path, __layers_name,
+            __layers_md5, __paths_index_delete
         )
 
         # Get driver for geojson properly
@@ -1032,8 +1074,8 @@ class WorkerGIS(object):
         __geo_path = __path_trs + __path['name'] + '.geojson'
         cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
 
-        return __g_info, __paths_names, \
-            __paths_fields, __paths_layers
+        return __g_info, __layers_md5, \
+            __layers_info, __layers_fields_info
 
     def get_info(self, path):
         """ This function allows to get information from
