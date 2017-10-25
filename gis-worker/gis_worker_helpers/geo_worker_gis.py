@@ -970,7 +970,7 @@ class WorkerGIS(object):
 
             # Generate centroid and Area if Geometry
             # is kind of Polygon
-            if 'polygon' in [
+            if 'Geometry: Polygon' == [
                 __o for __o in __gi_info['info']
                 if 'Geometry:' in __o
             ][0].lower():
