@@ -1094,7 +1094,7 @@ class WorkerGIS(object):
         __geo_path = __path_trs + __path['name'] + '.geojson'
         cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
 
-        return __g_info, __layers_md5, \
+        return __g_info, __layers_name, __layers_md5, \
             __layers_info, __layers_fields_info
 
     def get_info(self, path):
