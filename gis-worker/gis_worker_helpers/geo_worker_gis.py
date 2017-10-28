@@ -457,12 +457,11 @@ def validate_ogr_fields(path, fields):
         __file_feat = __file_layer.GetNextFeature()
 
     # Set structures for removing fields
-    __sorted_fields = sorted(
-        __fields_flags.items(),
-        key=lambda x: x[1]['i']
-    )
     __sorted_fields = [
-        __f[0] for __f in __sorted_fields
+        __f[0] for __f in sorted(
+            __fields_flags.items(),
+            key=lambda x: x[1]['i']
+        )
     ]
     __f_pad = 0
     __f_counter = 0
@@ -924,7 +923,7 @@ class WorkerGIS(object):
 
         # Detect if there were any errors
         if len(__g_info['error']):
-            return __g_info
+            return __g_info, None, None, None
 
         # Detect warnings
         if len(__g_info['warn']):
