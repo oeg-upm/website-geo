@@ -654,15 +654,14 @@ def set_areas(path):
     __file_src = None
 
 
-def set_vrt(path, layers_path, layers_name, deleted):
+def set_vrt(path, layers, deleted):
     """ This function generates the VRT file
         to create a good conversion for GeoJSON
         geo-spatial file.
 
     Args:
         path (dict): path's information
-        layers_path (list): list of file's path
-        layers_name (dict): md5 and names
+        layers (list): list of file's path
         deleted (list): list of index to be deleted
 
     Returns:
@@ -675,15 +674,15 @@ def set_vrt(path, layers_path, layers_name, deleted):
         '<OGRVRTUnionLayer name="GeoLinkedData Features">'
 
     # Iterate over files
-    for __file_i in range(0, len(layers_path)):
+    for __file_i in range(0, len(layers)):
 
         # Check if index needs to be included
         if __file_i not in deleted:
             __vrt_template += '<OGRVRTLayer name="' + \
-                layers_path[__file_i] + '">'
+                layers[__file_i] + '">'
             __vrt_template += '<SrcDataSource>' + \
                 path['folder'] + 'shp/' + \
-                layers_path[__file_i] + '.shp' + \
+                layers[__file_i] + '.shp' + \
                 '</SrcDataSource>'
             __vrt_template += '</OGRVRTLayer>'
 
@@ -1079,7 +1078,7 @@ class WorkerGIS(object):
         # Generate VRT for GeoJSON transformation
         __vrt_path = set_vrt(
             __path, __layers_name,
-            __layers_md5, __paths_index_delete
+            __paths_index_delete
         )
 
         # Get driver for geojson properly
@@ -1093,6 +1092,18 @@ class WorkerGIS(object):
         # Execute transformation to GeoJSON
         __geo_path = __path_trs + __path['name'] + '.geojson'
         cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
+
+        # Delete bad layers
+        __layers_name = [
+            __layers_name[__path_rev_i]
+            for __path_rev_i in range(0, len(__layers_name))
+            if __path_rev_i not in __paths_index_delete
+        ]
+        __layers_md5 = {
+            __path_rev_i: __layers_md5[__path_rev_i]
+            for __path_rev_i in __layers_md5.keys()
+            if __path_rev_i in __layers_name
+        }
 
         return __g_info, __layers_name, __layers_md5, \
             __layers_info, __layers_fields_info
