@@ -922,7 +922,8 @@ class WorkerGIS(object):
 
         # Detect if there were any errors
         if len(__g_info['error']):
-            return __g_info, None, None, None
+            return __g_info, None, \
+                None, None, None
 
         # Detect warnings
         if len(__g_info['warn']):
@@ -1108,12 +1109,13 @@ class WorkerGIS(object):
         return __g_info, __layers_name, __layers_md5, \
             __layers_info, __layers_fields_info
 
-    def get_info(self, path):
+    def get_info(self, path, inc_layers=False):
         """ This function allows to get information from
             specific file thanks to GDAL tools.
 
         Args:
             path (string): file's path
+            inc_layers (bool): flag to include layers' name
 
         Returns:
             dict: information about the outputs
@@ -1122,6 +1124,11 @@ class WorkerGIS(object):
 
         # Get information when executes
         __info = cmd_ogrinfo([path])
+
+        # Check if any error exist
+        if len(__info['error']):
+            __info['info_values'] = []
+            return __info
 
         # Structures for information
         __values = {}
@@ -1133,6 +1140,10 @@ class WorkerGIS(object):
             'Feature Count': 'features',
             'Extent': 'bounding'
         }
+
+        # Include layers name
+        if inc_layers:
+            __names['Layer name'] = 'Layer'
 
         # Iterate over information
         for __o in __info['info']:
@@ -1204,12 +1215,13 @@ class WorkerGIS(object):
 
         return __log_messages
 
-    def get_fields(self, path):
+    def get_fields(self, path, inc_layers=False):
         """ This function allows to get fields' information
             from specific file thanks to GDAL tools.
 
         Args:
             path (string): file's path
+            inc_layers (bool): flag to include layers' name
 
         Returns:
             dict: information about the outputs
@@ -1219,40 +1231,48 @@ class WorkerGIS(object):
         # Get information when executes
         __info = cmd_ogrinfo([path])
 
-        # Check if error messages exist
+        # Check if any error exist
         if len(__info['error']):
+            __info['info_values'] = []
             return __info
-
-        # Structures for fields
-        __values = {}
 
         # Remove unnecessary information
         __info['info'] = [
             __o for __o in __info['info'] 
             if 'Geometry:' not in __o and 'Feature Count:' not in __o
-            and 'Extent: (' not in __o and 'Layer name:' not in __o
+            and 'Extent: (' not in __o
         ]
 
-        # Iterate over fields information
-        for __f in __info['info']:
+        # Check if layers name must be included
+        if not inc_layers:
+            __info['info'] = [
+                __o for __o in __info['info']
+                if 'Layer name:' not in __o
+            ]
 
-            # Get field name
-            __field_name = __f[:__f.index(':')]
+            # Structures for fields
+            __values = {}
 
-            # Save field info
-            __field_type = __f.replace(__field_name, '')[2:]
-            __field_type = __field_type[:__field_type.index('(') - 1]
-            __field_type = str(__field_type).lower()
+            # Iterate over fields information
+            for __f in __info['info']:
 
-            # Check field info
-            if __field_type == 'real' or __field_type == 'float':
-                __field_type = 'double'
+                # Get field name
+                __field_name = __f[:__f.index(':')]
 
-            # Save field structure
-            __values[__field_name] = __field_type
+                # Save field info
+                __field_type = __f.replace(__field_name, '')[2:]
+                __field_type = __field_type[:__field_type.index('(') - 1]
+                __field_type = str(__field_type).lower()
 
-        # Save structure
-        __info['info_values'] = __values
+                # Check field info
+                if __field_type == 'real' or __field_type == 'float':
+                    __field_type = 'double'
+
+                # Save field structure
+                __values[__field_name] = __field_type
+
+            # Save structure
+            __info['info_values'] = __values
 
         return __info
 

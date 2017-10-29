@@ -24,11 +24,11 @@
 import os
 import sys
 import json
+import shutil
 from os.path import splitext
 from celery.task import task
 from celery.utils.log import get_task_logger
 from gis_worker_helpers.geo_worker_gis import WorkerGIS
-from gis_worker_helpers.geo_worker_gis import get_ogr_file_extensions
 from gis_worker_helpers.geo_worker_xml import WorkerXML
 from gis_worker_helpers.geo_worker_db import WorkerRedis
 reload(sys)
@@ -43,6 +43,10 @@ __email__ = "alejfcarrera@mail.ru"
 
 
 ##########################################################################
+
+
+print_styles = ['info', 'warn', 'error']
+
 
 def get_configuration_file():
     """ This function allows you to load a configuration from file.
@@ -165,7 +169,6 @@ def print_to_logger(messages, logger=None):
 
     # Set prefix for all messages
     __prefix = '\n * '
-    __prefix_order = ['info', 'warn', 'error']
     __prefix_kind = {
         'info': 'INFO',
         'warn': 'WARN',
@@ -180,7 +183,7 @@ def print_to_logger(messages, logger=None):
     }
 
     # Iterate kind of messages
-    for __k in __prefix_order:
+    for __k in print_styles:
 
         # Detect if there are any messages
         if len(messages[__k]):
@@ -204,7 +207,7 @@ def print_to_logger(messages, logger=None):
     if logger is not None:
 
         # Iterate kind of messages
-        for __k in __prefix_order:
+        for __k in print_styles:
 
             # Detect if there are any messages
             if len(__logger_msg[__k]):
@@ -325,7 +328,8 @@ def transform_with_path(path, ext_dst, logger):
     """
 
     # Transform resource and return result
-    __t_info, __ti_info = get_gdal_instance().transform(path, ext_dst)
+    __t_info, __ln_info, __lmd5_info, __li_info, __fn_info = \
+        get_gdal_instance().transform(path, ext_dst)
 
     # Detect if external logger was activated
     if logger is None:
@@ -337,29 +341,40 @@ def transform_with_path(path, ext_dst, logger):
             __t_info['warn'] = [
                 '* ----------- Warnings ------------\n'
             ] + __t_info['warn']
-        if len(__t_info['info']):
+        if __fn_info is not None and len(__fn_info['raw']):
             __t_info['info'] = [
-               '* ---- Fields of the Shapefile ----\n'
-            ] + __t_info['info']
+               '* ------------ Fields -------------\n'
+            ]
+            for __fn in __fn_info['raw']:
+                __t_info['info'] += __fn
 
         # Log messages to stdout
         print_to_logger(__t_info, logger)
 
     # Return status code and messages
     return {
-        'status': 2 if len(__t_info['error']) else 0,
+        'status': 2,
+        'messages': __t_info
+    } if len(__t_info['error']) else {
+        'status': 0,
         'messages': __t_info,
-        'information': __ti_info
+        'information': {
+            'names': __ln_info,
+            'names_md5': __lmd5_info,
+            'properties': __li_info['info'],
+            'fields': __fn_info['info']
+        }
     }
 
 
-def transform_with_id(identifier, ext_dst, logger):
+def transform_with_id(identifier, ext_dst, rd, logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
     Args:
         identifier (string): task internal id
         ext_dst (string): extension of transformation
+        rd (WorkerRedis): instance of WorkerRedis
         logger (Logger): logger class to write messages
 
     Return:
@@ -367,43 +382,78 @@ def transform_with_id(identifier, ext_dst, logger):
 
     """
 
-    # Check if redis or gdal were input
-    __lib = get_libraries()
-
     # Check if database has metadata for this identifier
-    if __lib[0].check_existence(identifier, 'files'):
+    if rd.check_existence(identifier, 'files'):
 
-        # Get information about the specific identifier
-        __f_info = __lib[0].redis['files'].hgetall(identifier)
+        # Get extension about the specific identifier
+        __f_ext = rd.redis['files'].hget(
+            identifier, 'extension'
+        )
 
         # Generate path
         __config = get_configuration_file()
         __path = __config['folder'] + os.sep + \
-            identifier + os.sep + __f_info['name'] + \
-            __f_info['extension']
-
-        # Close redis
-        __lib[0].exit()
+            identifier + os.sep + identifier + \
+            '.' + __f_ext
 
         # Transform resource and get result
         return transform_with_path(__path, ext_dst, logger)
 
     else:
 
-        # Close redis
-        __lib[0].exit()
-
         # Return not found message
         return {'status': 1, 'messages': print_not_found_message()}
 
 
-def info_with_path(path, logger):
+def transform_revert_with_id(identifier):
+    """ This function deletes generated files from
+        a custom transformation for specific identifier.
+
+    Args:
+        identifier (string): task internal id
+
+    """
+
+    # Generate path
+    __config = get_configuration_file()
+    __path = __config['folder'] + os.sep + \
+        identifier + os.sep
+    __path_shp = __path + 'shp' + os.sep
+    __path_trs = __path + 'trs' + os.sep
+
+    # Check Shapefile path exists
+    if os.path.isdir(__path_shp):
+
+        # Remove directory
+        shutil.rmtree(__path_shp)
+
+    # Check transformation path exists
+    if os.path.isdir(__path_trs):
+
+        # Remove directory
+        shutil.rmtree(__path_trs)
+
+    # Remove any GeoJSON VRT file:
+    for __f in os.listdir(__path):
+
+        # Get extension from path
+        __file_ext = '.'.join(__f.split('.')[-2:]) \
+            if len(__f.split('.')) > 2 \
+            else os.path.splitext(__f)[1]
+
+        # Check extension
+        if __file_ext == '.vrt':
+            os.remove(__path + __f)
+
+
+def info_with_path(path, logger, inc_layers=False):
     """ This function gets information from metadata
         gis or geometries file through GDAL libraries.
 
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
+        inc_layers (bool): flag to include layers' name
 
     Return:
         dict: information about the outputs and status code
@@ -411,7 +461,7 @@ def info_with_path(path, logger):
     """
 
     # Get information resource and return result
-    __t_info = get_gdal_instance().get_info(path)
+    __t_info = get_gdal_instance().get_info(path, inc_layers)
 
     # Detect if external logger was activated
     if logger is None:
@@ -438,50 +488,7 @@ def info_with_path(path, logger):
     }
 
 
-def info_with_id(identifier, logger):
-    """ This function gets information from metadata
-        gis or geometries file through GDAL libraries.
-
-    Args:
-        identifier (string): task internal id
-        logger (Logger): logger class to write messages
-
-    Return:
-        dict: information about the outputs and status code
-
-    """
-
-    # Check if redis or gdal were input
-    __lib = get_libraries()
-
-    # Check if database has metadata for this identifier
-    if __lib[0].check_existence(identifier, 'files'):
-
-        # Get information about the specific identifier
-        __f_info = __lib[0].redis['files'].hgetall(identifier)
-
-        # Generate path
-        __config = get_configuration_file()
-        __path = __config['folder'] + os.sep + \
-            identifier + os.sep + __f_info['name'] + \
-            __f_info['extension']
-
-        # Close redis
-        __lib[0].exit()
-
-        # Transform resource and get result
-        return info_with_path(__path, logger)
-
-    else:
-
-        # Close redis
-        __lib[0].exit()
-
-        # Return not found message
-        return {'status': 1, 'messages': print_not_found_message()}
-
-
-def fields_with_path(path, logger):
+def fields_with_path(path, logger, inc_layers=False):
     """ This function gets information from metadata
         fields about gis or geometries file through
         GDAL libraries.
@@ -489,6 +496,7 @@ def fields_with_path(path, logger):
     Args:
         path (string): file's path
         logger (Logger): logger class to write messages
+        inc_layers (bool): flag to include layers' name
 
     Return:
         dict: information about the outputs and status code
@@ -496,7 +504,7 @@ def fields_with_path(path, logger):
     """
 
     # Get information resource and return result
-    __t_info = get_gdal_instance().get_fields(path, True)
+    __t_info = get_gdal_instance().get_fields(path, inc_layers)
 
     # Detect if external logger was activated
     if logger is None:
@@ -510,7 +518,7 @@ def fields_with_path(path, logger):
             ] + __t_info['warn']
         if len(__t_info['info']):
             __t_info['info'] = [
-                '* ------------ Fields -------------\n'
+               '* ------------ Fields -------------\n'
             ] + __t_info['info']
 
         # Log messages to stdout
@@ -521,93 +529,6 @@ def fields_with_path(path, logger):
         'status': 2 if len(__t_info['error']) else 0,
         'messages': __t_info
     }
-
-
-def fields_with_id(identifier, logger):
-    """ This function gets information from task identifier.
-        It gets information from metadata fields about gis
-        or geometries file through GDAL libraries.
-
-    Args:
-        identifier (string): task internal id
-        logger (Logger): logger class to write messages
-
-    Return:
-        dict: information about the outputs and status code
-
-    """
-
-    # Check if redis or gdal were input
-    __lib = get_libraries()
-
-    # Check if database has metadata for this identifier
-    if __lib[0].check_existence(identifier, 'files'):
-
-        # Get information about the specific identifier
-        __f_info = __lib[0].redis['files'].hgetall(identifier)
-
-        # Generate path
-        __config = get_configuration_file()
-        __path = __config['folder'] + os.sep + \
-            identifier + os.sep + __f_info['name'] + \
-            __f_info['extension']
-
-        # Close redis
-        __lib[0].exit()
-
-        # Transform resource and get result
-        return fields_with_path(__path, logger)
-
-    else:
-
-        # Close redis
-        __lib[0].exit()
-
-        # Return not found message
-        return {'status': 1, 'messages': print_not_found_message()}
-
-
-def delete_with_id(identifier, extension):
-    """ This function deletes a specific folder with
-        extensions inside this folder.
-
-    Args:
-        identifier (string): task internal id
-        extension (string): extension of source files
-
-    """
-
-    # Generate path
-    __config = get_configuration_file()
-    __path = __config['folder'] + os.sep + identifier
-
-    # Check path exists
-    if os.path.isdir(__path):
-
-        # Get all files from path
-        __path_files = os.listdir(__path)
-
-        # Get all extensions from base extension
-        __extensions = get_ogr_file_extensions(extension)
-
-        # Iterate over files
-        for __file in __path_files:
-
-            # Join path with file
-            __f = __path + os.sep + __file
-
-            # Get extension from path
-            __file_ext = '.'.join(__f.split('.')[-2:]) \
-                if len(__f.split('.')) > 2 else os.path.splitext(__f)[1]
-
-            # Check if extension is valid
-            if __file_ext in __extensions:
-
-                # Check if path is a correct file and exists
-                if os.path.exists(__f) and os.path.isfile(__f):
-
-                    # Remove path
-                    os.remove(__f)
 
 
 def execute_geo_job_with_path(path, logger, checks):
@@ -688,7 +609,7 @@ def execute_geo_job_with_path(path, logger, checks):
     }
 
 
-def execute_geo_job_with_id(identifier, logger):
+def execute_geo_job_with_id(identifier, rd, logger):
     """ This function gets information from task identifier.
         It executes the possible GeoKettle XML job linked to
         this specific task and throws any possible issue
@@ -696,21 +617,18 @@ def execute_geo_job_with_id(identifier, logger):
 
     Args:
         identifier (string): task internal id
+        rd (WorkerRedis): instance of WorkerRedis
         logger (Logger): logger class to write messages
 
     Return:
         dict: information about the outputs and status code
 
     """
-
-    # Check if redis or gdal were input
-    __lib = get_libraries()
-
     # Check if database has metadata for this identifier
-    if __lib[0].check_existence(identifier, 'files'):
+    if rd.check_existence(identifier, 'files'):
 
         # Get information about the specific identifier
-        __f_info = __lib[0].redis['files'].hgetall(identifier)
+        __f_info = rd.redis['files'].hgetall(identifier)
 
         # Generate path
         __config = get_configuration_file()
@@ -718,18 +636,12 @@ def execute_geo_job_with_id(identifier, logger):
             identifier + os.sep + __f_info['name'] + \
             __f_info['extension']
 
-        # Close redis
-        __lib[0].exit()
-
         # Transform resource and get result
         return execute_geo_transform_with_path(
             __path, logger, False
         )
 
     else:
-
-        # Close redis
-        __lib[0].exit()
 
         # Return not found message
         return {'status': 1, 'messages': print_not_found_message()}
@@ -808,7 +720,7 @@ def execute_geo_transform_with_path(path, logger, checks):
     }
 
 
-def execute_geo_transform_with_id(identifier, logger):
+def execute_geo_transform_with_id(identifier, rd, logger):
     """ This function gets information from task identifier.
         It executes the possible GeoKettle XML transformation
         linked to this specific task and throws any possible
@@ -816,6 +728,7 @@ def execute_geo_transform_with_id(identifier, logger):
 
     Args:
         identifier (string): task internal id
+        rd (WorkerRedis): instance of WorkerRedis
         logger (Logger): logger class to write messages
 
     Return:
@@ -823,23 +736,17 @@ def execute_geo_transform_with_id(identifier, logger):
 
     """
 
-    # Check if redis or gdal were input
-    __lib = get_libraries()
-
     # Check if database has metadata for this identifier
-    if __lib[0].check_existence(identifier, 'files'):
+    if rd.check_existence(identifier, 'files'):
 
         # Get information about the specific identifier
-        __f_info = __lib[0].redis['files'].hgetall(identifier)
+        __f_info = rd.redis['files'].hgetall(identifier)
 
         # Generate path
         __config = get_configuration_file()
         __path = __config['folder'] + os.sep + \
             identifier + os.sep + __f_info['name'] + \
             __f_info['extension']
-
-        # Close redis
-        __lib[0].exit()
 
         # Transform resource and get result
         return execute_geo_transform_with_path(
@@ -848,9 +755,6 @@ def execute_geo_transform_with_id(identifier, logger):
 
     else:
 
-        # Close redis
-        __lib[0].exit()
-
         # Return not found message
         return {'status': 1, 'messages': print_not_found_message()}
 
@@ -858,28 +762,31 @@ def execute_geo_transform_with_id(identifier, logger):
 ##########################################################################
 
 
-def create_initial_mapping(identifier, redis, logger):
+def init_mapping(identifier, rd, logger):
     """ This function allows create or update an initial mapping
         on the database for a specific identifier.
 
     Args:
         identifier (string): task internal id
-        redis (WorkerRedis): instance of WorkerRedis
+        rd (WorkerRedis): instance of WorkerRedis
         logger (Logger): logger class to write messages
 
     """
 
+    # Remove previous files
+    transform_revert_with_id(identifier)
+
     # Lock the execution for this task. In this case we will use
     # the Redis SETNX to ensure that other remote machines won't do
     # the same task.
-    __lock_status = redis.lock(identifier, 'mapping-i')
+    __lock_status = rd.lock(identifier, 'mapping-i')
 
     # Check status of the lock
     if __lock_status == 0:
 
         # Transform to Shapefile
         __o_info = transform_with_id(
-            identifier, '.shp', logger
+            identifier, '.shp', rd, logger
         )
 
         # Flags for errors
@@ -889,30 +796,36 @@ def create_initial_mapping(identifier, redis, logger):
         # Detect flags
         if not __flag_not_exist and not __flag_error:
 
-            # Save warn messages
-            if len(__o_info['messages']['warn']):
-                redis.save_record_log(
-                    identifier, 'mapping-i', 'warn',
-                    __o_info['messages']['warn']
-                )
+            # Save messages
+            for __k in print_styles:
+                if len(__o_info['messages'][__k]):
+                    rd.save_record_log(
+                        identifier, 'mapping-i', __k,
+                        __o_info['messages'][__k]
+                    )
 
-            # Save info messages
-            redis.save_record_log(
-                identifier, 'mapping-i', 'info',
-                __o_info['messages']['info']
-            )
+            # Delete previous values
+            rd.remove_records(identifier)
 
-            # Save information from new files
-            redis.save_record_info(
+            # Save information from layers
+            rd.save_record_info(
                 identifier,
-                __o_info['information']
+                __o_info['information']['names'],
+                __o_info['information']['names_md5'],
+                __o_info['information']['properties']
             )
 
-            # TODO: save fields
+            # Save fields from layers
+            rd.save_record_fields(
+                identifier,
+                __o_info['information']['names'],
+                __o_info['information']['fields']
+            )
 
             # Save status for tracking success
-            redis.save_record_status(
-                identifier, 'mapping-i', 0
+            rd.save_record_status(
+                identifier,
+                'mapping-i', 0
             )
 
         # Detect error flag
@@ -920,17 +833,18 @@ def create_initial_mapping(identifier, redis, logger):
 
             # Save error messages
             if len(__o_info['messages']['error']):
-                redis.save_record_log(
+                rd.save_record_log(
                     identifier, 'mapping-i', 'error',
                     __o_info['messages']['error']
                 )
 
             # Save status for tracking success
-            redis.save_record_status(
+            rd.save_record_status(
                 identifier, 'mapping-i', 1
             )
 
-            # TODO: remove generated files
+            # Remove generated files
+            transform_revert_with_id(identifier)
 
         if __flag_not_exist:
 
@@ -940,19 +854,19 @@ def create_initial_mapping(identifier, redis, logger):
             )
 
         # Release lock
-        redis.unlock(identifier + ':mapping-i', True)
+        rd.unlock(identifier + ':mapping-i', True)
 
     else:
 
         # Log status
-        print_worker_status(logger, __lock_status)
+        print_worker_status(__lock_status, logger)
 
 
 ##########################################################################
 
 
-@task(bind=True, name='gis_worker_tasks.initial_mapping', max_retries=5)
-def initial_mapping(self):
+@task(bind=True, name='gis_worker_tasks.create_mapping', max_retries=5)
+def create_mapping(self):
     """ This function allows create an initial mapping
         from a specific task from AMQP messages.
 
@@ -963,17 +877,17 @@ def initial_mapping(self):
 
     try:
 
-        # Get instance of Redis Database and GDAL instance
-        __lib = get_libraries()
+        # Get instance of Redis Database instance
+        __redis = get_redis_instance()
 
         # Create identifier from task_id
         __identifier = self.request.id
 
         # Execute new initial mapping generation
-        create_initial_mapping(__identifier, __lib[0], __logger)
+        init_mapping(__identifier, __redis, __logger)
 
         # Close redis
-        __lib[0].exit()
+        __redis.exit()
 
     except Exception as e:
 
@@ -996,55 +910,8 @@ def initial_mapping(self):
             )
 
 
-@task(bind=True, name='gis_worker_tasks.update_mapping', max_retries=5)
-def update_mapping(self):
-    """ This function allows to update an initial mapping
-        that was saved previously on Worker Database from
-        a specific task from AMQP messages.
-
-    """
-
-    # Create logger to log messages to specific log file
-    __logger = get_task_logger(__name__)
-
-    try:
-
-        # Get instance of Redis Database and GDAL instance
-        __lib = get_libraries()
-
-        # Create identifier from task_id
-        __identifier = self.request.id
-
-        # Remove previous mapping
-        __lib[0].del_initial_mapping(__identifier)
-
-        # Execute new initial mapping generation
-        create_initial_mapping(__identifier, __lib[0], __logger)
-
-        # Close redis
-        __lib[0].exit()
-
-    except Exception as e:
-
-        # Print error message
-        print_to_logger({
-            'error': [
-                '* ------------ Errors -------------\n',
-                str(e.message if e.message != '' else e)
-            ],
-            'warn': [],
-            'info': []
-        }, __logger)
-
-        # Retry task (max 5) to wait for loading libraries
-        if self.request.retries < 5:
-            raise self.retry(
-                exc='', countdown=(self.request.retries + 1) * 20
-            )
-
-
-@task(bind=True, name='gis_worker_tasks.extended_mapping')
-def extended_mapping(self):
+@task(bind=True, name='gis_worker_tasks.extend_mapping')
+def extend_mapping(self):
     return None
 
 

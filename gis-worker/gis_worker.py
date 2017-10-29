@@ -143,16 +143,12 @@ class Worker(object):
         # Configure queues of RabbitMQ
         celery_app.conf.task_queues = (
             Queue(
-                'geo-mapping-initial', mapping_exchange,
-                routing_key='geo.mapping.initial'
+                'geo-mapping-create', mapping_exchange,
+                routing_key='geo.mapping.create'
             ),
             Queue(
-                'geo-mapping-update', mapping_exchange,
-                routing_key='geo.mapping.update'
-            ),
-            Queue(
-                'geo-mapping-extended', mapping_exchange,
-                routing_key='geo.mapping.extended'
+                'geo-mapping-extend', mapping_exchange,
+                routing_key='geo.mapping.extend'
             ),
             Queue(
                 'geo-default', default_exchange,
@@ -167,20 +163,15 @@ class Worker(object):
 
         # Configure tasks of Celery - RabbitMQ
         celery_app.conf.task_routes = {
-            'gis_worker_tasks.initial_mapping': {
-                'queue': 'geo-mapping-initial',
+            'gis_worker_tasks.create_mapping': {
+                'queue': 'geo-mapping-create',
                 'exchange': mapping_exchange,
-                'routing_key': 'geo.mapping.initial'
+                'routing_key': 'geo.mapping.create'
             },
-            'gis_worker_tasks.update_mapping': {
-                'queue': 'geo-mapping-update',
+            'gis_worker_tasks.extend_mapping': {
+                'queue': 'geo-mapping-extend',
                 'exchange': mapping_exchange,
-                'routing_key': 'geo.mapping.update'
-            },
-            'gis_worker_tasks.extended_mapping': {
-                'queue': 'geo-mapping-extended',
-                'exchange': mapping_exchange,
-                'routing_key': 'geo.mapping.extended'
+                'routing_key': 'geo.mapping.extend'
             },
             'gis_worker_tasks.default': {
                 'queue': 'geo-default',
@@ -269,14 +260,14 @@ def main_script():
     elif __args.info is not None:
 
         sys.exit(gis_worker_tasks.info_with_path(
-            __args.info[0], None
+            __args.info[0], None, True
         )['status'])
 
     # Option: fields + id
     elif __args.fields is not None:
 
         sys.exit(gis_worker_tasks.fields_with_path(
-            __args.fields[0], None
+            __args.fields[0], None, True
         )['status'])
 
     # Option: job + file

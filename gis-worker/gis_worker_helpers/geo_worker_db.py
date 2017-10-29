@@ -237,79 +237,80 @@ class WorkerRedis(object):
         # Return status
         return self.redis[database].exists(identifier)
 
-    def save_initial_mapping(self, identifier, fields):
-        """ This function allows to save the mapping for
-            specific identifier. This mapping is the generated
-            mapping from GDAL tools, identifying the fields from
-            the source or raw data.
-
-        Args:
-            identifier (string): key where save information
-            fields (list): fields' information
-        
-        """
-
-        # Create data structure
-        __mapping = {}
-
-        # Iterate over the fields
-        for __f in fields:
-
-            # Get position of : on field
-            __field_double_point = __f.index(':')
-
-            # Get name of field
-            __field_name = __f[:__field_double_point]
-
-            # Get kind of field
-            __field_value = str(
-                __f[__field_double_point + 2:].split(' ')[0]
-            ).lower()
-
-            # Save field on dict
-            __mapping[__field_name] = __field_value
-
-        # Save mapping fields on database
-        self.redis['mapping-i'].hmset(identifier, __mapping)
-
-    def del_initial_mapping(self, identifier):
-        """ This function allows to delete the mapping for
-            specific identifier.
+    def remove_records(self, identifier):
+        """ This function allows to delete the information
+            and all the fields for specific identifier.
 
         Args:
             identifier (string): key to delete it
 
         """
 
-        # Delete mapping fields on database
-        self.redis['mapping-i'].delete(identifier)
+        # Iterate over old info and remove
+        for __k in self.redis['files'].scan_iter(
+            identifier + ':layer:*'
+        ):
+            self.redis['files'].delete(__k)
 
-    def save_record_info(self, identifier, information):
+        # Iterate over old fields and remove
+        for __k in self.redis['mapping-i'].scan_iter(
+            identifier + ':layer:*'
+        ):
+            self.redis['mapping-i'].delete(__k)
+
+    def save_record_info(self, identifier, layers, layers_md5, layers_info):
         """ This function allows to save the new parameters.
 
         Args:
             identifier (string): key where save information
-            information (list): files' information
+            layers (list): transformed files' names
+            layers_md5 (dict): relations between ids and names
+            layers_info (list): transformed files' properties
         
         """
 
-        # Remove previous messages
-        self.redis['files'].delete(
-            identifier + ':information'
-        )
+        # Save data to database
+        for __k in range(0, len(layers)):
 
-        # Create new structure of messages
-        __messages = [
-            __message.strip(' \t\n\r')
-            for __message in information
-            if __message != '\n'
-        ]
+            # Get identifier of layer
+            __layer = layers[__k]
 
-        # Save new dictionary with information
-        self.redis['files'].rpush(
-            identifier + ':information',
-            *__messages
-        )
+            # Set layer name
+            self.redis['files'].set(
+                identifier + ':layer:' +
+                __layer + ':name',
+                layers_md5[__layer]
+            )
+
+            # Set layer information
+            self.redis['files'].hmset(
+                identifier + ':layer:' +
+                __layer + ':info',
+                layers_info[__k]
+            )
+
+    def save_record_fields(self, identifier, layers, layers_fields):
+        """ This function allows to save the new parameters.
+
+        Args:
+            identifier (string): key where save information
+            layers (list): transformed files' names
+            layers_fields (list): transformed files' fields
+
+        """
+
+        # Save data to database
+        for __k in range(0, len(layers)):
+
+            # Get identifier of layer
+            __layer = layers[__k]
+
+            # Set layer fields
+            self.redis['mapping-i'].hmset(
+                identifier + ':layer:' +
+                __layer + ':fields',
+                layers_fields[__k]
+            )
 
     def save_record_status(self, identifier, database, status):
         """ This function allows to save the status of the task.
