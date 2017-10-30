@@ -26,6 +26,7 @@ import sys
 import hashlib
 import unicodedata
 from os.path import splitext
+from dateutil.parser import parse
 from subprocess import Popen, PIPE
 
 if sys.version_info < (3, 0):
@@ -397,6 +398,45 @@ def get_ogr_file_extensions(extension):
     return []
 
 
+def get_ogr_value(value):
+    """ This function returns the parsed value
+        from specific ogr data.
+
+    Args:
+        value (string): value to check
+
+    Returns:
+        type: Python real data
+
+    """
+
+    # Check if data is String
+    if type(value) == str:
+
+        # Deep copy
+        try:
+            __value = str(value)
+        except Exception:
+            __value = '' + value
+
+        # Check possible date
+        try:
+            __value = parse(__value)
+            if len(value) >= 8 and __value is not None:
+                return __value.strftime('%Y-%m-%d')
+        except Exception:
+            pass
+
+        # Check possible number
+        try:
+            return eval(value)
+        except Exception:
+            return value
+
+    else:
+        return value
+
+
 def validate_ogr_fields(path, fields):
     """ This function checks the fields
         of specific Geo-spatial file.
@@ -436,12 +476,27 @@ def validate_ogr_fields(path, fields):
         # Iterate over fields of the Shapefile
         for __field in fields:
 
-            # Get real index
-            __index = __file_feat.GetFieldIndex(__field)
-
             # Check if field is checking at least once
             if __field not in __fields_flags:
                 __fields_flags[__field] = {'b': False}
+
+            # Get real index
+            __index = __file_feat.GetFieldIndex(__field)
+
+            # Check if field is String and non empty
+            __value = __file_feat.GetField(__index)
+            if __file_feat.GetFieldType(__index) == 4 and \
+               __value is not None:
+
+                # Determine real value for specific data
+                __real_value = get_ogr_value(__value)
+
+                # Change if data is equals to old data
+                if __value != __real_value:
+                    __file_feat.SetField(
+                        __index, __real_value
+                    )
+                    __file_layer.SetFeature(__file_feat)
 
             # Check if field is True (has value)
             if __fields_flags[__field]['b']:
@@ -486,7 +541,7 @@ def validate_ogr_fields(path, fields):
             __file_field = __file_layer_def.GetFieldDefn(__index)
             __file_name = clean_string(__field).encode('utf-8')
 
-            # Check if new name is equals to old
+            # Change name if it is necessary
             if __file_name != __field:
                 __file_field.SetName(__file_name)
                 __file_layer.AlterFieldDefn(

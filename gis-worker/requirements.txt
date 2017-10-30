@@ -2,3 +2,4 @@ celery
 hiredis
 redis
 defusedxml
+python-dateutil
