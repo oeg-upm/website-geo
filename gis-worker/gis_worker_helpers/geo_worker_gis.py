@@ -1008,7 +1008,7 @@ class WorkerGIS(object):
             # Check if md5 is saved
             if __path_info['name'] not in __layers_md5:
                 __layers_md5[__path_info['name']] = \
-                    md5_string(__path_info['name'])
+                    md5_string(__path_rev)
                 __layers_name.append(
                     __layers_md5[__path_info['name']]
                 )
