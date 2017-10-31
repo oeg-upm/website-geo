@@ -969,6 +969,13 @@ class WorkerGIS(object):
         __path_shp = __path['folder'] + 'shp' + os.sep
         __path_trs = __path['folder'] + 'trs' + os.sep
 
+        # Check if transformation paths exist
+        if os.path.exists(__path_shp) and \
+           os.path.exists(__path_trs):
+            return {'info': [], 'warn': [], 'error': [
+                'Delete the previous transformation before proceed.'
+            ]}, None, None, None, None
+
         # Create arguments for transforming to Shapefile
         __command = [__driver, __path_shp, path]
 
