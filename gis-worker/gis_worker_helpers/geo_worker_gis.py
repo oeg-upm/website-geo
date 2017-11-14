@@ -13,12 +13,9 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import re
 import os
 import sys
-import hashlib
-import unicodedata
-from os.path import splitext
+import utils
 from dateutil.parser import parse
 from subprocess import Popen, PIPE
 
@@ -35,161 +32,6 @@ __email__ = "alejfcarrera@mail.ru"
 
 
 ##########################################################################
-
-
-def parse_path(path):
-    """ This function allows you to parse a path.
-
-    Args:
-        path (string): file's path
-
-    Returns:
-        dict: Information about the path.
-
-    """
-
-    # Get folder from path
-    __path_dir = os.path.dirname(path) + os.sep
-
-    # Get extension of the file
-    __path_ext = splitext(path)[1]
-
-    # Get file name
-    __path_name = path.replace(__path_dir, '')
-    __path_name = __path_name.replace(__path_ext, '')
-
-    return {
-        'name': __path_name,
-        'extension': __path_ext,
-        'folder': __path_dir
-    }
-
-
-def md5_string(string):
-    try:
-        string_encode = string.encode()
-    except Exception:
-        string_encode = string
-    return hashlib.md5(
-        string_encode +
-        's4lt_g30_l1nk3d_d4t4'
-    ).hexdigest()
-
-
-def clean_string(string):
-    """ This function allows you to remove
-        latin characters and spaces or from any string.
-
-    Args:
-        string (string): value to be parsed
-
-    Returns:
-        string: parsed value
-
-    """
-
-    uni_value = string.decode("utf-8")
-    form = unicodedata.normalize('NFKD', uni_value)
-    return re.sub(r'[^a-zA-Z0-9]', '', u"".join(
-        [c for c in form if not unicodedata.combining(c)]
-    )).lower()
-
-
-def find_string(string, piece, n=0):
-    """ This function returns an index where
-        occurrence is found.
-
-    Args:
-        string (string): sentence to check
-        piece (string): word or character to check
-        n (index): position to start
-
-    Returns:
-        int: index
-
-    """
-
-    i = -1
-    for c in xrange(n):
-        i = string.find(piece, i + 1)
-        if i < 0:
-            break
-    return i
-
-
-##########################################################################
-
-
-def check_geokettle_path():
-    """ This function detects if Geokettle executables are included
-        on the current environment (PATH variable). This is important
-        to avoid full path directories and to be compatible with Docker
-        Geokettle Image.
-
-    Returns:
-        bool: True if "kitchen" and "pan" exist, False otherwise.
-
-    """
-
-    # Create split character depending on operative system
-    path_split = ';' if 'win32' in sys.platform else ':'
-
-    # Get folders from PATH variable
-    path_dirs = os.environ.get('PATH').split(path_split)
-
-    # Iterate over folders
-    for path_dir in path_dirs:
-
-        # Check if folder exists
-        if os.path.isdir(path_dir):
-
-            # Get all nodes from directory
-            path_files = os.listdir(path_dir)
-
-            # Return if kitchen and pan exists at the same folder
-            if 'kitchen.sh' in path_files and 'pan.sh' in path_files:
-                return True
-
-    # Executables were not found
-    return False
-
-
-def check_gdal_path():
-    """ This function detects if GDAL executables are included
-        on the current environment (PATH variable). This is important
-        to avoid full path directories and to be sure that GDAL tools
-        are available to execute them.
-
-    Returns:
-        bool: True if GDAL tools exist, False otherwise.
-
-    """
-
-    # Create split character depending on operative system
-    path_split = ';' if 'win32' in sys.platform else ':'
-
-    # Get folders from PATH variable
-    path_dirs = os.environ.get('PATH').split(path_split)
-
-    # Iterate over folders
-    for path_dir in path_dirs:
-
-        # Check if folder exists
-        if os.path.isdir(path_dir):
-
-            # Get all nodes from directory
-            path_files = os.listdir(path_dir)
-
-            # Return if kitchen and pan exists at the same folder
-            if 'ogr2ogr' in path_files and 'ogrinfo' in path_files:
-
-                # Check GDAL 2.2.0 version
-                from osgeo import gdal
-                version_num = int(gdal.VersionInfo('VERSION_NUM'))
-                return version_num > 2020000
-
-    # Executables were not found
-    return False
 
 
 def check_geo_has_features(information):
@@ -444,7 +286,7 @@ def validate_ogr_fields(path, fields):
     """
 
     # Get information from path
-    __path = parse_path(path)
+    __path = utils.parse_path(path)
 
     # Get kind of file depending on final extension
     __driver = get_ogr_driver(__path['extension'])
@@ -532,7 +374,7 @@ def validate_ogr_fields(path, fields):
 
             # Clean name of the field
             __file_field = __file_layer_def.GetFieldDefn(__index)
-            __file_name = clean_string(__field).encode('utf-8')
+            __file_name = utils.clean_string(__field).encode('utf-8')
 
             # Change name if it is necessary
             if __file_name != __field:
@@ -564,7 +406,7 @@ def get_projection(path):
     """
 
     # Get information from path
-    __path = parse_path(path)
+    __path = utils.parse_path(path)
 
     # Get kind of file depending on final extension
     __driver = get_ogr_driver(__path['extension'])
@@ -607,7 +449,7 @@ def set_centroids(path):
     """
 
     # Get information from path
-    __path = parse_path(path)
+    __path = utils.parse_path(path)
 
     # Get kind of file depending on final extension
     __driver = get_ogr_driver(__path['extension'])
@@ -659,7 +501,7 @@ def set_areas(path):
     """
 
     # Get information from path
-    __path = parse_path(path)
+    __path = utils.parse_path(path)
 
     # Get kind of file depending on final extension
     __driver = get_ogr_driver(__path['extension'])
@@ -845,7 +687,7 @@ def parse_geo_return(outputs, errors):
                 # Save index to structure
                 # + 2 -> character + space
                 if __key not in __index_dash:
-                    __index_dash[__key] = find_string(
+                    __index_dash[__key] = utils.find_string(
                         __message, '-', 2
                     ) + 2
 
@@ -934,8 +776,20 @@ class WorkerGIS(object):
 
     def __init__(self):
 
+        # Set init values
+        self.gis_status = False
+        self.geo_status = False
+
         # Set status of GIS configuration
-        self.status = check_geokettle_path() and check_gdal_path()
+        if utils.check_env_path(['ogr2ogr', 'ogrinfo']):
+
+            # Check GDAL 2.2.0 version
+            from osgeo import gdal
+            version_num = int(gdal.VersionInfo('VERSION_NUM'))
+            self.gis_status = version_num > 2020000
+
+        self.geo_status = utils.check_env_path(['kitchen.sh', 'pan.sh'])
+        self.status = self.gis_status and self.geo_status
 
     def transform(self, path, extension):
         """ This function allows to transform any geo-spatial
@@ -958,7 +812,7 @@ class WorkerGIS(object):
             return print_error_extension()
 
         # Get information from path
-        __path = parse_path(path)
+        __path = utils.parse_path(path)
         __path_shp = __path['folder'] + 'shp' + os.sep
         __path_trs = __path['folder'] + 'trs' + os.sep
 
@@ -996,12 +850,12 @@ class WorkerGIS(object):
         for __path_rev in __path_files:
 
             # Get information from file
-            __path_info = parse_path(__path_rev)
+            __path_info = utils.parse_path(__path_rev)
 
             # Check if md5 is saved
             if __path_info['name'] not in __layers_md5:
                 __layers_md5[__path_info['name']] = \
-                    md5_string(__path_rev)
+                    utils.md5_string(__path_rev)
                 __layers_name.append(
                     __layers_md5[__path_info['name']]
                 )
@@ -1348,9 +1202,7 @@ class WorkerGIS(object):
         __g_info, __original_info = cmd_geo(['pan.sh', path])
 
         # Get extension from path
-        __ext_src = '.'.join(path.split('.')[-2:]) \
-            if len(path.split('.')) > 2 \
-            else splitext(path)[1]
+        __ext_src = utils.parse_path(path)['extension']
 
         # Get directory path to save on log
         __log_path = path.replace(__ext_src, '')
@@ -1397,9 +1249,7 @@ class WorkerGIS(object):
         __g_info, __original_info = cmd_geo(['kitchen.sh', path])
 
         # Get extension from path
-        __ext_src = '.'.join(path.split('.')[-2:]) \
-            if len(path.split('.')) > 2 \
-            else splitext(path)[1]
+        __ext_src = utils.parse_path(path)['extension']
 
         # Get directory path to save on log
         __log_path = path.replace(__ext_src, '')

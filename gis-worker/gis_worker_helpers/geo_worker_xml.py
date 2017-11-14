@@ -15,7 +15,7 @@
 
 import os
 import sys
-import json
+import utils
 import defusedxml.ElementTree
 
 if sys.version_info < (3, 0):
@@ -28,102 +28,6 @@ __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
 __license__ = "Creative Commons Attribution-Noncommercial license"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
-
-
-##########################################################################
-
-
-special_folders = [
-    '${Internal.Transformation.Filename.Directory}',
-    '${Internal.Job.Filename.Directory}'
-]
-
-
-def get_configuration_file():
-    """ This function allows you to load a configuration from file.
-
-    Returns:
-         dict: configuration fields and values.
-
-    """
-
-    # Configuration folder
-    __config_base_path = './gis_worker_config'
-    __debug = False
-
-    # Check if application is on Debug mode
-    if int(os.environ.get('GEO_WORKER_DEBUG', 1)) == 1:
-
-        # Get development configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_DEV', __config_base_path + '/config_debug.json'
-        )
-
-        # Set debug flag
-        __debug = True
-
-    else:
-
-        # Get production configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_PROD', __config_base_path + '/config_production.json'
-        )
-
-    # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
-
-    # Open file to load configuration
-    with open(cwd + __config_path) as __file_data:
-
-        # Return dictionary as configuration
-        __dict = dict(json.load(__file_data))
-        __dict['debug'] = __debug
-
-        return __dict
-
-
-def get_true_folder(path, node_path):
-    """ This function allows you to parse and verify if
-        a path is or not a XML special variable.
-
-    Args:
-        path: file's path
-        node_path: node's value path
-
-    Returns:
-         tuple: verified path and flag of conversion
-
-    """
-
-    # Get file's path without file
-    __file_path = os.path.dirname(path)
-
-    # Generate a full copy of node path
-    __node_path = str(node_path)
-
-    # Save flag to determine if a path is a variable
-    __node_flag = False
-
-    # Iterate over XML variables
-    for folder in special_folders:
-
-        # Check if path is a variable
-        if __node_path.startswith(folder):
-
-            __node_path = __node_path.replace(
-                folder, __file_path
-            )
-            __node_flag = True
-            break
-
-    # Check if folder is the same of file's path
-    if not __node_flag:
-        __node_flag = os.path.dirname(
-            __node_path
-        ).startswith(__file_path)
-
-    # Get folder without file
-    return __node_path, __node_flag
 
 
 ##########################################################################
@@ -306,7 +210,49 @@ class WorkerXML(object):
 
     def __init__(self):
 
-        self.config = get_configuration_file()
+        self.config = utils.get_configuration_file()
+
+    def get_node_folder(self, path, node_path):
+        """ This function allows you to parse and verify if
+            a path is or not a XML special variable.
+
+        Args:
+            path: file's path
+            node_path: node's value path
+
+        Returns:
+             tuple: verified path and flag of conversion
+
+        """
+
+        # Get file's path without file
+        __file_path = os.path.dirname(path)
+
+        # Generate a full copy of node path
+        __node_path = str(node_path)
+
+        # Save flag to determine if a path is a variable
+        __node_flag = False
+
+        # Iterate over XML variables
+        for folder in utils.get_geokettle_special_folders():
+
+            # Check if path is a variable
+            if __node_path.startswith(folder):
+                __node_path = __node_path.replace(
+                    folder, __file_path
+                )
+                __node_flag = True
+                break
+
+        # Check if folder is the same of file's path
+        if not __node_flag:
+            __node_flag = os.path.dirname(
+                __node_path
+            ).startswith(__file_path)
+
+        # Get folder without file
+        return __node_path, __node_flag
 
     def check_issues(self, path):
         """ This function allows to check any issue from
@@ -518,7 +464,7 @@ class WorkerXML(object):
                 __node_f = __node_n.text + '.' + __node_e.text
 
             # Verify directory from value
-            __node_f, __folder_flag = get_true_folder(path, __node_f)
+            __node_f, __folder_flag = self.get_node_folder(path, __node_f)
 
             # Get directory from value
             __folder = os.path.dirname(__node_f)

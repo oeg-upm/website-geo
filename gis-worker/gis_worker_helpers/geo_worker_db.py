@@ -13,11 +13,10 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import os
 import sys
-import json
 import time
 import redis
+import utils
 from redis import TimeoutError, ConnectionError
 
 if sys.version_info < (3, 0):
@@ -30,52 +29,6 @@ __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
 __license__ = "Creative Commons Attribution-Noncommercial license"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
-
-
-##########################################################################
-
-
-def get_configuration_file():
-    """ This function allows you to load a configuration from file.
-
-    Returns:
-         dict: configuration fields and values.
-
-    """
-
-    # Configuration folder
-    __config_base_path = './gis_worker_config'
-    __debug = False
-
-    # Check if application is on Debug mode
-    if int(os.environ.get('GEO_WORKER_DEBUG', 1)) == 1:
-
-        # Get development configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_DEV', __config_base_path + '/config_debug.json'
-        )
-
-        # Set debug flag
-        __debug = True
-
-    else:
-
-        # Get production configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_PROD', __config_base_path + '/config_production.json'
-        )
-
-    # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
-
-    # Open file to load configuration
-    with open(cwd + __config_path) as __file_data:
-
-        # Return dictionary as configuration
-        __dict = dict(json.load(__file_data))
-        __dict['debug'] = __debug
-
-        return __dict
 
 
 ##########################################################################
@@ -203,7 +156,7 @@ class WorkerRedis(object):
     def __init__(self):
         
         # Get current configuration
-        self.config = get_configuration_file()
+        self.config = utils.get_configuration_file()
 
         # Create configuration for Redis
         self.redis, self.redis_pools = configure_redis(self.config)
