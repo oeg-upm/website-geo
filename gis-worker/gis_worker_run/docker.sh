@@ -1,27 +1,25 @@
 #!/bin/bash
 
-# Stop previous worker container
-docker stop geolinkeddata.worker >/dev/null 2>&1 && cbs=1 || cbs=0
-if [ "$cbs" -eq "1" ]; then
-    docker rm geolinkeddata.worker >/dev/null 2>&1
-fi
+# Docker script to launch GIS Worker instance
+# Edit this file to configure some properties of the
+# GIS Worker instance
+
+# Configuration
+GEO_WORKER_RESOURCES=
+
+# Stop and Remove container
+docker stop geolinkeddata.worker >/dev/null 2>&1
+docker rm geolinkeddata.worker >/dev/null 2>&1
 
 # Save directory
 cwd=$(pwd)
-cd ..
+cd "$cwd/.."
 
 # Suppress Warnings
 export PYTHONWARNINGS="ignore"
 
 # Remove all python temp files
 rm -rf *.egg-info
-
-# Get Geo Resources folder path
-if [[ -z "${OEG_RESOURCES_FOLDER}" ]]; then
-    ORFD="/opt/geo-resources"
-else
-    ORFD="${OEG_RESOURCES_FOLDER}"
-fi
 
 # Detect if RabbitMQ is running
 rabbit_cont=$(docker ps -aqf "name=geolinkeddata.rabbitmq")
@@ -62,13 +60,23 @@ if [ "$ibs" -eq "0" ]; then
 fi
 
 # Launch docker container
-docker run -d --name geolinkeddata.worker \
-    --restart=always \
-    -v $ORFD:/opt/resources \
-    -e OEG_DEBUG_MODE=0 \
-    --link geolinkeddata.redis:redishost \
-    --link geolinkeddata.rabbitmq:rabbithost \
-    oegupm/geolinkeddata-worker
+if [[ -z "$GEO_WORKER_RESOURCES" && "$GEO_WORKER_RESOURCES" = '' ]]
+then
+    docker run -d --name geolinkeddata.worker \
+        --restart=always \
+        -e OEG_DEBUG_MODE=0 \
+        --link geolinkeddata.redis:redishost \
+        --link geolinkeddata.rabbitmq:rabbithost \
+        oegupm/geolinkeddata-worker
+else
+    docker run -d --name geolinkeddata.worker \
+        --restart=always \
+        -v $GEO_WORKER_RESOURCES:/opt/resources \
+        -e OEG_DEBUG_MODE=0 \
+        --link geolinkeddata.redis:redishost \
+        --link geolinkeddata.rabbitmq:rabbithost \
+        oegupm/geolinkeddata-worker
+fi
 
 # Came back to directory
-cd $cwd
+cd "$cwd"

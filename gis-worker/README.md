@@ -14,8 +14,15 @@ Configuration for the Docker Container (edit [docker.sh](./gis_worker_run/docker
 
 |Name|Default value|
 |----------|--------------|
-|OEG_DEBUG_FLAG|1 ~ True|
-|OEG_RESOURCES_FOLDER|/opt/resources|
+|GEO_WORKER_RESOURCES|NULL|
+
+Environment for more specific configuration
+
+|Name|Default value|
+|----------|--------------|
+|GEO_WORKER_DEBUG|0 ~ False|
+|GEO_WORKER_CFG_DEV|None|
+|GEO_WORKER_CFG_PROD|None|
 
 Build the Docker Image
 
@@ -70,8 +77,11 @@ optional arguments:
 
 ---
 
-Ontology Engineering Group © Copyright 2017.
+Geographic Information System Worker (c) by Ontology Engineering Group
 
-Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+Geographic Information System Worker is licensed under a CC BY-NC 4.0.
 
 Maintainer, [Alejandro F. Carrera](https://www.github.com/alejandrofcarrera)
+
+You should have received a copy of the license along with this
+work. If not, [see](http://creativecommons.org/licenses/by-nc/4.0/).

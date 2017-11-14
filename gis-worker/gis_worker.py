@@ -8,15 +8,8 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
   Copyright (C) 2017 Ontology Engineering Group.
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-            http://www.apache.org/licenses/LICENSE-2.0
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+  Geographic Information System Worker is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
@@ -34,7 +27,7 @@ if sys.version_info < (3, 0):
 __author__ = "Alejandro F. Carrera"
 __copyright__ = "Copyright 2017 © GeoLinkeddata Platform"
 __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
-__license__ = "Apache"
+__license__ = "Creative Commons Attribution-Noncommercial license"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
 
@@ -55,11 +48,11 @@ def get_configuration_file():
     __debug = False
 
     # Check if application is on Debug mode
-    if int(os.environ.get('OEG_DEBUG_MODE', 1)) == 1:
+    if int(os.environ.get('GEO_WORKER_DEBUG', 1)) == 1:
 
         # Get development configuration
         __config_path = os.environ.get(
-            'OEG_CONFIG_DEBUG_FILE', __config_base_path + '/config_debug.json'
+            'GEO_WORKER_CFG_DEV', __config_base_path + '/config_debug.json'
         )
 
         # Set debug flag
@@ -69,7 +62,7 @@ def get_configuration_file():
 
         # Get production configuration
         __config_path = os.environ.get(
-            'OEG_CONFIG_FILE', __config_base_path + '/config_production.json'
+            'GEO_WORKER_CFG_PROD', __config_base_path + '/config_production.json'
         )
 
     # Load current directory of geo_worker.py

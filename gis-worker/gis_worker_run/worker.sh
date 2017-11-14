@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Configuration by default
+export PYTHONWARNINGS="ignore"
+
 # Kill previous processes
 function pkill() {
     for X in `ps ax | grep $1 | grep -v grep | awk {'print $1'}`; do
@@ -8,15 +11,12 @@ function pkill() {
 }
 pkill celery
 
-# Suppress Warnings
-export PYTHONWARNINGS="ignore"
-
 # Save directory
 cwd=$(pwd)
-cd ..
+cd "$cwd/.."
 
-# Init GeoLinkeddata Worker
+# Init GIS Worker
 celery worker --app gis_worker.app -l info -Ofair &
 
 # Came back to directory
-cd $cwd
+cd "$cwd"

@@ -1,7 +1,18 @@
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+#  Ontology Engineering Group
+#        http://www.oeg-upm.net/
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+#  Copyright (C) 2017 Ontology Engineering Group.
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+#  Geographic Information System Worker is licensed under a
+#  Creative Commons Attribution-NC 4.0 International License.
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+#
+
 # Declare base image, because this software needs
 # the latest geokettle docker built image with all
 # the necessary to run properly.
-
 FROM oegupm/geokettle-x3geo
 MAINTAINER Alejandro F. Carrera
 

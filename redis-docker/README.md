@@ -35,8 +35,6 @@ Stop instance of GeoLinkeddata Redis
 
 ---
 
-Ontology Engineering Group © Copyright 2017.
-
-Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+RedisDB for Geographic Information System Worker (c) by Ontology Engineering Group
 
 Maintainer, [Alejandro F. Carrera](https://www.github.com/alejandrofcarrera)
