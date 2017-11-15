@@ -1,7 +1,7 @@
 {
   "redis": {
     "db": {
-      "host": "192.168.99.100",
+      "host": "redishost",
       "port": 6379,
       "pass": ""
     },
@@ -17,7 +17,7 @@
   },
   "folder": "/opt/resources",
   "celery": {
-    "broker_host": "localhost",
+    "broker_host": "rabbithost",
     "broker_port": 5672,
     "broker_user": "rabbitmq",
     "broker_pass": "password"
@@ -26,5 +26,6 @@
     "steps": [],
     "entries": [],
     "folders": []
-  }
+  },
+  "debug": false
 }

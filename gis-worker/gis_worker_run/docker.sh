@@ -6,6 +6,7 @@
 
 # Configuration
 GEO_WORKER_RESOURCES=
+GEO_WORKER_CFG=
 
 # Stop and Remove container
 docker stop geolinkeddata.worker >/dev/null 2>&1
@@ -62,20 +63,39 @@ fi
 # Launch docker container
 if [[ -z "$GEO_WORKER_RESOURCES" && "$GEO_WORKER_RESOURCES" = '' ]]
 then
-    docker run -d --name geolinkeddata.worker \
-        --restart=always \
-        -e OEG_DEBUG_MODE=0 \
-        --link geolinkeddata.redis:redishost \
-        --link geolinkeddata.rabbitmq:rabbithost \
-        oegupm/geolinkeddata-worker
+    if [[ -z "$GEO_WORKER_RESOURCES" && "$GEO_WORKER_RESOURCES" = '' ]]
+    then
+        docker run -d --name geolinkeddata.worker \
+            --restart=always \
+            --link geolinkeddata.redis:redishost \
+            --link geolinkeddata.rabbitmq:rabbithost \
+            oegupm/geolinkeddata-worker
+    else
+        docker run -d --name geolinkeddata.worker \
+            --restart=always \
+            -v $GEO_WORKER_CFG:/opt/worker/gis_worker_helpers/configuration.json \
+            --link geolinkeddata.redis:redishost \
+            --link geolinkeddata.rabbitmq:rabbithost \
+            oegupm/geolinkeddata-worker
+    fi
 else
-    docker run -d --name geolinkeddata.worker \
-        --restart=always \
-        -v $GEO_WORKER_RESOURCES:/opt/resources \
-        -e OEG_DEBUG_MODE=0 \
-        --link geolinkeddata.redis:redishost \
-        --link geolinkeddata.rabbitmq:rabbithost \
-        oegupm/geolinkeddata-worker
+    if [[ -z "$GEO_WORKER_RESOURCES" && "$GEO_WORKER_RESOURCES" = '' ]]
+    then
+        docker run -d --name geolinkeddata.worker \
+            --restart=always \
+            -v $GEO_WORKER_RESOURCES:/opt/resources \
+            --link geolinkeddata.redis:redishost \
+            --link geolinkeddata.rabbitmq:rabbithost \
+            oegupm/geolinkeddata-worker
+    else
+        docker run -d --name geolinkeddata.worker \
+            --restart=always \
+            -v $GEO_WORKER_CFG:/opt/worker/gis_worker_helpers/configuration.json \
+            -v $GEO_WORKER_RESOURCES:/opt/resources \
+            --link geolinkeddata.redis:redishost \
+            --link geolinkeddata.rabbitmq:rabbithost \
+            oegupm/geolinkeddata-worker
+    fi
 fi
 
 # Came back to directory

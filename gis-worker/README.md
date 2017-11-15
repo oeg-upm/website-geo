@@ -1,28 +1,20 @@
 ## Geographic Information System Worker Image
 
-This Docker Image includes:
+### Use of Docker Image that includes:
 
  * [GeoKettle Docker Image](https://github.com/oeg-upm/docker-geokettle)
- * [GDAL 2.2.1](http://trac.osgeo.org/gdal/wiki/DownloadingGdalBinaries)
- * [GDAL Python 2.2.1](http://gdal.org/python/)
+ * [GDAL 2.2.2](http://trac.osgeo.org/gdal/wiki/DownloadingGdalBinaries)
+ * [GDAL Python 2.2.2](http://gdal.org/python/)
  * [Google LIBKML](https://github.com/google/libkml)
  * GIS Worker for receiving tasks from RabbitMQ and save them on Redis
 
----
+#### Configuration:
 
-Configuration for the Docker Container (edit [docker.sh](./gis_worker_run/docker.sh) file)
+To set the configuration for ```GeoKettle```, please edit the ```xml``` key at [configuration](./gis_worker_helpers/configuration.json) file.
 
-|Name|Default value|
-|----------|--------------|
-|GEO_WORKER_RESOURCES|NULL|
+Also, you can set the shared volumes at Docker launch script (in this case, you do not need to set any environment key). The keys to set the shared volumes are ```GEO_WORKER_RESOURCES``` & ```GEO_WORKER_CFG``` at [docker.sh](./gis_worker_run/docker.sh). By default, these keys are Null to be avoided.
 
-Environment for more specific configuration
-
-|Name|Default value|
-|----------|--------------|
-|GEO_WORKER_DEBUG|0 ~ False|
-|GEO_WORKER_CFG_DEV|None|
-|GEO_WORKER_CFG_PROD|None|
+#### Build & Running:
 
 Build the Docker Image
 
@@ -49,10 +41,15 @@ cd ../rabbitmq-docker && ./launch.sh
 ```bash
 cd gis_worker_run && ./docker.sh
 ```
-
 ---
 
-Options for Command Line Interface
+### Use of GIS Worker as CLI:
+
+#### Configuration:
+
+To set the configuration for ```GeoKettle```, please edit the ```xml``` key at [configuration](./gis_worker_helpers/configuration.json) file. The other key that can be changed is ```debug``` to set the verbose mode.
+
+#### Help:
 
 ```bash
 python gis_worker.py -h

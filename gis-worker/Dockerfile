@@ -103,7 +103,7 @@ RUN chown -R geo:geo /opt
 USER geo
 
 # Expose geo-resources volumes
-VOLUME ["/opt/resources"]
+VOLUME ["/opt/resources", "/opt/worker/gis_worker_helpers/configuration.json"]
 
 # Run celery when docker run
 ENTRYPOINT ["celery", "worker", "-A", "gis_worker.app", "-l", "info", "-Ofair"]

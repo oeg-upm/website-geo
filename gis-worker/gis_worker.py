@@ -62,7 +62,7 @@ def get_configuration_file():
 
         # Get production configuration
         __config_path = os.environ.get(
-            'GEO_WORKER_CFG_PROD', __config_base_path + '/config_production.json'
+            'GEO_WORKER_CFG_PROD', __config_base_path + '/configuration.json'
         )
 
     # Load current directory of geo_worker.py
