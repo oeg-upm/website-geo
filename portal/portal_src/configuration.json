@@ -1,0 +1,15 @@
+{
+  "web": {
+    "port": 443,
+    "url": "https://www.geolinkeddata.es"
+  },
+  "celery": {
+    "url": "rabbithost",
+    "port": 5672,
+    "username": "rabbitmq",
+    "password": "password"
+  },
+  "logging": "/var/log/portal.log",
+  "debug": false,
+  "keys": []
+}
