@@ -45,36 +45,14 @@ def get_configuration_file():
     """
 
     # Configuration folder
-    __config_base_path = '../gis_worker_config'
-    __debug = False
-
-    # Check if application is on Debug mode
-    if int(os.environ.get('GEO_WORKER_DEBUG', 1)) == 1:
-
-        # Get development configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_DEV', __config_base_path + '/config_debug.json'
-        )
-
-        # Set debug flag
-        __debug = True
-
-    else:
-
-        # Get production configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_PROD', __config_base_path + '/config_production.json'
-        )
-
-    # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
+    __config_path = os.path.dirname(os.path.realpath(__file__)) + \
+        os.sep + 'configuration.json'
 
     # Open file to load configuration
-    with open(cwd + __config_path) as __file_data:
+    with open(__config_path) as __file_data:
 
         # Return dictionary as configuration
         __dict = dict(json.load(__file_data))
-        __dict['debug'] = __debug
 
         return __dict
 
