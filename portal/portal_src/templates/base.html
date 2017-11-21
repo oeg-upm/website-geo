@@ -1,13 +1,9 @@
 <!DOCTYPE html>
-<!--
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-  Copyright (C) 2017 Ontology Engineering Group.
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
-  GeoLinkeddata Open Data Portal is licensed under a
-  Creative Commons Attribution-NC 4.0 International License.
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
--->
-<html lang="{{ headers.locale }}">
+{% if request.path == '/' %}
+<html class="no-js condensed" xml:lang="{{ headers.locale }}" lang="{{ headers.locale }}">
+{% else %}
+<html class="no-js expanded" xml:lang="{{ headers.locale }}" lang="{{ headers.locale }}">
+{% endif %}
     <head>
         <title>GeoLinkeddata</title>
         <meta charset="UTF-8"/>
@@ -20,12 +16,13 @@
         <meta name="keywords" content="georesource, open data, ">
         <meta name="format-detection" content="telephone=no"/>
         <meta name="googlebot" content="nofollow"/>
-        <meta name="robots" content="noimageindex"/>
+        <meta name="robots" content="noimageindex, noarchive"/>
         <meta name="msapplication-tap-highlight" content="no"/>
         <meta name="msapplication-TileColor" content="#2b5797"/>
         <meta name="msapplication-TileImage" content="{{ headers.domain }}/static/img-fav/mstile-144x144.png"/>
         <meta name="msapplication-config" content="{{ headers.domain }}/static/img-fav/browserconfig.xml"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="theme-color" content="#2b5797"/>
         <meta name="twitter:card" content="summary_large_image"/>
         <meta name="twitter:author" content="@oeg_upm"/>
@@ -65,14 +62,6 @@
         <meta property="og:image:width" content="1024"/>
         <meta property="og:image:height" content="535"/>
         {% endif %}
-        {% if headers.debug == False %}
-        <script>
-            window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-            ga('create', 'UA-15686717-1', 'auto');
-            ga('send', 'pageview');
-        </script>
-        <script async src='https://www.google-analytics.com/analytics.js'></script>
-        {% endif %}
         <link rel="canonical" href="{{ headers.domain }}"/>
         <link rel="shortlink" href="{{ headers.domain }}"/>
         <link rel="icon" href="{{url_for('static', filename='img-fav/favicon.ico')}}"/>
@@ -107,8 +96,165 @@
         <link rel="icon" type="image/png" sizes="256x256" href="{{url_for('static', filename='img-fav/android-chrome-256x256.png')}}"/>
         <link rel="icon" type="image/png" sizes="384x384" href="{{url_for('static', filename='img-fav/android-chrome-384x384.png')}}"/>
         <link rel="icon" type="image/png" sizes="512x512" href="{{url_for('static', filename='img-fav/android-chrome-512x512.png')}}"/>
+        {% if headers.debug == False %}
+        <script>
+            window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+            ga('create', 'UA-15686717-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+        <script type="text/javascript" async src='https://www.google-analytics.com/analytics.js'></script>
+        {% endif %}
+        <script type="text/javascript" src="{{url_for('static', filename='js/base.min.js')}}"></script>
+        {% block head_js %}
+        {% endblock %}
+        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/font-awesome.min.css')}}"/>
+        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.min.css')}}"/>
+        {% block head_css %}
+        {% endblock %}
     </head>
     <body>
-    GeoLinkeddata Website
+        <span id="mega-container">
+            <section class="fit-container">
+                <nav id="nav-container" role="navigation">
+                    <div class="nav-content x-centered">
+                        <div class="content-fitter elements-row y-centered x-centered">
+                            <div class="nav-logo elements-row x-centered">
+                                <a class="nav-logo-img" role="logo" href="/" title="GeoLinkeddata"></a>
+                                <div class="nav-logo-text">
+                                    <span class="up" role="banner">GeoLinkeddata</span>
+                                    <span class="down text-grey">
+                                        {% if headers.locale == 'es' %}
+                                        Portal de datos abiertos
+                                        {% else %}
+                                        GIS Open Data Portal
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="nav-right elements-row y-centered x-centered">
+                                <a href="#" id="burguer-button" class="fa fa-bars text-click" aria-hidden="true"></a>
+                                {% if request.path == '/' %}
+                                <nav id="nav-buttons" role="navigation">
+                                    <ul class="flex elements-row">
+                                        <li class="pad-right">
+                                            {% if headers.locale == 'en' %}
+                                            <a href="/about">About us</a>
+                                            {% else %}
+                                            <a href="/about">Acerca de</a>
+                                            {% endif %}
+                                        </li>
+                                        <li class="pad-right"><a href="/data">Datasets</a></li>
+                                        <li>
+                                            {% if headers.locale == 'en' %}
+                                            <a href="/organizations">Organizations</a>
+                                            {% else %}
+                                            <a href="/organizations">Organizaciones</a>
+                                            {% endif %}
+                                        </li>
+                                    </ul>
+                                </nav>
+                                {% else %}
+                                <div id="nav-search" class="flex" role="search">
+                                    <div class="search-content x-centered">
+                                        <form class="content-fitter elements-row y-centered x-centered flex" action="/search" method="get" >
+                                            {% if headers.locale == 'en' %}
+                                            <input name="value" placeholder="What are you looking for ?" type="text">
+                                            {% else %}
+                                            <input name="value" placeholder=" ¿ Qu&eacute; est&aacute;s buscando ?" type="text">
+                                            {% endif %}
+                                            <input class="text-click" type="submit" value="&#xf002;">
+                                         </form>
+                                    </div>
+                                </div>
+                                <a href="/accounts" id="account-button" class="fa fa-user-circle text-click" aria-hidden="true"></a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    </div>
+                </nav>
+                {% if request.path != '/' %}
+                <div id="search-container" class="flex" role="search">
+                    <div class="search-content x-centered">
+                        <form class="content-fitter elements-row y-centered x-centered flex" action="/search" method="get" >
+                            {% if headers.locale == 'en' %}
+                            <input name="value" placeholder="What are you looking for ?" type="text">
+                            {% else %}
+                            <input name="value" placeholder=" ¿ Qu&eacute; est&aacute;s buscando ?" type="text">
+                            {% endif %}
+                            <input class="text-click" type="submit" value="&#xf002;">
+                         </form>
+                    </div>
+                </div>
+                {% endif %}
+                <div id="burguer-container">
+                    <div class="burguer-content x-centered">
+                        <nav class="content-fitter" role="navigation">
+                            <ul>
+                                <li>
+                                    {% if headers.locale == 'en' %}
+                                    <a href="/about">About us</a>
+                                    {% else %}
+                                    <a href="/about">Acerca de</a>
+                                    {% endif %}
+                                </li>
+                                <li><a href="/data">Datasets</a></li>
+                                <li>
+                                    {% if headers.locale == 'en' %}
+                                    <a href="/organizations">Organizations</a>
+                                    {% else %}
+                                    <a href="/organizations">Organizaciones</a>
+                                    {% endif %}
+                                </li>
+                                {% if request.path != '/' %}
+                                <li><a href="/sparql">SPARQL Endpoint</a></li>
+                                <li><a href="/map">Map4RDF</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <main id="main-container" role="main">
+                    <div class="main-content">
+                        <div class="content-fitter">
+                        {% block container %}
+                        {% endblock %}
+                        </div>
+                    </div>
+                </main>
+                <footer id="footer-container" role="contentinfo">
+                    <div class="footer-content x-centered">
+                        <nav class="content-fitter" role="navigation">
+                            <ul>
+                                <li>
+                                    {% if headers.locale == 'en' %}
+                                    <a href="/about">About us</a>
+                                    {% else %}
+                                    <a href="/about">Acerca de</a>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    {% if headers.locale == 'en' %}
+                                    <a href="/accesibility">Accesibility</a>
+                                    {% else %}
+                                    <a href="/accesibility">Accesibilidad</a>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    {% if headers.locale == 'en' %}
+                                    <a href="/policy">Data Policy</a>
+                                    {% else %}
+                                    <a href="/policy">Política de datos</a>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    <a href="https://twitter.com/oeg_upm"><i class="fa fa-twitter-square" aria-hidden="true"></i></a>
+                                </li>
+                            </ul>
+                            <span>{{ headers.time.year }} &#169; Ontology Engineering Group</span>
+                        </nav>
+                    </div>
+                </footer>
+            </section>
+        </span>
     </body>
 </html>

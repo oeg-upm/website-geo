@@ -16,6 +16,7 @@
 import sys
 import json
 import settings
+from datetime import datetime
 from flask import redirect, make_response, render_template
 
 if sys.version_info < (3, 0):
@@ -150,7 +151,8 @@ def generate_render(app, request, html_name, values=None):
     __values = {} if values is None else values.copy()
     __values['headers'] = {
         'debug': config.debug, 'locale': __locale,
-        'domain': config.flask_host
+        'domain': config.flask_host,
+        'time': datetime.utcnow()
     }
 
     # Return rendered template

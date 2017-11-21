@@ -20,8 +20,8 @@ import traceback
 from celery import Celery
 from portal_src import http
 from portal_src import settings
-from flask import Flask, request
 from kombu import Exchange, Queue
+from flask import Flask, request, url_for, send_from_directory
 
 if sys.version_info < (3, 0):
     reload(sys)
@@ -92,6 +92,7 @@ class Portal(object):
         self.generate_trace_endpoints()
 
         # Add Endpoints
+        self.generate_fav_endpoints()
         self.generate_root_endpoints()
 
     def generate_flask_app(self):
@@ -226,6 +227,18 @@ class Portal(object):
             print_exception(e)
             return http.generate_error_response('Bad format', 422)
 
+    def generate_fav_endpoints(self):
+        """ Method for generating favicon compatibility
+
+        """
+
+        @self.app.route('/favicon.ico')
+        def favicon():
+            return send_from_directory(
+                cwd + '/static/img-fav', 'favicon.ico',
+                mimetype='image/vnd.microsoft.icon'
+            )
+
     def generate_root_endpoints(self):
         """ Method for generating root endpoints
 
@@ -240,7 +253,7 @@ class Portal(object):
 
             """
 
-            return http.generate_render(self.app, request, 'base')
+            return http.generate_render(self.app, request, 'base')          
 
 
 # Create instance and export Flask app
