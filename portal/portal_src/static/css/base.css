@@ -14,18 +14,18 @@
 
 .text-grey {color: #595959;}
 
-.text-click {color: #1A4F84;}
+.text-click {color: #1d5995;}
 
 a, a:link, a > i {
     text-decoration: none;
-    color: #1A4F84;
+    color: #1d5995;
 }
 
 a:visited, a:visited > i {color: #933951;}
 a:hover {text-decoration: underline; color: #595959;}
 a:hover > i {text-decoration:none; color: #595959;}
 a:focus, a:focus > i {color: #595959}
-a:active, a:active > i {color: #1A4F84;}
+a:active, a:active > i {color: #1d5995;}
 
 /* ################################################################## */
 
@@ -357,7 +357,8 @@ section, .elements-column {
     border-bottom: 1px solid rgba(1, 1, 1, 0);
 }
 
-#search-container input[type="text"]:focus {
+#search-container input[type="text"]:focus,
+#search-container input[type="text"]:active, {
     border-top: 1px solid #1d5995;
     border-bottom: 1px solid #1d5995;
 }
@@ -365,8 +366,8 @@ section, .elements-column {
 #search-container input[type="submit"],
 #nav-search input[type="submit"] {
     font-family: FontAwesome;
-    position: absolute;
-    right: 8px;
+    position: relative;
+    right: 46px;
     border: none;
     background: none;
     box-shadow: none;
@@ -382,6 +383,8 @@ section, .elements-column {
     transition : color 750ms ease-out;
 }
 
+#search-container input[type="submit"]:active,
+#nav-search input[type="submit"]:active,
 #search-container input[type="text"]:focus ~ input[type="submit"],
 #nav-search input[type="text"]:focus ~ input[type="submit"] {
     color: #1d5995;
@@ -555,8 +558,7 @@ table {
 
 /* ################################################################## */
 
-/* 512px */
-@media (min-width: 32em) {
+@media (min-width: 512px) {
 
     #nav-container > .div-container {
         height: 79px;
@@ -609,8 +611,7 @@ table {
 
 }
 
-/* 768px */
-@media (min-width: 48em) {
+@media (min-width: 768px) {
     
     .div-container {
         padding: 0 20px;
@@ -684,8 +685,7 @@ table {
 
 }
 
-/* 896px */
-@media (min-width: 56em) {
+@media (min-width: 896px) {
 
     .div-container {
         padding: 0 35px;
@@ -730,8 +730,7 @@ table {
 
 }
 
-/* 1024px */
-@media (min-width: 64em) {
+@media (min-width: 1024px) {
 
     .div-container {
         padding: 0 40px;

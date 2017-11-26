@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/home.css')}}"/>
+{% endblock %}
+{% block head_js %}
+<script async src='https://www.google.com/recaptcha/api.js?hl={{ headers.locale }}'></script>
+{% endblock %}
+{% block content %}
+<div id="background">
+	<div class="div-container y-centered">
+		<div id="hsearch-container" class="x-centered y-centered">
+			<h1>{{ headers.translations.title }}</h1>
+			<form class="flex elements-row y-centered x-centered" action="/search" method="get">
+                <input data-hotkey="s" name="value" aria-label="{{ headers.translations.button_search }}" placeholder="{{ headers.translations.placeholder_search }}" data-unscoped-placeholder="{{ headers.translations.button_search }}" data-scoped-placeholder="{{ headers.translations.button_search }}" autocapitalize="off" type="text">
+                <input class="text-click" type="submit" value="&#xf002;">
+            </form>
+		</div>
+		<p id="hsearch-subtitle">{{ headers.translations.description }}</p>
+	</div>
+</div>
+<div id="counters">
+    <div class="div-container y-centered">
+        <div class="stat-item">
+            <span class="stat-item-value">{{ statistics.resources }}</span>
+            <span class="stat-item-title">{{ headers.translations.label_resources }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-value">{{ statistics.reported }}</span>
+            <span class="stat-item-title">{{ headers.translations.label_dreported }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-value">{{ statistics.downloads }}</span>
+            <span class="stat-item-title">{{ headers.translations.label_downloads }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-value">{{ statistics.org }}</span>
+            <span class="stat-item-title">{{ headers.translations.button_org }}</span>
+        </div>
+    </div>
+</div>
+<div id="update-buttons">
+	<div class="div-container">
+		<div class="titles elements-row">
+			<p class="update-buttons-title">{{ headers.translations.label_updates }}</p>
+			<p class="update-buttons-title">{{ headers.translations.label_services }}</p>
+		</div>
+		<div class="buttons">
+			<p class="update-button-datasets">{{ headers.translations.label_updates }}</p>
+			<div class="timeline">
+				{% for update in updates %}
+	  			<div class="entry">
+	  				<div class="entry-date">
+	      				<p>{{ update.time.day }} / {{ update.time.month }} / {{ update.time.year }}</p>
+	      				<div class="entry-date-bubble"></div>
+	    			</div>
+	    			<div class="entry-value">
+	      				<a href="/datasets/{{ update.id }}" class="entry-value-name">{{ update.name }}</a>
+	      				<p>{{ headers.translations.label_uploadedby }}
+	      					<a href="/organizations/{{ update.org_id }}" class="entry-value-org">{{ update.org }}</a>
+	      				</p>
+	      			</div>
+	  			</div>
+	  			{% endfor %}
+			</div>
+			<p class="update-button-services">{{ headers.translations.label_services }}</p>
+			<div class="services">
+				<a href="/sparql" class="sparql"></a>
+				<a href="/map4rdf" class="map4rdf"></a>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="contact">
+	<div class="div-container">
+		<p class="title">{{ headers.translations.label_report }}</p>
+		<form action="/contact" method="POST">
+			<div class="contact-row left">
+				<div class="contact-section">
+					<div class="input-box">
+						<input data-hotkey="n" name="name" aria-label="{{ headers.translations.label_name }}" placeholder="{{ headers.translations.label_name }}" data-unscoped-placeholder="{{ headers.translations.label_name }}" data-scoped-placeholder="{{ headers.translations.label_name }}" autocapitalize="off" type="text" maxlength="50" required>
+						<i class="fa fa-user-o" aria-hidden="true"></i>
+					</div>
+					<div class="input-box marg">
+						<input data-hotkey="m" name="email" aria-label="{{ headers.translations.label_email }}" placeholder="{{ headers.translations.label_email }}" data-unscoped-placeholder="{{ headers.translations.label_email }}" data-scoped-placeholder="{{ headers.translations.label_email }}" autocapitalize="off" type="email" required>
+						<i class="fa fa-envelope-open-o" aria-hidden="true"></i>
+					</div>
+					<div class="input-box marg">
+						<input data-hotkey="a" name="email" aria-label="{{ headers.translations.label_subject }}" placeholder="{{ headers.translations.label_subject }}" data-unscoped-placeholder="{{ headers.translations.label_subject }}" data-scoped-placeholder="{{ headers.translations.label_subject }}" autocapitalize="off" type="text" maxlength="80" required>
+						<i class="fa fa-paper-plane-o" aria-hidden="true"></i>
+					</div>
+				</div>
+				<div class="contact-section marg description">
+					<textarea data-hotkey="a" name="email" aria-label="{{ headers.translations.label_description }}" placeholder="{{ headers.translations.label_description }}" data-unscoped-placeholder="{{ headers.translations.label_description }}" data-scoped-placeholder="{{ headers.translations.label_description }}" autocapitalize="off" maxlength="500" required></textarea>
+				</div>
+			</div>
+			<div class="contact-row right">
+				<div class="contact-section g-recaptcha" data-sitekey="{{ headers.keys.captcha }}"></div>
+				<div class="contact-section marg">
+					<div class="elements-row">
+						<input class="contact-check" name="terms" value="terms" type="checkbox" required>
+						<span class="contact-check-title">{{ headers.translations.label_legal_title }}</span>
+						<a class="contact-check-link" href="/data-policy#contact" target="_blank">{{ headers.translations.label_legal_link }}</a>
+					</div>
+					<p class="contact-disclaimer">{{ headers.translations.label_legal_fields }}</p>
+					<input value="{{ headers.translations.button_send }}" type="submit">
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

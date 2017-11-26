@@ -1,6 +1,6 @@
 {
   "web": {
-    "port": 443,
+    "port": 8000,
     "url": "https://www.geolinkeddata.es"
   },
   "celery": {
@@ -11,5 +11,8 @@
   },
   "logging": "/var/log/portal.log",
   "debug": false,
-  "keys": []
+  "keys": {
+    "google_captcha": "",
+    "google_analytics": ""
+  }
 }

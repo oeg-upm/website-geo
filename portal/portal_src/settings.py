@@ -67,6 +67,39 @@ class Config(object):
                 __dict = dict(json.load(__file_data))
                 return __dict
 
+        def get_configuration_translations():
+            """ This function allows you to load translation files.
+
+            Returns:
+                 dict: translations fields and values.
+
+            """
+
+            __translations = {}
+
+            # Configuration folder
+            __config_path = os.path.dirname(os.path.realpath(__file__))
+
+            # Get current files of the current directory
+            __files = os.listdir(__config_path)
+
+            # Iterate over files
+            for __file in __files:
+
+                # Check if file is a translation file
+                if 'configuration_' in __file:
+
+                    # Get language from file
+                    __lang = __file[14:].replace('.json', '')
+
+                    # Open file to load configuration
+                    with open(__config_path + os.sep + __file) as __file_data:
+
+                        # Return dictionary as configuration
+                        __translations[__lang] = dict(json.load(__file_data))
+
+            return __translations
+
         # Get configuration for the current instance
         settings = get_configuration_file()
         self.debug = logging.DEBUG if settings['debug'] else logging.INFO
@@ -85,6 +118,15 @@ class Config(object):
             ':' + str(self.celery_port)
         self.celery_user = settings['celery']['username']
         self.celery_pwd = settings['celery']['password']
+
+        # TRANSLATIONS
+        self.translations = get_configuration_translations()
+
+        # SECURITY KEYS
+        self.keys = {
+            'captcha': settings['keys']['google_catpcha'],
+            'analytics': settings['keys']['google_analytics']
+        }
 
         # LOGGING
         formatter = logging.Formatter(

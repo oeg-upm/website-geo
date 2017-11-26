@@ -5,7 +5,7 @@
 <html class="no-js expanded" xml:lang="{{ headers.locale }}" lang="{{ headers.locale }}">
 {% endif %}
     <head>
-        <title>GeoLinkeddata</title>
+        <title>{{ headers.translations.title }}</title>
         <meta charset="UTF-8"/>
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
         <meta http-equiv="x-rim-auto-match" content="none"/>
@@ -27,23 +27,20 @@
         <meta name="twitter:card" content="summary_large_image"/>
         <meta name="twitter:author" content="@oeg_upm"/>
         <meta name="twitter:url" content="{{ headers.domain }}{{ request.path }}"/>
-        <meta name="twitter:title" content="GeoLinkeddata Open Data Portal"/>
+        <meta name="twitter:title" content="{{ headers.translations.twitter_title }}"/>
         {% if 'image' in headers %}
         <meta property="twitter:image" content="{{ headers.domain }}/static/img/{{ headers.image.name }}"/>
         <meta property="twitter:image:alt" content="{{ headers.image.alt }}"/>
         {% else %}
         <meta property="twitter:image" content="{{ headers.domain }}/static/img-logo/logo-share.jpg"/>
-        <meta property="twitter:image:alt" content="GeoLinkeddata Logo"/>
+        <meta property="twitter:image:alt" content="{{ headers.translations.title }} Logo"/>
         {% endif %}
+        <meta name="twitter:description" content="{{ headers.translations.description }}"/>
+        <meta name="description" content="{{ headers.translations.description }}"/>
+        <meta name="og:description" content="{{ headers.translations.description }}"/>
         {% if headers.locale == 'es' %}
-        <meta name="twitter:description" content="El portal de datos abiertos geo.linkeddata.es te permite explorar, descargar y reutilizar los datasets y recursos geográficos más destacables del ámbito nacional e internacional."/>
-        <meta name="description" content="El portal de datos abiertos geo.linkeddata.es te permite explorar, descargar y reutilizar los datasets y recursos geográficos más destacables del ámbito nacional e internacional."/>
-        <meta property="og:description" content="El portal de datos abiertos geo.linkeddata.es te permite explorar, descargar y reutilizar los datasets y recursos geográficos más destacables del ámbito nacional e internacional."/>
         <meta property="og:locale" content="es_ES"/>
         {% else %}
-        <meta name="twitter:description" content="The open data portal geo.linkeddata.es allows you to explore, download and reuse the most relevant datasets and geographic resources of national and international scope."/>
-        <meta name="description" content="The open data portal geo.linkeddata.es allows you to explore, download and reuse the most relevant datasets and geographic resources of national and international scope."/>
-        <meta property="og:description" content="The open data portal geo.linkeddata.es allows you to explore, download and reuse the most relevant datasets and geographic resources of national and international scope."/>
         <meta property="og:locale" content="en_GB"/>
         {% endif %}
         <meta property="og:type" content="website"/>
@@ -99,16 +96,16 @@
         {% if headers.debug == False %}
         <script>
             window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-            ga('create', 'UA-15686717-1', 'auto');
+            ga('create', '{{ headers.keys.analytics }}', 'auto');
             ga('send', 'pageview');
         </script>
         <script type="text/javascript" async src='https://www.google-analytics.com/analytics.js'></script>
         {% endif %}
-        <script type="text/javascript" src="{{url_for('static', filename='js/base.min.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/base.js')}}"></script>
         {% block head_js %}
         {% endblock %}
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/font-awesome.min.css')}}"/>
-        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.min.css')}}"/>
+        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.css')}}"/>
         {% block head_css %}
         {% endblock %}
     </head>
@@ -121,11 +118,7 @@
                             <div class="logo-rdf" title="RDF"></div>
                             <div class="logo-open" title="Open Data License"></div>
                         </div>
-                        {% if headers.locale == 'en' %}
-                        <a id="but-account" href="/accounts">Sign in<i class="fa fa-user-circle" aria-hidden="true"></i></a>
-                        {% else %}
-                        <a id="but-account" href="/accounts">Acceder<i class="fa fa-user-circle" aria-hidden="true"></i></a>
-                        {% endif %}
+                        <a id="but-account" href="/accounts">{{ headers.translations.button_signin }}<i class="fa fa-user-circle" aria-hidden="true"></i></a>
                     </div>
                 </div>
                 <nav id="nav-container" role="navigation">
@@ -133,14 +126,8 @@
                         <div class="nav-logo elements-row y-centered">
                             <a class="nav-logo-img" role="logo" href="/" title="GeoLinkeddata"></a>
                             <div class="nav-logo-text">
-                                <span class="up" role="banner">GeoLinkeddata</span>
-                                <span class="down text-grey">
-                                    {% if headers.locale == 'es' %}
-                                    Portal de datos abiertos
-                                    {% else %}
-                                    GIS Open Data Portal
-                                    {% endif %}
-                                </span>
+                                <h1 class="up" role="banner">{{ headers.translations.title }}</h1>
+                                <h2 class="down text-grey">{{ headers.translations.subtitle }}</h2>
                             </div>
                         </div>
                         <div class="nav-right elements-row y-centered">
@@ -148,32 +135,16 @@
                             {% if request.path == '/' %}
                             <nav id="nav-buttons" role="navigation">
                                 <ul class="flex elements-row">
-                                    <li class="pad-right">
-                                        {% if headers.locale == 'en' %}
-                                        <a href="/about">About us</a>
-                                        {% else %}
-                                        <a href="/about">Acerca de</a>
-                                        {% endif %}
-                                    </li>
-                                    <li class="pad-right"><a href="/data">Datasets</a></li>
-                                    <li>
-                                        {% if headers.locale == 'en' %}
-                                        <a href="/organizations">Organizations</a>
-                                        {% else %}
-                                        <a href="/organizations">Organizaciones</a>
-                                        {% endif %}
-                                    </li>
+                                    <li class="pad-right"><a href="/about">{{ headers.translations.button_about }}</a></li>
+                                    <li class="pad-right"><a href="/data">{{ headers.translations.button_datasets }}</a></li>
+                                    <li><a href="/organizations">{{ headers.translations.button_org }}</a></li>
                                 </ul>
                             </nav>
                             {% else %}
                             <div id="nav-search" class="flex" role="search">
                                 <div class="div-container">
                                     <form class="flex elements-row y-centered x-centered" action="/search" method="get" >
-                                        {% if headers.locale == 'en' %}
-                                        <input data-hotkey="s" name="value" aria-label="Search" placeholder="What are you looking for ?" data-unscoped-placeholder="Search" data-scoped-placeholder="Search" autocapitalize="off" type="text">
-                                        {% else %}
-                                        <input data-hotkey="s" name="value" aria-label="B&uacute;squeda" placeholder=" ¿ Qu&eacute; est&aacute;s buscando ?" data-unscoped-placeholder="B&uacute;squeda" data-scoped-placeholder="B&uacute;squeda" autocapitalize="off" type="text">
-                                        {% endif %}
+                                        <input data-hotkey="s" name="value" aria-label="{{ headers.translations.button_search }}" placeholder="{{ headers.translations.placeholder_search }}" data-unscoped-placeholder="{{ headers.translations.button_search }}" data-scoped-placeholder="{{ headers.translations.button_search }}" autocapitalize="off" type="text">
                                         <input class="text-click" type="submit" value="&#xf002;">
                                      </form>
                                 </div>
@@ -186,11 +157,7 @@
                 <div id="search-container" class="flex" role="search">
                     <div class="div-container">
                         <form class="flex elements-row y-centered x-centered" action="/search" method="get" >
-                            {% if headers.locale == 'en' %}
-                            <input name="value" placeholder="What are you looking for ?" type="text">
-                            {% else %}
-                            <input name="value" placeholder=" ¿ Qu&eacute; est&aacute;s buscando ?" type="text">
-                            {% endif %}
+                            <input name="value" placeholder="{{ headers.translations.placeholder_search }}" type="text">
                             <input class="text-click" type="submit" value="&#xf002;">
                          </form>
                     </div>
@@ -199,55 +166,26 @@
                 <div id="burguer-container">
                     <nav class="div-container" role="navigation">
                         <ul>
-                            <li>
-                                {% if headers.locale == 'en' %}
-                                <a href="/about"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>About us</a>
-                                {% else %}
-                                <a href="/about"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Acerca de</a>
-                                {% endif %}
-                            </li>
-                            <li><a href="/data"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Datasets</a></li>
-                            <li>
-                                {% if headers.locale == 'en' %}
-                                <a href="/organizations"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Organizations</a>
-                                {% else %}
-                                <a href="/organizations"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Organizaciones</a>
-                                {% endif %}
-                            </li>
+                            <li><a href="/about"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_about }}</a></li>
+                            <li><a href="/data"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_datasets }}</a></li>
+                            <li><a href="/organizations"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_org }}</a></li>
                             {% if request.path != '/' %}
-                            <li><a href="/sparql"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>SPARQL Endpoint</a></li>
-                            <li><a href="/map"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Map4RDF</a></li>
+                            <li><a href="/sparql"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_sparql }}</a></li>
+                            <li><a href="/map"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_map4rdf }}</a></li>
                             {% endif %}
                         </ul>
                     </nav>
                 </div>
                 <main id="main-container" role="main">
-                    <div class="div-container"></div>
+                    {% block content %}
+                    {% endblock %}
                 </main>
                 <footer id="footer-container" role="contentinfo">
                     <nav class="div-container" role="navigation">
                         <ul>
-                            <li>
-                                {% if headers.locale == 'en' %}
-                                <a href="/about">About us</a>
-                                {% else %}
-                                <a href="/about">Acerca de</a>
-                                {% endif %}
-                            </li>
-                            <li>
-                                {% if headers.locale == 'en' %}
-                                <a href="/accesibility">Accesibility</a>
-                                {% else %}
-                                <a href="/accesibility">Accesibilidad</a>
-                                {% endif %}
-                            </li>
-                            <li>
-                                {% if headers.locale == 'en' %}
-                                <a href="/policy">Data Policy</a>
-                                {% else %}
-                                <a href="/policy">Política de datos</a>
-                                {% endif %}
-                            </li>
+                            <li><a href="/about">{{ headers.translations.button_about }}</a></li>
+                            <li><a href="/accesibility">{{ headers.translations.button_accesibility }}</a></li>
+                            <li><a href="/policy">{{ headers.translations.button_dpolicy }}</a></li>
                             <li>
                                 <a href="https://twitter.com/oeg_upm"><i class="fa fa-twitter-square" aria-hidden="true"></i>oeg</a>
                             </li>

@@ -142,16 +142,16 @@ def generate_render(app, request, html_name, values=None):
     __locale = request.cookies.get(cookie_language, 'en')
 
     # Set language to file name or not otherwise
-    __html_name = html_name
-    if __locale != 'en':
-        __html_name += '_' + __locale
-    __html_name += '.html'
+    __html_name = html_name + '.html'
 
     # Set new values to jinja arguments
     __values = {} if values is None else values.copy()
     __values['headers'] = {
-        'debug': config.debug, 'locale': __locale,
+        'keys': config.keys,
+        'debug': config.debug,
+        'locale': __locale,
         'domain': config.flask_host,
+        'translations': config.translations[__locale],
         'time': datetime.utcnow()
     }
 
