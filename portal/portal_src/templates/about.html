@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/about.css')}}"/>
+{% endblock %}
+{% block head_js %}
+{% endblock %}
+{% block content %}
+<div class="about">
+	<div class="div-container">
+		<h3 class="title">{{ headers.translations.about_data_title }}</h3>
+		<p>{{ headers.translations.about_data_p1 }}</p>
+		<p>{{ headers.translations.about_data_p2 }}</p>
+		<p>{{ headers.translations.about_data_p3 }}</p>
+		<h3 class="title">{{ headers.translations.about_what_title }}</h3>
+		<p><strong>{{ headers.translations.about_what_p1_title }}:</strong> {{ headers.translations.about_what_p1 }}</p>
+		<p><strong>{{ headers.translations.about_what_p2_title }}:</strong> {{ headers.translations.about_what_p2 }}</p>
+		<p><strong>{{ headers.translations.about_what_p3_title }}:</strong> {{ headers.translations.about_what_p3 }}</p>
+		<p><strong>{{ headers.translations.about_what_p4_title }}:</strong> {{ headers.translations.about_what_p4 }}</p>
+		<h3 class="title">{{ headers.translations.about_web_title }}</h3>
+		<p>{{ headers.translations.about_web_p1 }}</p>
+		<p>{{ headers.translations.about_web_p2 }}</p>
+		<p>{{ headers.translations.about_web_p3 }}</p>
+		<h3 class="title">{{ headers.translations.about_oeg_title }}</h3>
+		<p>{{ headers.translations.about_oeg_p1 }} <a href="http://www.oeg-upm.net" target="_blank">Ontology Engineering Group</a> {{ headers.translations.about_oeg_p2 }}</p>
+		<p>{{ headers.translations.about_oeg_p3 }}</p>
+	</div>
+</div>
+{% endblock %}

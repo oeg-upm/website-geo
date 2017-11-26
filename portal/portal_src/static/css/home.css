@@ -18,7 +18,7 @@
 	height: auto;
 	min-height: 425px;
 	z-index: 1;
-	background: white;
+	background-color: white;
 	background-repeat: no-repeat;
 	background: -moz-linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('../img-bg/background@2x.jpg');
 	background: -webkit-linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('../img-bg/background@2x.jpg');
@@ -58,9 +58,7 @@
 }
 
 #hsearch-container > form {
-	background: white;
-	border: 2px solid #1d5995;
-	border-radius: 6px;
+	position: relative;
 	height: 48px;
 	max-width: 692px;
 	width: 100%;
@@ -69,18 +67,35 @@
 #hsearch-container > form > input[type="text"] {
 	box-shadow: none;
 	outline: none;
-	border: none;
+	background: white;
+	border: 2px solid #1d5995;
+	border-radius: 6px;
 	color: #1d5995;
 	width: 100%;
 	height: 100%;
-	padding: 0 16px 0 6px;
+	padding: 0 56px 0 16px;
 	font-size: 15px;
-	margin-left: 10px;
+	-webkit-transition : border 750ms ease-out;
+    -moz-transition : border 750ms ease-out;
+    -o-transition : border 750ms ease-out;
+    transition : border 750ms ease-out;
+}
+
+#hsearch-container > form > input[type="text"]:focus,
+#hsearch-container > form > input[type="text"]:active {
+	border: 2px solid #494949;	
+}
+
+#hsearch-container > form > input[type="text"]:focus,
+#hsearch-container > form > input[type="text"]:active,
+#hsearch-container > form > input[type="text"]:active ~ input[type="submit"],
+#hsearch-container > form > input[type="text"]:focus ~ input[type="submit"] {
+	color: #494949;
 }
 
 #hsearch-container > form > input[type="submit"] {
     font-family: FontAwesome;
-    position: relative;
+    position: absolute;
     right: 6px;
     border: none;
     background: none;
@@ -195,7 +210,7 @@
 	-webkit-flex-grow: 1;
 	-ms-flex-positive: 1;
 	flex-grow: 1;
-	text-align: left;
+	text-align: justify;
 	margin-left: 16px;
 	font-size: 16px;
 }
@@ -215,7 +230,10 @@
 	padding-right: 14px;
 }
 
-#update-buttons .timeline .entry-value > a,
+#update-buttons .timeline .entry-value > a {
+	text-align: justify;
+}
+
 #update-buttons .timeline .entry-value > p {
 	text-align: justify;
 }
@@ -239,25 +257,27 @@
 	border-color: #595959;
 }
 
-#update-buttons .services > .sparql {
-	background: url('../img-button/sparql@2x.jpg') no-repeat top left;
-	background-size: contain;
-}
-
-#update-buttons .services > a.sparql:hover {
-	background: url('../img-button/sparql_highlight@2x.jpg') no-repeat top left;
-	background-size: contain;
-}
-
-#update-buttons .services > .map4rdf {
+#update-buttons .services > .map4df {
 	margin-top: 40px;
-	background: url('../img-button/map4rdf@2x.jpg') no-repeat top left;
-	background-size: contain;
 }
 
-#update-buttons .services > a.map4rdf:hover {
-	background: url('../img-button/map4rdf_highlight@2x.jpg') no-repeat top left;
-	background-size: contain;
+#update-buttons .services > a.sparql > .sparql-h,
+#update-buttons .services > a.map4rdf > .map4rdf-h,
+#update-buttons .services > a.sparql:hover > .sparql-n,
+#update-buttons .services > a.map4rdf:hover > .map4rdf-n {
+	display: none;
+}
+
+#update-buttons .services > a.sparql:hover > .sparql-h,
+#update-buttons .services > a.map4rdf:hover > .map4rdf-h {
+	display: block;
+}
+
+#update-buttons .services > a.sparql > img,
+#update-buttons .services > a.map4rdf > img {
+	width: 100%;
+	height: 100%;
+	border-radius: 16px;
 }
 
 /* ################################################################## */
@@ -313,13 +333,13 @@
 #contact .input-box > input:active,
 #contact .contact-section.description > textarea:focus,
 #contact .contact-section.description > textarea:active {
-	border: 1px solid #545454;
-	color: #545454;
+	border: 1px solid #454545;
+	color: #454545;
 }
 
 #contact .input-box > input:focus + i,
 #contact .input-box > input:active + i {
-	color: #545454;
+	color: #454545;
 }
 
 #contact .contact-section.description > textarea {
@@ -365,15 +385,12 @@
 
 #contact .contact-section .contact-check {
 	margin: 0;
+	margin-right: 8px;
 }
 
 #contact .contact-section .contact-check-title,
 #contact .contact-section .contact-check-link {
 	font-size: 12px;
-}
-
-#contact .contact-section .contact-check-title {
-	margin-left: 8px;
 }
 
 #contact .contact-section .contact-check-link {
@@ -462,10 +479,6 @@
 		margin-bottom: 40px;
 	}
 
-	#hsearch-container > form > input[type="text"] {
-		padding: 0 16px 0 10px;
-	}
-
     #hsearch-subtitle {
     	padding: 20px;
     	font-size: 13px;
@@ -525,6 +538,7 @@
 
 	#hsearch-container > form > input[type="text"] {
 		font-size: 16px;
+		padding: 0 60px 0 22px;
 	}
 
 	#hsearch-subtitle {
@@ -560,13 +574,7 @@
     	height: 60px;
     }
 
-    #hsearch-container > form > input[type="text"] {
-    	font-size: 16px;
-    	padding-right: 28px;
-    }
-
     #hsearch-container > form > input[type="submit"] {
-    	right: 12px;
     	font-size: 24px;
     	width: 50px;
     }

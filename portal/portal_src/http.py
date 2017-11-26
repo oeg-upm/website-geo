@@ -147,7 +147,7 @@ def generate_render(app, request, html_name, values=None):
     # Set new values to jinja arguments
     __values = {} if values is None else values.copy()
     __values['headers'] = {
-        'keys': config.keys,
+        'tokens': config.keys,
         'debug': config.debug,
         'locale': __locale,
         'domain': config.flask_host,

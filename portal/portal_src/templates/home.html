@@ -10,7 +10,7 @@
 	<div class="div-container y-centered">
 		<div id="hsearch-container" class="x-centered y-centered">
 			<h1>{{ headers.translations.title }}</h1>
-			<form class="flex elements-row y-centered x-centered" action="/search" method="get">
+			<form class="flex elements-row y-centered" action="/search" method="get">
                 <input data-hotkey="s" name="value" aria-label="{{ headers.translations.button_search }}" placeholder="{{ headers.translations.placeholder_search }}" data-unscoped-placeholder="{{ headers.translations.button_search }}" data-scoped-placeholder="{{ headers.translations.button_search }}" autocapitalize="off" type="text">
                 <input class="text-click" type="submit" value="&#xf002;">
             </form>
@@ -41,11 +41,11 @@
 <div id="update-buttons">
 	<div class="div-container">
 		<div class="titles elements-row">
-			<p class="update-buttons-title">{{ headers.translations.label_updates }}</p>
-			<p class="update-buttons-title">{{ headers.translations.label_services }}</p>
+			<h2 class="update-buttons-title">{{ headers.translations.label_updates }}</h2>
+			<h2 class="update-buttons-title">{{ headers.translations.label_services }}</h2>
 		</div>
 		<div class="buttons">
-			<p class="update-button-datasets">{{ headers.translations.label_updates }}</p>
+			<h2 class="update-button-datasets">{{ headers.translations.label_updates }}</h2>
 			<div class="timeline">
 				{% for update in updates %}
 	  			<div class="entry">
@@ -62,17 +62,23 @@
 	  			</div>
 	  			{% endfor %}
 			</div>
-			<p class="update-button-services">{{ headers.translations.label_services }}</p>
+			<h2 class="update-button-services">{{ headers.translations.label_services }}</h2>
 			<div class="services">
-				<a href="/sparql" class="sparql"></a>
-				<a href="/map4rdf" class="map4rdf"></a>
+				<a href="/sparql" class="sparql" title="SPARQL Endpoint">
+					<img class="sparql-n" alt="SPARQL Endpoint" src="{{url_for('static', filename='img-button/sparql.jpg')}}">
+					<img class="sparql-h" alt="" src="{{url_for('static', filename='img-button/sparql_high.jpg')}}">
+				</a>
+				<a href="/map4rdf" class="map4rdf" title="Map4RDF">
+					<img class="map4rdf-n" alt="Map4RDF" src="{{url_for('static', filename='img-button/map4rdf.jpg')}}">
+					<img class="map4rdf-h" alt="" src="{{url_for('static', filename='img-button/map4rdf_high.jpg')}}">
+				</a>
 			</div>
 		</div>
 	</div>
 </div>
 <div id="contact">
 	<div class="div-container">
-		<p class="title">{{ headers.translations.label_report }}</p>
+		<h3 class="title">{{ headers.translations.label_report }}</h3>
 		<form action="/contact" method="POST">
 			<div class="contact-row left">
 				<div class="contact-section">
@@ -94,12 +100,10 @@
 				</div>
 			</div>
 			<div class="contact-row right">
-				<div class="contact-section g-recaptcha" data-sitekey="{{ headers.keys.captcha }}"></div>
+				<div class="contact-section g-recaptcha" data-sitekey="{{ headers.tokens.captcha }}"></div>
 				<div class="contact-section marg">
 					<div class="elements-row">
-						<input class="contact-check" name="terms" value="terms" type="checkbox" required>
-						<span class="contact-check-title">{{ headers.translations.label_legal_title }}</span>
-						<a class="contact-check-link" href="/data-policy#contact" target="_blank">{{ headers.translations.label_legal_link }}</a>
+						<span class="contact-check-title"><input class="contact-check" name="terms" value="terms" type="checkbox" required>{{ headers.translations.label_legal_title }}<a class="contact-check-link" href="/policy#contact" target="_blank">{{ headers.translations.label_legal_link }}</a></span>
 					</div>
 					<p class="contact-disclaimer">{{ headers.translations.label_legal_fields }}</p>
 					<input value="{{ headers.translations.button_send }}" type="submit">

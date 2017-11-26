@@ -1,0 +1,37 @@
+/*
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Ontology Engineering Group
+        http://www.oeg-upm.net/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Copyright (C) 2017 Ontology Engineering Group.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  GeoLinkeddata Open Data Portal is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
+/* ################################################################## */
+
+.about {
+	margin-bottom: 40px;
+}
+
+/* ################################################################## */
+
+.title {
+	text-align: center;
+	font-weight: 600;
+	font-size: 22px;
+	margin: 40px 0px;
+	padding: 0 30px;
+	line-height: 30px;
+}
+
+p {
+	text-align: justify;
+	margin-bottom: 16px;
+}
+
+p strong {
+	font-weight: 600;
+}

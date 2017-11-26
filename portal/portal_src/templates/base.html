@@ -96,7 +96,7 @@
         {% if headers.debug == False %}
         <script>
             window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-            ga('create', '{{ headers.keys.analytics }}', 'auto');
+            ga('create', '{{ headers.tokens.analytics }}', 'auto');
             ga('send', 'pageview');
         </script>
         <script type="text/javascript" async src='https://www.google-analytics.com/analytics.js'></script>
@@ -124,26 +124,28 @@
                 <nav id="nav-container" role="navigation">
                     <div class="div-container elements-row">
                         <div class="nav-logo elements-row y-centered">
-                            <a class="nav-logo-img" role="logo" href="/" title="GeoLinkeddata"></a>
+                            <a class="nav-logo-img" role="logo" href="/" title="GeoLinkeddata">
+                                <img alt="GeoLinkeddata" src="{{url_for('static', filename='img-logo/logo-small.jpg')}}">
+                            </a>
                             <div class="nav-logo-text">
                                 <h1 class="up" role="banner">{{ headers.translations.title }}</h1>
                                 <h2 class="down text-grey">{{ headers.translations.subtitle }}</h2>
                             </div>
                         </div>
                         <div class="nav-right elements-row y-centered">
-                            <a href="#" id="burguer-button" class="fa fa-bars text-click" aria-hidden="true"></a>
+                            <span id="burguer-button" class="fa fa-bars text-click" aria-hidden="true"></span>
                             {% if request.path == '/' %}
                             <nav id="nav-buttons" role="navigation">
-                                <ul class="flex elements-row">
+                                <ol class="flex elements-row">
                                     <li class="pad-right"><a href="/about">{{ headers.translations.button_about }}</a></li>
                                     <li class="pad-right"><a href="/data">{{ headers.translations.button_datasets }}</a></li>
                                     <li><a href="/organizations">{{ headers.translations.button_org }}</a></li>
-                                </ul>
+                                </ol>
                             </nav>
                             {% else %}
-                            <div id="nav-search" class="flex" role="search">
+                            <div id="nav-search" role="search">
                                 <div class="div-container">
-                                    <form class="flex elements-row y-centered x-centered" action="/search" method="get" >
+                                    <form class="flex elements-row y-centered" action="/search" method="get" >
                                         <input data-hotkey="s" name="value" aria-label="{{ headers.translations.button_search }}" placeholder="{{ headers.translations.placeholder_search }}" data-unscoped-placeholder="{{ headers.translations.button_search }}" data-scoped-placeholder="{{ headers.translations.button_search }}" autocapitalize="off" type="text">
                                         <input class="text-click" type="submit" value="&#xf002;">
                                      </form>
@@ -157,7 +159,7 @@
                 <div id="search-container" class="flex" role="search">
                     <div class="div-container">
                         <form class="flex elements-row y-centered x-centered" action="/search" method="get" >
-                            <input name="value" placeholder="{{ headers.translations.placeholder_search }}" type="text">
+                            <input data-hotkey="s" name="value" aria-label="{{ headers.translations.button_search }}" placeholder="{{ headers.translations.placeholder_search }}" data-unscoped-placeholder="{{ headers.translations.button_search }}" data-scoped-placeholder="{{ headers.translations.button_search }}" autocapitalize="off" type="text">
                             <input class="text-click" type="submit" value="&#xf002;">
                          </form>
                     </div>
@@ -165,15 +167,15 @@
                 {% endif %}
                 <div id="burguer-container">
                     <nav class="div-container" role="navigation">
-                        <ul>
+                        <ol>
                             <li><a href="/about"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_about }}</a></li>
                             <li><a href="/data"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_datasets }}</a></li>
                             <li><a href="/organizations"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_org }}</a></li>
                             {% if request.path != '/' %}
-                            <li><a href="/sparql"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_sparql }}</a></li>
-                            <li><a href="/map"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_map4rdf }}</a></li>
+                            <li><a href="/sparql"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>SPARQL Endpoint</a></li>
+                            <li><a href="/map"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Map4RDF</a></li>
                             {% endif %}
-                        </ul>
+                        </ol>
                     </nav>
                 </div>
                 <main id="main-container" role="main">
@@ -182,14 +184,14 @@
                 </main>
                 <footer id="footer-container" role="contentinfo">
                     <nav class="div-container" role="navigation">
-                        <ul>
+                        <ol>
                             <li><a href="/about">{{ headers.translations.button_about }}</a></li>
                             <li><a href="/accesibility">{{ headers.translations.button_accesibility }}</a></li>
                             <li><a href="/policy">{{ headers.translations.button_dpolicy }}</a></li>
                             <li>
                                 <a href="https://twitter.com/oeg_upm"><i class="fa fa-twitter-square" aria-hidden="true"></i>oeg</a>
                             </li>
-                        </ul>
+                        </ol>
                         <span>{{ headers.time.year }} &#169; Ontology Engineering Group</span>
                     </nav>
                 </footer>
