@@ -30,6 +30,7 @@ __email__ = "alejfcarrera@mail.ru"
 def read(name):
     return open(os.path.join(os.path.dirname(__file__), name)).read()
 
+
 setup(
     name="geo-portal",
     version="1.0.0",
@@ -38,12 +39,14 @@ setup(
     description="This open data portal allows you explore, \
         discover and download datasets or geo resources",
     license=__license__,
-    keywords="geolinkeddata website flask gis maps open-data resources datasets",
+    keywords="geolinkeddata website flask gis maps open-data \
+        resources datasets",
     url="https://github.com/oeg-upm/website-geo.git",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     install_requires=[
-        'Flask', 'flask_negotiate', 'python-dateutil', 'requests',
-        'user-agents', 'pycrypto', 'urllib3', 'gevent', 'gunicorn'
+        'Flask', 'flask_negotiate', 'python-dateutil',
+        'requests', 'user-agents', 'pycrypto', 'urllib3',
+        'gevent', 'gunicorn'
     ],
     classifiers=[],
     scripts=['portal.py']

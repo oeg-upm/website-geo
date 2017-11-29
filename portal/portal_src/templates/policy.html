@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/policy.css')}}"/>
+{% endblock %}
+{% block head_js %}
+{% endblock %}
+{% block content %}
+<div id="privacy-policy">
+	<div class="div-container">
+        <h3 class="title">{{ headers.translations.policy_privacy_title }}</h3>
+        <h4 class="subtitle"> {{ headers.translations.policy_privacy_controller_title }}</h4>
+        <p class="center"> {{ headers.translations.policy_privacy_controller_p1 }}</p>
+        <h4 class="subtitle marg"> {{ headers.translations.policy_privacy_data_title }}</h4>
+        <p>{{ headers.translations.policy_privacy_data_p1 }}<a class="strong" href="#privacy-processing-data">{{ headers.translations.policy_privacy_data_p2 }}</a>. {{ headers.translations.policy_privacy_data_p3 }}</p>
+        <h4 class="subtitle marg"> {{ headers.translations.policy_privacy_mode_title }}</h4>
+        <p><strong>{{ headers.translations.policy_privacy_mode_method_title }}:</strong> {{ headers.translations.policy_privacy_mode_method_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_privacy_mode_place_title }}:</strong> {{ headers.translations.policy_privacy_mode_place_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_privacy_mode_retention_title }}:</strong> {{ headers.translations.policy_privacy_mode_retention_p1 }}</p>
+        <h4 class="subtitle marg"> {{ headers.translations.policy_privacy_use_title }}</h4>
+        <p>{{ headers.translations.policy_privacy_use_p1 }}</p>
+        <h4 id="privacy-processing-data" class="subtitle marg"> {{ headers.translations.policy_privacy_data_p2 }}</h4>
+        <p>{{ headers.translations.policy_privacy_detailed_p1 }}</p>
+        <h5 class="subtitle marg"><a href="https://www.google.com/intl/en/policies/privacy" target="_blank">· Google Analytics (Google Inc.) ·</a></h5>
+        <p>{{ headers.translations.policy_privacy_google_p1 }}</p>
+        <p>{{ headers.translations.policy_privacy_google_p2 }}</p>
+        <p>{{ headers.translations.policy_privacy_google_p3 }}</p>
+        <h5 class="subtitle marg"><a href="https://www.google.com/intl/en/policies/privacy" target="_blank">· Google reCAPTCHA (Google Inc.) ·</a></h5>
+        <p>{{ headers.translations.policy_privacy_google_re_p1 }}</p>
+        <p>{{ headers.translations.policy_privacy_google_p2 }}</p>
+        <p>{{ headers.translations.policy_privacy_google_p3 }}</p>
+        <h5 id="contact-form" class="subtitle marg">· {{ headers.translations.policy_privacy_contact_title }} ·</h5>
+        <p>{{ headers.translations.policy_privacy_contact_p1 }}</p>
+        <p>{{ headers.translations.policy_privacy_contact_p2 }}</p>
+        <p>{{ headers.translations.policy_privacy_contact_p3 }}</p>
+        <h5 class="subtitle marg">· {{ headers.translations.policy_privacy_uuid_title }} ·</h5>
+        <p>{{ headers.translations.policy_privacy_uuid_p1 }}</p>
+        <p>{{ headers.translations.policy_privacy_contact_p3 }}</p>
+        <h4 class="subtitle marg">{{ headers.translations.policy_privacy_other_title }}</h4>
+        <p><strong>{{ headers.translations.policy_privacy_other_legal_title }}:</strong> {{ headers.translations.policy_privacy_other_legal_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_privacy_other_personal_title }}:</strong> {{ headers.translations.policy_privacy_other_personal_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_privacy_other_system_title }}:</strong> {{ headers.translations.policy_privacy_other_system_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_privacy_other_non_title }}:</strong> {{ headers.translations.policy_privacy_other_non_p1 }}<a class="strong">{{ headers.translations.policy_privacy_other_non_p2 }}</a> {{ headers.translations.policy_privacy_other_non_p3 }}</p>
+        <p><strong>{{ headers.translations.policy_privacy_other_right_title }}:</strong> {{ headers.translations.policy_privacy_other_right_p1 }}</p>
+        <p class="nomarg"><strong>{{ headers.translations.policy_privacy_other_changes_title }}:</strong> {{ headers.translations.policy_privacy_other_changes_p1 }}</p>
+        <h3 id="cookies" class="title">{{ headers.translations.policy_cookies_title }}</h3>
+        <h4 class="subtitle">{{ headers.translations.policy_cookies_definition_title }}</h4>
+        <p>{{ headers.translations.policy_cookies_definition_p1 }}</p>
+        <h4 class="subtitle marg">{{ headers.translations.policy_cookies_use_title }}</h4>
+        <p>{{ headers.translations.policy_cookies_use_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_cookies_use_session_title }}:</strong> {{ headers.translations.policy_cookies_use_session_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_cookies_use_persistent_title }}:</strong> {{ headers.translations.policy_cookies_use_persistent_p1 }}</p>
+        <p>{{ headers.translations.policy_cookies_use_p2 }}</p>
+        <p><strong>{{ headers.translations.policy_cookies_use_own_title }}:</strong> {{ headers.translations.policy_cookies_use_own_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_cookies_use_third_title }}:</strong> {{ headers.translations.policy_cookies_use_third_p1 }}</p>
+        <p>{{ headers.translations.policy_cookies_use_p3 }}</p>
+        <p><strong>{{ headers.translations.policy_cookies_use_register_title }}:</strong> {{ headers.translations.policy_cookies_use_register_p1 }}</p>
+        <p><strong>{{ headers.translations.policy_cookies_use_analysis_title }}:</strong> {{ headers.translations.policy_cookies_use_analysis_p1 }}</p>
+        <h4 class="subtitle marg">{{ headers.translations.policy_cookies_settings_title }}</h4>
+        <p>{{ headers.translations.policy_cookies_settings_p1 }}</p>
+        <h5 class="subtitle nomarg"><a href="http://support.google.com/chrome/bin/answer.py?hl={{ headers.session.device_lang }}&answer=95647" target="_blank">· Google Chrome ·</a></h5>
+        <h5 class="subtitle browser"><a href="http://support.apple.com/kb/ph5042" target="_blank">· Safari ·</a></h5>
+        <h5 class="subtitle browser"><a href="http://www.opera.com/help/tutorials/security/privacy/" target="_blank">· Opera ·</a></h5>
+        {% if headers.session.device_lang == 'en' %}
+        <h5 class="subtitle browser"><a href="https://support.mozilla.org/en-US/kb/delete-cookies-remove-info-websites-stored" target="_blank">· Firefox ·</a></h5>
+        <h5 class="subtitle browser"><a href="https://support.microsoft.com/en-us/help/278835/how-to-delete-cookie-files-in-internet-explorer" target="_blank">· Internet Explorer ·</a></h5>
+        <h5 class="subtitle browser"><a href="https://privacy.microsoft.com/en-us/windows-10-microsoft-edge-and-privacy" target="_blank">· Edge ·</a></h5>
+        {% else %}
+        <h5 class="subtitle browser"><a href="https://support.mozilla.org/es-ES/kb/delete-cookies-remove-info-websites-stored" target="_blank">· Firefox ·</a></h5>
+        <h5 class="subtitle browser"><a href="https://support.microsoft.com/es-es/help/278835/how-to-delete-cookie-files-in-internet-explorer" target="_blank">· Internet Explorer ·</a></h5>
+        <h5 class="subtitle browser"><a href="https://privacy.microsoft.com/es-es/windows-10-microsoft-edge-and-privacy" target="_blank">· Edge ·</a></h5>
+        {% endif %}
+        <h3 id="data" class="title">{{ headers.translations.policy_data_title }}</h3>
+        <p>{{ headers.translations.policy_data_p1 }}<a class="strong" href="https://creativecommons.org/licenses/by/4.0/">{{ headers.translations.policy_data_p2 }}</a>{{ headers.translations.policy_data_p3 }}</p>
+        <p><strong>{{ headers.translations.policy_data_p4 }}:</strong> {{ headers.translations.policy_data_p5 }}</p>
+        <p><strong>{{ headers.translations.policy_data_p6 }}:</strong> {{ headers.translations.title }}</p>
+        <p>{{ headers.translations.policy_data_p7 }}</p>
+        <p>{{ headers.translations.policy_data_p8 }}</p>
+        <p>{{ headers.translations.policy_data_p9 }}</p>
+        <p class="nomarg">{{ headers.translations.policy_data_p10 }}</p>
+        <h3 class="title">{{ headers.translations.policy_definitions_title }}</h3>
+        <p><strong>{{ headers.translations.policy_definitions_p1 }}:</strong> {{ headers.translations.policy_definitions_p2 }}</p>
+        <p><strong>{{ headers.translations.policy_definitions_p3 }}:</strong> {{ headers.translations.policy_definitions_p4 }}</p>
+        <p><strong>{{ headers.translations.policy_definitions_p5 }}:</strong> {{ headers.translations.policy_definitions_p6 }}</p>
+        <p><strong>{{ headers.translations.policy_definitions_p7 }}:</strong> {{ headers.translations.policy_definitions_p8 }}</p>
+        <p><strong>{{ headers.translations.policy_definitions_p9 }}:</strong> {{ headers.translations.policy_definitions_p10 }}</p>
+        <p class="nomarg"><strong>{{ headers.translations.policy_definitions_p11 }}:</strong> {{ headers.translations.policy_definitions_p12 }}</p>
+        <h3 class="title">{{ headers.translations.policy_legal_title }}</h3>
+        <p><strong>{{ headers.translations.policy_legal_p1 }}</strong></p>
+	</div>
+</div>
+{% endblock %}

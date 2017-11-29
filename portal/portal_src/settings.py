@@ -119,13 +119,18 @@ class Config(object):
         self.celery_user = settings['celery']['username']
         self.celery_pwd = settings['celery']['password']
 
+        # DATABASE CONFIGURATION
+        self.redis = settings['redis']
+        self.redis_cache = settings['redis_cache']
+
         # TRANSLATIONS
         self.translations = get_configuration_translations()
 
         # SECURITY KEYS
         self.keys = {
             'captcha': settings['keys']['google_captcha'],
-            'analytics': settings['keys']['google_analytics']
+            'analytics': settings['keys']['google_analytics'],
+            'crypto': settings['keys']['cryptography']
         }
 
         # LOGGING

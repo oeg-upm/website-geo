@@ -15,7 +15,11 @@
 
 import sys
 import json
+import uuid
+import crypto
+import random
 import settings
+import user_agents
 from datetime import datetime
 from flask import redirect, make_response, render_template
 
@@ -39,6 +43,80 @@ cookie_language = '_geo_portal_lang'
 cookie_user = '_geo_portal_usr_id'
 cookie_token = '_geo_portal_usr_token'
 cookie_device = '_geo_portal_usr_device'
+
+
+##########################################################################
+
+
+def parse_headers(request):
+    """ This function allows to parse all the cookies stored
+        on a request and the User Agent too.
+
+    Args:
+        request (Request): request to be parsed
+
+    Returns:
+        dict: headers values including login status
+
+    """
+
+    # Init parameters
+    __headers = {'logged': True}
+
+    # Check user is present
+    if cookie_user in request.cookies:
+        __headers['user_id'] = request.cookies[cookie_user]
+    else:
+        __headers['logged'] = False
+
+    # Check token is present
+    if cookie_token in request.cookies:
+        __headers['user_token'] = request.cookies[cookie_token]
+    else:
+        __headers['logged'] = False
+
+    # Get language cookie or default value
+    __headers['device_lang'] = request.cookies.get(
+        cookie_language, 'en'
+    )
+
+    # Check device is present
+    if cookie_device in request.cookies:
+        __headers['device_token'] = request.cookies[cookie_device]
+
+    # Create device token
+    else:
+
+        # Generate constraints
+        __ua = user_agents.parse(request.user_agent.string)
+        __device_is_present = __ua.device.model is not None
+        __device_value = __ua.device.model + ' (' if \
+            __device_is_present else ''
+
+        # Join OS and Browser version
+        __device_value += __ua.os.family + ' ' + \
+            __ua.os.version_string + ', ' + \
+            __ua.browser.family + ' ' + \
+            __ua.browser.version_string
+        if __device_is_present:
+            __device_value += ')'
+
+        # Join UUID
+        __device_value += '-|-' + uuid.uuid4().hex
+
+        # Get one of random key
+        __crp_number = random.randint(
+            0, len(config.keys['crypto']) - 1
+        )
+        __crp_key = config.keys['crypto'][__crp_number]
+        __device_value = crypto.encrypt_aes256(
+            __device_value, __crp_key
+        )
+        __device_value += str(__crp_number)
+        __headers['device_token'] = __device_value
+
+    # Return information
+    return __headers
 
 
 ##########################################################################
@@ -83,19 +161,23 @@ def generate_json_response(json_object, status=200):
     return resp
 
 
-def generate_complete_redirection(request):
+def generate_complete_redirection(request, url=None):
     """ This function allows to generate a redirection
         to the domain directly.
 
     Args:
         request (Request): request to be rebuilt
+        url (string): url to add (optional)
 
     Returns:
         Response: flask response (redirect)
 
     """
 
-    resp = redirect(config.flask_host + '/')
+    __url = config.flask_host + '/'
+    if url is not None:
+        __url += url
+    resp = redirect(__url)
     clean_all_cookies(resp, request)
     return resp
 
@@ -106,7 +188,7 @@ def generate_redirection(url, next_url=None):
 
     Args:
         url (string): path to go
-        next_url (string): path to go next
+        next_url (string): path to go next (optional)
 
     Returns:
         Response: flask response (redirect)
@@ -120,7 +202,7 @@ def generate_redirection(url, next_url=None):
     return resp
 
 
-def generate_render(app, request, html_name, values=None):
+def generate_render(app, html_name, headers, values=None):
     """ This function allows to generate the render of a
         custom path of the domain. It allows to set a
         specific language and also injected parameters
@@ -128,8 +210,8 @@ def generate_render(app, request, html_name, values=None):
 
     Args:
         app (Flask): flask application to load the render
-        request (Request): request to be analysed
         html_name (string): name to search on templates
+        headers (dict): dict with values about request
         values (dict): dict to be merged with kargs
 
     Returns:
@@ -139,7 +221,7 @@ def generate_render(app, request, html_name, values=None):
 
     # Get locale from cookies if it is available
     # Format: ISO 639-1 code
-    __locale = request.cookies.get(cookie_language, 'en')
+    __locale = headers['device_lang']
 
     # Set language to file name or not otherwise
     __html_name = html_name + '.html'
@@ -147,12 +229,10 @@ def generate_render(app, request, html_name, values=None):
     # Set new values to jinja arguments
     __values = {} if values is None else values.copy()
     __values['headers'] = {
-        'tokens': config.keys,
-        'debug': config.debug,
-        'locale': __locale,
-        'domain': config.flask_host,
+        'session': headers, 'tokens': config.keys,
+        'debug': config.debug, 'time': datetime.utcnow(),
         'translations': config.translations[__locale],
-        'time': datetime.utcnow()
+        'domain': config.flask_host
     }
 
     # Return rendered template

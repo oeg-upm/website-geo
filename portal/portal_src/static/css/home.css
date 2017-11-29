@@ -114,7 +114,7 @@
 
 #hsearch-subtitle {
 	padding: 15px;
-	background: hsla(0, 0%, 95%, 0.825);
+	background-color: rgba(242, 242, 242, 0.825);
 	font-size: 12px;
 	text-align: justify;
 	max-width: 650px;
@@ -384,8 +384,7 @@
 }
 
 #contact .contact-section .contact-check {
-	margin: 0;
-	margin-right: 8px;
+	margin: 0 8px 0 0;
 }
 
 #contact .contact-section .contact-check-title,

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block head_css %}
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/home.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/home.min.css')}}"/>
 {% endblock %}
 {% block head_js %}
 <script async src='https://www.google.com/recaptcha/api.js?hl={{ headers.locale }}'></script>
@@ -22,15 +22,15 @@
     <div class="div-container y-centered">
         <div class="stat-item">
             <span class="stat-item-value">{{ statistics.resources }}</span>
-            <span class="stat-item-title">{{ headers.translations.label_resources }}</span>
+            <span class="stat-item-title">{{ headers.translations.home_resources }}</span>
         </div>
         <div class="stat-item">
             <span class="stat-item-value">{{ statistics.reported }}</span>
-            <span class="stat-item-title">{{ headers.translations.label_dreported }}</span>
+            <span class="stat-item-title">{{ headers.translations.home_dreported }}</span>
         </div>
         <div class="stat-item">
             <span class="stat-item-value">{{ statistics.downloads }}</span>
-            <span class="stat-item-title">{{ headers.translations.label_downloads }}</span>
+            <span class="stat-item-title">{{ headers.translations.home_downloads }}</span>
         </div>
         <div class="stat-item">
             <span class="stat-item-value">{{ statistics.org }}</span>
@@ -41,11 +41,11 @@
 <div id="update-buttons">
 	<div class="div-container">
 		<div class="titles elements-row">
-			<h2 class="update-buttons-title">{{ headers.translations.label_updates }}</h2>
-			<h2 class="update-buttons-title">{{ headers.translations.label_services }}</h2>
+			<h2 class="update-buttons-title">{{ headers.translations.home_updates }}</h2>
+			<h2 class="update-buttons-title">{{ headers.translations.home_services }}</h2>
 		</div>
 		<div class="buttons">
-			<h2 class="update-button-datasets">{{ headers.translations.label_updates }}</h2>
+			<h2 class="update-button-datasets">{{ headers.translations.home_updates }}</h2>
 			<div class="timeline">
 				{% for update in updates %}
 	  			<div class="entry">
@@ -55,14 +55,14 @@
 	    			</div>
 	    			<div class="entry-value">
 	      				<a href="/datasets/{{ update.id }}" class="entry-value-name">{{ update.name }}</a>
-	      				<p>{{ headers.translations.label_uploadedby }}
+	      				<p>{{ headers.translations.home_uploadedby }}
 	      					<a href="/organizations/{{ update.org_id }}" class="entry-value-org">{{ update.org }}</a>
 	      				</p>
 	      			</div>
 	  			</div>
 	  			{% endfor %}
 			</div>
-			<h2 class="update-button-services">{{ headers.translations.label_services }}</h2>
+			<h2 class="update-button-services">{{ headers.translations.home_services }}</h2>
 			<div class="services">
 				<a href="/sparql" class="sparql" title="SPARQL Endpoint">
 					<img class="sparql-n" alt="SPARQL Endpoint" src="{{url_for('static', filename='img-button/sparql.jpg')}}">
@@ -78,34 +78,34 @@
 </div>
 <div id="contact">
 	<div class="div-container">
-		<h3 class="title">{{ headers.translations.label_report }}</h3>
-		<form action="/contact" method="POST">
+		<h3 class="title">{{ headers.translations.home_report }}</h3>
+		<form action="/contact" method="post">
 			<div class="contact-row left">
 				<div class="contact-section">
 					<div class="input-box">
-						<input data-hotkey="n" name="name" aria-label="{{ headers.translations.label_name }}" placeholder="{{ headers.translations.label_name }}" data-unscoped-placeholder="{{ headers.translations.label_name }}" data-scoped-placeholder="{{ headers.translations.label_name }}" autocapitalize="off" type="text" maxlength="50" required>
+						<input data-hotkey="n" name="name" aria-label="{{ headers.translations.home_name }}" placeholder="{{ headers.translations.home_name }}" data-unscoped-placeholder="{{ headers.translations.home_name }}" data-scoped-placeholder="{{ headers.translations.home_name }}" autocapitalize="off" type="text" maxlength="50" required>
 						<i class="fa fa-user-o" aria-hidden="true"></i>
 					</div>
 					<div class="input-box marg">
-						<input data-hotkey="m" name="email" aria-label="{{ headers.translations.label_email }}" placeholder="{{ headers.translations.label_email }}" data-unscoped-placeholder="{{ headers.translations.label_email }}" data-scoped-placeholder="{{ headers.translations.label_email }}" autocapitalize="off" type="email" required>
+						<input data-hotkey="m" name="email" aria-label="{{ headers.translations.home_email }}" placeholder="{{ headers.translations.home_email }}" data-unscoped-placeholder="{{ headers.translations.home_email }}" data-scoped-placeholder="{{ headers.translations.home_email }}" autocapitalize="off" type="email" required>
 						<i class="fa fa-envelope-open-o" aria-hidden="true"></i>
 					</div>
 					<div class="input-box marg">
-						<input data-hotkey="a" name="email" aria-label="{{ headers.translations.label_subject }}" placeholder="{{ headers.translations.label_subject }}" data-unscoped-placeholder="{{ headers.translations.label_subject }}" data-scoped-placeholder="{{ headers.translations.label_subject }}" autocapitalize="off" type="text" maxlength="80" required>
+						<input data-hotkey="a" name="email" aria-label="{{ headers.translations.home_subject }}" placeholder="{{ headers.translations.home_subject }}" data-unscoped-placeholder="{{ headers.translations.home_subject }}" data-scoped-placeholder="{{ headers.translations.home_subject }}" autocapitalize="off" type="text" maxlength="80" required>
 						<i class="fa fa-paper-plane-o" aria-hidden="true"></i>
 					</div>
 				</div>
 				<div class="contact-section marg description">
-					<textarea data-hotkey="a" name="email" aria-label="{{ headers.translations.label_description }}" placeholder="{{ headers.translations.label_description }}" data-unscoped-placeholder="{{ headers.translations.label_description }}" data-scoped-placeholder="{{ headers.translations.label_description }}" autocapitalize="off" maxlength="500" required></textarea>
+					<textarea data-hotkey="a" name="email" aria-label="{{ headers.translations.home_description }}" placeholder="{{ headers.translations.home_description }}" data-unscoped-placeholder="{{ headers.translations.home_description }}" data-scoped-placeholder="{{ headers.translations.home_description }}" autocapitalize="off" maxlength="500" required></textarea>
 				</div>
 			</div>
 			<div class="contact-row right">
 				<div class="contact-section g-recaptcha" data-sitekey="{{ headers.tokens.captcha }}"></div>
 				<div class="contact-section marg">
 					<div class="elements-row">
-						<span class="contact-check-title"><input class="contact-check" name="terms" value="terms" type="checkbox" required>{{ headers.translations.label_legal_title }}<a class="contact-check-link" href="/policy#contact" target="_blank">{{ headers.translations.label_legal_link }}</a></span>
+						<span class="contact-check-title"><input class="contact-check" name="terms" value="terms" type="checkbox" required>{{ headers.translations.home_legal_title }}<a class="contact-check-link" href="/policy#contact-form" target="_blank">{{ headers.translations.home_legal_link }}</a></span>
 					</div>
-					<p class="contact-disclaimer">{{ headers.translations.label_legal_fields }}</p>
+					<p class="contact-disclaimer">{{ headers.translations.home_legal_fields }}</p>
 					<input value="{{ headers.translations.button_send }}" type="submit">
 				</div>
 			</div>

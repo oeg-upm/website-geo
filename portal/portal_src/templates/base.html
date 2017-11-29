@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 {% if request.path == '/' %}
-<html class="no-js condensed" xml:lang="{{ headers.locale }}" lang="{{ headers.locale }}">
+<html class="no-js condensed" xml:lang="{{ headers.session.device_lang }}" lang="{{ headers.session.device_lang }}">
 {% else %}
-<html class="no-js expanded" xml:lang="{{ headers.locale }}" lang="{{ headers.locale }}">
+<html class="no-js expanded" xml:lang="{{ headers.session.device_lang }}" lang="{{ headers.session.device_lang }}">
 {% endif %}
     <head>
         <title>{{ headers.translations.title }}</title>
         <meta charset="UTF-8"/>
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
         <meta http-equiv="x-rim-auto-match" content="none"/>
+        <meta http-equiv="Content-Language" content="{{ headers.session.device_lang }}">
+	    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
         <meta name="HandheldFriendly" content="true"/>
         <meta name="MobileOptimized" content="width"/>
         <meta name="author" content="Ontology Engineering Group"/>
-        <meta name="keywords" content="georesource, open data, ">
+        <meta name="keywords" content="geo, resource, open data, datasets">
         <meta name="format-detection" content="telephone=no"/>
         <meta name="googlebot" content="nofollow"/>
         <meta name="robots" content="noimageindex, noarchive"/>
@@ -38,7 +40,7 @@
         <meta name="twitter:description" content="{{ headers.translations.description }}"/>
         <meta name="description" content="{{ headers.translations.description }}"/>
         <meta name="og:description" content="{{ headers.translations.description }}"/>
-        {% if headers.locale == 'es' %}
+        {% if headers.session.device_lang == 'es' %}
         <meta property="og:locale" content="es_ES"/>
         {% else %}
         <meta property="og:locale" content="en_GB"/>
@@ -101,11 +103,11 @@
         </script>
         <script type="text/javascript" async src='https://www.google-analytics.com/analytics.js'></script>
         {% endif %}
-        <script type="text/javascript" src="{{url_for('static', filename='js/base.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/base.min.js')}}"></script>
         {% block head_js %}
         {% endblock %}
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/font-awesome.min.css')}}"/>
-        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.css')}}"/>
+        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.min.css')}}"/>
         {% block head_css %}
         {% endblock %}
     </head>
@@ -118,7 +120,11 @@
                             <div class="logo-rdf" title="RDF"></div>
                             <div class="logo-open" title="Open Data License"></div>
                         </div>
+                        {% if headers.session.logged == False %}
                         <a id="but-account" href="/accounts">{{ headers.translations.button_signin }}<i class="fa fa-user-circle" aria-hidden="true"></i></a>
+                        {% else %}
+                        <a id="but-account" href="/accounts">{{ headers.translations.button_accounts }}<i class="fa fa-user-circle" aria-hidden="true"></i></a>
+                        {% endif %}
                     </div>
                 </div>
                 <nav id="nav-container" role="navigation">
@@ -187,7 +193,7 @@
                         <ol>
                             <li><a href="/about">{{ headers.translations.button_about }}</a></li>
                             <li><a href="/accesibility">{{ headers.translations.button_accesibility }}</a></li>
-                            <li><a href="/policy">{{ headers.translations.button_dpolicy }}</a></li>
+                            <li><a href="/policy#data">{{ headers.translations.button_dpolicy }}</a></li>
                             <li>
                                 <a href="https://twitter.com/oeg_upm"><i class="fa fa-twitter-square" aria-hidden="true"></i>oeg</a>
                             </li>
