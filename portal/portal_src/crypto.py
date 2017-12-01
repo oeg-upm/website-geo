@@ -14,13 +14,16 @@
 """
 
 import sys
+import time
+import hmac
 import json
 import base64
+import random
 import datetime
 import settings
 import traceback
 from Crypto.Cipher import AES
-from Crypto.Hash import MD5
+from Crypto.Hash import MD5, SHA256
 
 if sys.version_info < (3, 0):
     reload(sys)
@@ -85,6 +88,45 @@ def encrypt_md5(str_to_encrypt):
         return None
 
 
+def encrypt_sha256(str_to_encrypt):
+    """ This function allows to generate an SHA 256 string
+        from specific string
+
+    Args:
+        str_to_encrypt (string): string to be cyphered
+
+    Returns:
+        string: SHA 256 or None
+
+    """
+
+    try:
+
+        # Generate signature
+        __kk = int(random.random() * len(config.keys['crypto']))
+        __sig = '' + str_to_encrypt
+        __sig += '|time=' + str(time.time())
+        __sig += '|n1=' + str(random.random() * 99)
+        __sig += '|n2=' + str(random.random() * 99)
+        __sig += '|kk=' + str(__kk)
+        __sig += '|kv=' + config.keys['crypto'][__kk]
+
+        # Get string parameters for HMAC
+        # Bug 2.7 https://bugs.python.org/issue5285
+        __sig = str(__sig)
+        __kv = str(config.keys['crypto'][__kk])
+
+        # Return SHA 256
+        return hmac.new(
+            __kv, __sig, SHA256
+        ).hexdigest().lower()
+
+    except Exception:
+
+        print_exception()
+        return None
+
+
 def encrypt_aes256(str_to_encrypt, key):
     """ This function allows to generate an AES 256 string
         from specific string and provided key.
@@ -94,7 +136,7 @@ def encrypt_aes256(str_to_encrypt, key):
         key (string): key for encrypt
 
     Returns:
-        string: AES 256 - BASE 64
+        string: AES 256 - BASE 64 or None
 
     """
 
@@ -133,7 +175,7 @@ def decrypt_aes256(str_to_decrypt, key):
         key (string): key for decrypt
 
     Returns:
-        string: original value
+        string: original value or None
 
     """
 
@@ -161,6 +203,47 @@ def decrypt_aes256(str_to_decrypt, key):
 ##########################################################################
 
 
+def encrypt_password(password):
+    """ This function allows to encrypt a specific
+        password to SHA 256 string
+
+    Args:
+        password (string): password to be cyphered
+
+    Returns:
+        string: SHA 256 or None
+
+    """
+
+    try:
+
+        # Get key from configuration
+        __crp_key = config.keys['master']
+
+        # Generate signature
+        __sig = ''
+        __n = 0
+        for i in config.keys['crypto']:
+            __sig += '|key(' + str(__n) + ')=' + i
+            __n += 1
+        __sig += '|pwd=' + password
+
+        # Get string parameters for HMAC
+        # Bug 2.7 https://bugs.python.org/issue5285
+        __sig = str(__sig)
+        __crp_key = str(__crp_key)
+
+        # Return SHA 256
+        return hmac.new(
+            __crp_key, __sig, SHA256
+        ).hexdigest().lower()
+
+    except Exception:
+
+        print_exception()
+        return None
+
+
 def encrypt_dict(dict_to_encrypt, key=None):
     """ This function allows to generate an AES 256 string
         from specific dictionary and provided key.
@@ -170,7 +253,7 @@ def encrypt_dict(dict_to_encrypt, key=None):
         key (string): key for encrypt (optional)
 
     Returns:
-        string: AES 256 - BASE 64
+        string: AES 256 - BASE 64 or None
 
     """
 
@@ -179,10 +262,10 @@ def encrypt_dict(dict_to_encrypt, key=None):
 
         # Generate number from current month
         __crp_number = datetime.datetime.now().month % \
-            len(config.keys.crypto)
+            len(config.keys['crypto'])
 
         # Get key from configuration
-        __crp_key = config.keys.crypto[__crp_number]
+        __crp_key = config.keys['crypto'][__crp_number]
 
     else:
 
@@ -202,7 +285,7 @@ def decrypt_dict(dict_to_decrypt, key=None):
         key (string): key for decrypt (optional)
 
     Returns:
-        string: original value
+        string: original value or None
 
     """
 
@@ -211,10 +294,10 @@ def decrypt_dict(dict_to_decrypt, key=None):
 
         # Generate number from current month
         __crp_number = datetime.datetime.now().month % \
-            len(config.keys.crypto)
+            len(config.keys['crypto'])
 
         # Get key from configuration
-        __crp_key = config.keys.crypto[__crp_number]
+        __crp_key = config.keys['crypto'][__crp_number]
 
     else:
 

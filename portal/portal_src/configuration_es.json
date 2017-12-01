@@ -51,6 +51,8 @@
 	"accounts_login_title": "Iniciar sesión",
 	"accounts_login_username": "Nombre de usuario",
 	"accounts_login_password": "Contraseña",
+	"accounts_login_error_parameters": "Los valores o el token CSRF no son válidos",
+	"accounts_login_error_credentials": "El usuario o la contraseña no son válidos",
 	"policy_privacy_title": "Política de privacidad",
 	"policy_privacy_controller_title": "Propietario",
 	"policy_privacy_controller_p1": "UNIVERSIDAD POLITÉCNICA DE MADRID - UPM (ONTOLOGY ENGINEERING GROUP), Campus de Montegancedo s/n, 28660 Boadilla del Monte - Madrid (España)",

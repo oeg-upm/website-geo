@@ -51,6 +51,8 @@
 	"accounts_login_title": "Log on",
 	"accounts_login_username": "Username",
 	"accounts_login_password": "Password",
+	"accounts_login_error_parameters": "Form values or CSRF are invalid",
+	"accounts_login_error_credentials": "Username or password are invalid",
 	"policy_privacy_title": "Privacy Policy",
 	"policy_privacy_controller_title": "Data Controller",
 	"policy_privacy_controller_p1": "TECHNICAL UNIVERSITY OF MADRID - UPM (ONTOLOGY ENGINEERING GROUP), Campus de Montegancedo s/n, 28660 Boadilla del Monte - Madrid (Spain)",

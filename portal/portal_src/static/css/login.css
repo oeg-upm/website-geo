@@ -45,6 +45,15 @@
 	margin-top: 20px;
 }
 
+.div-container > #login > .input-box.error {
+    margin-top: 10px;
+}
+
+.div-container > #login > .input-box.error > p {
+    color: red;
+    text-align: center;
+}
+
 .div-container > #login > .input-box {
     width: 100%;
     margin: 0;

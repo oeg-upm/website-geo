@@ -130,7 +130,8 @@ class Config(object):
         self.keys = {
             'captcha': settings['keys']['google_captcha'],
             'analytics': settings['keys']['google_analytics'],
-            'crypto': settings['keys']['cryptography']
+            'crypto': settings['keys']['cryptography'],
+            'master': settings['keys']['master']
         }
 
         # LOGGING

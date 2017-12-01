@@ -14,6 +14,16 @@
             <input data-hotkey="p" name="password" aria-label="{{ headers.translations.accounts_login_password }}" placeholder="{{ headers.translations.accounts_login_password }}" data-unscoped-placeholder="{{ headers.translations.accounts_login_password }}" data-scoped-placeholder="{{ headers.translations.accounts_login_password }}" autocapitalize="off" type="password" required>
             <i class="fa fa-key" aria-hidden="true"></i>
         </div>
+        {% if request.args.get('error_msg') is not none %}
+        <div class="input-box error">
+            {% if request.args.get('error_msg') == 'p' %}
+            <p>{{ headers.translations.accounts_login_error_parameters }}</p>
+            {% elif request.args.get('error_msg') == 'c' %}
+            <p>{{ headers.translations.accounts_login_error_credentials }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        <input name=csrf_token type=hidden value="{{ csrf_token }}">
         <div class="input-box marg">
             <input value="{{ headers.translations.button_signin }}" type="submit">
         </div>

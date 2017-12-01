@@ -16,6 +16,7 @@
 import sys
 import json
 import uuid
+import time
 import crypto
 import random
 import settings
@@ -70,19 +71,23 @@ def parse_headers(request):
         __headers['logged'] = False
 
     # Check token is present
-    if cookie_token in request.cookies:
+    if cookie_token in request.cookies and __headers['logged']:
         __headers['user_token'] = request.cookies[cookie_token]
     else:
         __headers['logged'] = False
 
     # Get language cookie or default value
-    __headers['device_lang'] = request.cookies.get(
-        cookie_language, 'en'
-    )
+    if cookie_language in request.cookies:
+        __headers['device_lang'] = request.cookies[cookie_language]
+        __headers['device_lang_present'] = True
+    else:
+        __headers['device_lang'] = 'es'
+        __headers['device_lang_present'] = False
 
     # Check device is present
     if cookie_device in request.cookies:
         __headers['device_token'] = request.cookies[cookie_device]
+        __headers['device_token_present'] = True
 
     # Create device token
     else:
@@ -114,6 +119,7 @@ def parse_headers(request):
         )
         __device_value += str(__crp_number)
         __headers['device_token'] = __device_value
+        __headers['device_token_present'] = False
 
     # Return information
     return __headers
@@ -161,45 +167,61 @@ def generate_json_response(json_object, status=200):
     return resp
 
 
-def generate_complete_redirection(request, url=None):
+def generate_redirection(
+    url='', clean=False, next_url=None, user_id=None,
+    user_token=None
+):
     """ This function allows to generate a redirection
-        to the domain directly.
+        to the specific URL with some settings.
 
     Args:
-        request (Request): request to be rebuilt
         url (string): url to add (optional)
+        clean (bool): flag to delete all cookies (optional)
+        next_url (string): url to redirect (optional)
+        user_id (string): identifier cookie (optional)
+        user_token (string): user token cookie (optional)
 
     Returns:
         Response: flask response (redirect)
 
     """
 
-    __url = config.flask_host + '/'
-    if url is not None:
-        __url += url
-    resp = redirect(__url)
-    clean_all_cookies(resp, request)
-    return resp
-
-
-def generate_redirection(url, next_url=None):
-    """ This function allows to generate a redirection
-        to a custom path of the domain directly.
-
-    Args:
-        url (string): path to go
-        next_url (string): path to go next (optional)
-
-    Returns:
-        Response: flask response (redirect)
-
-    """
-
+    # Create base URL
     __url = config.flask_host + '/' + url
+
+    # Add next URL param if it is necessary
     if next_url is not None:
         __url += '?next=' + next_url
-    resp = redirect(__url)
-    return resp
+
+    # Create base response
+    __response = redirect(__url)
+
+    # Set new expiration time
+    __expire = int(time.time() + 2419200)
+
+    # Check if remove is necessary
+    if clean:
+        __response.delete_cookie(cookie_token, path='/')
+        __response.delete_cookie(cookie_user, path='/')
+    else:
+
+        # Add identifier cookie
+        if user_id is not None:
+            __response.set_cookie(
+                cookie_user, value=user_id,
+                path='/', expires=__expire,
+                httponly=False
+            )
+
+        # Add token cookie
+        if user_token is not None:
+            __response.set_cookie(
+                cookie_token, value=user_token,
+                path='/', expires=__expire,
+                httponly=False
+            )
+
+    return __response
 
 
 def generate_render(app, html_name, headers, values=None):
@@ -239,24 +261,38 @@ def generate_render(app, html_name, headers, values=None):
     r = app.make_response(render_template(__html_name, **__values))
     r.headers['content-type'] = 'text/html; charset=utf-8'
     r.headers['content-language'] = __locale
+
+    # Set cookies if it is necessary
+    if not headers['device_lang_present']:
+        r.set_cookie(
+            cookie_language, path='/',
+            value=headers['device_lang'],
+        )
+    if not headers['device_token_present']:
+        r.set_cookie(
+            cookie_device, path='/',
+            value=headers['device_token']
+        )
+
     return r
 
 
 ##########################################################################
 
 
-def clean_all_cookies(response, request):
-    """ This function allows to clean a request from
-        all the possible cookies else language cookie.
-        To do this, it sets the deletion on the
-        custom response passed by parameter.
+def generate_cookie(identifier):
+    """ This function allows to create a cookie for
+        a specific identifier.
 
     Args:
-        response (Response): response to be rebuilt
-        request (Request): request to be parsed
+        identifier (string): internal user id
+
+    Returns:
+        string: SHA 256 cookie or None
 
     """
 
-    for i in request.cookies:
-        if i != cookie_language:
-            response.delete_cookie(i, path='/')
+    return crypto.encrypt_sha256(
+        '|id=' + identifier +
+        '|salt=' + 's4lt0.g30l4nk3dd4t4.3s'
+    )
