@@ -120,11 +120,14 @@
                             <div class="logo-rdf" title="RDF"></div>
                             <div class="logo-open" title="Open Data License"></div>
                         </div>
-                        {% if headers.session.logged == False %}
-                        <a id="but-account" href="/accounts">{{ headers.translations.button_signin }}<i class="fa fa-user-circle" aria-hidden="true"></i></a>
-                        {% else %}
-                        <a id="but-account" href="/accounts">{{ headers.translations.button_accounts }}<i class="fa fa-user-circle" aria-hidden="true"></i></a>
-                        {% endif %}
+                        <div class="accounts elements-row y-centered">
+                            {% if headers.session.logged == False %}
+                            <a id="but-account" href="/login">{{ headers.translations.button_signin }}</a>
+                            {% else %}
+                            <a id="but-account" href="/accounts/{{ headers.session.user_id }}">{{ headers.session.user_name }}</a>
+                            {% endif %}
+                            <i class="fa fa-user-circle" aria-hidden="true"></i>
+                        </div>
                     </div>
                 </div>
                 <nav id="nav-container" role="navigation">
@@ -171,19 +174,66 @@
                     </div>
                 </div>
                 {% endif %}
+                {% if error == False %}
                 <div id="burguer-container">
                     <nav class="div-container" role="navigation">
                         <ol>
-                            <li><a href="/about"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_about }}</a></li>
-                            <li><a href="/data"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_datasets }}</a></li>
-                            <li><a href="/organizations"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>{{ headers.translations.button_org }}</a></li>
+                            {% if request.path == '/about' %}
+                            <li class="selected">
+                            {% else %}
+                            <li>
+                            {% endif %}
+                                <a href="/about">
+                                    <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>
+                                    {{ headers.translations.button_about }}
+                                </a>
+                            </li>
+                            {% if request.path == '/data' %}
+                            <li class="selected">
+                            {% else %}
+                            <li>
+                            {% endif %}
+                                <a href="/data">
+                                    <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>
+                                    {{ headers.translations.button_datasets }}
+                                </a>
+                            </li>
+                            {% if request.path == '/organizations' %}
+                            <li class="selected">
+                            {% else %}
+                            <li>
+                            {% endif %}
+                                <a href="/organizations">
+                                    <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>
+                                    {{ headers.translations.button_org }}
+                                </a>
+                            </li>
                             {% if request.path != '/' %}
-                            <li><a href="/sparql"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>SPARQL Endpoint</a></li>
-                            <li><a href="/map"><i class="fa fa-chevron-circle-right" aria-hidden="true"></i>Map4RDF</a></li>
+                            {% if request.path == '/sparql' %}
+                            <li class="selected">
+                            {% else %}
+                            <li>
+                            {% endif %}
+                                <a href="/sparql">
+                                    <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>
+                                    SPARQL Endpoint
+                                </a>
+                            </li>
+                            {% if request.path == '/map' %}
+                            <li class="selected">
+                            {% else %}
+                            <li>
+                            {% endif %}
+                                <a href="/map">
+                                    <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>
+                                    Map4RDF
+                                </a>
+                            </li>
                             {% endif %}
                         </ol>
                     </nav>
                 </div>
+                {% endif %}
                 <main id="main-container" role="main">
                     {% block content %}
                     {% endblock %}

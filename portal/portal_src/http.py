@@ -257,6 +257,10 @@ def generate_render(app, html_name, headers, values=None):
         'domain': config.flask_host
     }
 
+    # Check if error is present
+    if 'error' not in __values:
+        __values['error'] = False
+
     # Return rendered template
     r = app.make_response(render_template(__html_name, **__values))
     r.headers['content-type'] = 'text/html; charset=utf-8'

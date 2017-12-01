@@ -31,9 +31,9 @@
 
 #background > .div-container {
 	height: 100%;
-	-webkit-box-pack: space-between;
+	-webkit-box-pack: justify;
     -webkit-justify-content: space-between;
-    -ms-flex-pack: space-between;
+    -ms-flex-pack: justify;
     justify-content: space-between;
 }
 
@@ -333,13 +333,13 @@
 #contact .input-box > input:active,
 #contact .contact-section.description > textarea:focus,
 #contact .contact-section.description > textarea:active {
-	border: 1px solid #454545;
-	color: #454545;
+	border: 1px solid #494949;
+	color: #494949;
 }
 
 #contact .input-box > input:focus + i,
 #contact .input-box > input:active + i {
-	color: #454545;
+	color: #494949;
 }
 
 #contact .contact-section.description > textarea {

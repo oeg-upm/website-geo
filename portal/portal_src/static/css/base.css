@@ -100,7 +100,7 @@ body, button, input, textarea {
 
 #mega-container, article, div, footer, header, main, nav,
 section {
-    background-color: none;
+    background-color: transparent;
 	-webkit-box-align: stretch;
 	-webkit-align-items: stretch;
 	-ms-flex-align: stretch;
@@ -176,14 +176,14 @@ section, .elements-column {
 
 #credits-container > .div-container {
     height: 36px;
-    -webkit-box-pack: space-between;
+    -webkit-box-pack: justify;
     -webkit-justify-content: space-between;
-    -ms-flex-pack: space-between;
+    -ms-flex-pack: justify;
     justify-content: space-between;
 }
 
 #credits-container .logo-rdf {
-    width: 25.52px;
+    width: 26px;
     height: 22px;
     background: url("../img-logo/logo-rdf@2x.png") no-repeat top left;
     background-size: contain;
@@ -197,13 +197,25 @@ section, .elements-column {
     background-size: contain;
 }
 
-#credits-container #but-account {
+#credits-container .accounts {
+    max-width: 110px;
+    -webkit-box-pack: end;
+    -webkit-justify-content: flex-end;
+    -ms-flex-pack: end;
+    justify-content: flex-end;
+}
+
+#credits-container .accounts > a {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
     font-size: 16px;
 }
 
-#credits-container #but-account > i {
-    font-size: 18px;
+#credits-container .accounts > i {
+    font-size: 20px;
     margin-left: 8px;
+    color: #1d5995;
 }
 
 /* ################################################################## */
@@ -219,9 +231,9 @@ section, .elements-column {
 
 #nav-container > .div-container {
     height: 59px;
-    -webkit-box-pack: space-between;
+    -webkit-box-pack: justify;
     -webkit-justify-content: space-between;
-    -ms-flex-pack: space-between;
+    -ms-flex-pack: justify;
     justify-content: space-between;
 }
 
@@ -305,7 +317,7 @@ section, .elements-column {
 }
 
 #nav-search input[type="text"]:focus {
-    color: #454545;
+    color: #494949;
     border: 1px solid #494949;
 }
 
@@ -444,6 +456,10 @@ section, .elements-column {
     text-transform: uppercase;
 }
 
+#burguer-container > .div-container li.selected > a {
+    color: #494949;
+}
+
 #burguer-container > .div-container li > a > i {
     font-size: 16px;
     margin-right: 10px;
@@ -564,6 +580,38 @@ table {
 
 /* ################################################################## */
 
+@media (min-width: 320px) {
+
+    #credits-container .accounts {
+        max-width: 125px;
+    }
+
+}
+
+@media (min-width: 375px) {
+
+    #credits-container .accounts {
+        max-width: 180px;
+    }
+
+}
+
+@media (min-width: 410px) {
+
+    #credits-container .accounts {
+        max-width: 210px;
+    }
+
+}
+
+@media (min-width: 450px) {
+
+    #credits-container .accounts {
+        max-width: 100%;
+    }
+
+}
+
 @media (min-width: 512px) {
 
     #nav-container > .div-container {
@@ -600,9 +648,9 @@ table {
         display: -webkit-flex;
         display: -ms-flexbox;
         display: flex;
-        -webkit-box-pack: space-around;
+        -webkit-box-pack: distribute;
         -webkit-justify-content: space-around;
-        -ms-flex-pack: space-around;
+        -ms-flex-pack: distribute;
         justify-content: space-around;
         margin: 30px 0;
     }
@@ -674,9 +722,9 @@ table {
         display: -webkit-flex;
         display: -ms-flexbox;
         display: flex;
-        -webkit-box-pack: space-around;
+        -webkit-box-pack: distribute;
         -webkit-justify-content: space-around;
-        -ms-flex-pack: space-around;
+        -ms-flex-pack: distribute;
         justify-content: space-around;
         margin: 30px 0;
     }

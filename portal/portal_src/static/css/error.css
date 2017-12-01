@@ -1,0 +1,41 @@
+/*
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Ontology Engineering Group
+        http://www.oeg-upm.net/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Copyright (C) 2017 Ontology Engineering Group.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  GeoLinkeddata Open Data Portal is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
+/* ################################################################## */
+
+#main-container {
+    background-color: #f9f9f9;
+}
+
+#main-container .div-container {
+    height: 100%;
+    min-height: 500px;
+}
+
+#main-container .div-container > i {
+    font-size: 210px;
+    margin-bottom: 30px;
+}
+
+#main-container .div-container > h3 {
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#main-container .div-container > h4 {
+    font-size: 18px;
+    text-align: center;
+    line-height: 26px;
+    max-width: 320px;
+}

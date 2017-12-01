@@ -365,7 +365,6 @@ def set_account_fields(fields, kind):
         # Status = 1 -> bad username
         # Status = 2 -> bad password
         # Status = 3 -> bad email
-        # Status = 4 -> error on database
 
     """
 
@@ -420,22 +419,18 @@ def set_account_fields(fields, kind):
             __user['password']
         )
 
-        try:
+        # Save kind on dictionary
+        __user['kind'] = str(kind)
 
-            # Save information to database
-            __redis['users'].hmset(__id, __user)
+        # Save information to database
+        __redis['users'].hmset(__id, __user)
 
-            # Save username as MD5 to check faster
-            __md5 = crypto.encrypt_md5(__user['username'])
-            __redis['users'].set(__md5, __id)
+        # Save username as MD5 to check faster
+        __md5 = crypto.encrypt_md5(__user['username'])
+        __redis['users'].set(__md5, __id)
 
-            # Return new identifier
-            return {'status': 0, 'id': __id}
-
-        except Exception:
-
-            print_exception()
-            return {'status': 4}
+        # Return new identifier
+        return {'status': 0, 'id': __id}
 
 
 def set_account_credentials(identifier, device_token, cookie):
@@ -454,3 +449,56 @@ def set_account_credentials(identifier, device_token, cookie):
     # Save code on database
     __redis['tokens'].set(__cookie_key, cookie)
     __redis['tokens'].expire(__cookie_key, expire_one_month)
+
+
+def get_account_fields(identifier, fields=None):
+    """ This function allows to get information about a
+        specific user and you can specify the fields that
+        you want to receive.
+
+    Args:
+        identifier (string): internal user id
+        fields (list): list of fields (optional)
+
+    Returns:
+        dict: information about user or None
+
+    """
+
+    # Detect if it exists
+    if not check_account_id(identifier):
+
+        # Remove information from cache
+        __redis_cache['users'].delete(identifier)
+
+        return None
+
+    # Get all information from cache
+    __user = __redis_cache['users'].hgetall(identifier)
+
+    # Check if it is available
+    if not len(__user):
+
+        # Get user information from Redis
+        __user = __redis['users'].hgetall(identifier)
+
+        # Check if it is available
+        if not len(__user):
+            return None
+
+        # Save on cache for next time
+        __redis_cache['users'].hmset(identifier, __user)
+        __redis_cache['users'].expire(identifier, expire_one_day)
+
+    # Generate user dictionary from specific fields
+    if fields is not None:
+        __user = {it: __user[it] for it in fields if it in __user}
+
+    # Normalize values
+    if 'password' in __user:
+        del __user['password']
+    if 'kind' in __user:
+        __user['kind'] = int(__user['kind'])
+    __user['id'] = identifier
+
+    return __user

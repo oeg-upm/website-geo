@@ -71,21 +71,14 @@ def encrypt_md5(str_to_encrypt):
 
     """
 
-    try:
+    # Create new MD5 instance
+    __md5 = MD5.new()
 
-        # Create new MD5 instance
-        __md5 = MD5.new()
+    # Configure MD5 instance
+    __md5.update(str_to_encrypt)
 
-        # Configure MD5 instance
-        __md5.update(str_to_encrypt)
-
-        # Return MD5 hexadecimal value
-        return str(__md5.hexdigest()).lower()
-
-    except Exception:
-
-        print_exception()
-        return None
+    # Return MD5 hexadecimal value
+    return str(__md5.hexdigest()).lower()
 
 
 def encrypt_sha256(str_to_encrypt):
@@ -100,31 +93,24 @@ def encrypt_sha256(str_to_encrypt):
 
     """
 
-    try:
+    # Generate signature
+    __kk = int(random.random() * len(config.keys['crypto']))
+    __sig = '' + str_to_encrypt
+    __sig += '|time=' + str(time.time())
+    __sig += '|n1=' + str(random.random() * 99)
+    __sig += '|n2=' + str(random.random() * 99)
+    __sig += '|kk=' + str(__kk)
+    __sig += '|kv=' + config.keys['crypto'][__kk]
 
-        # Generate signature
-        __kk = int(random.random() * len(config.keys['crypto']))
-        __sig = '' + str_to_encrypt
-        __sig += '|time=' + str(time.time())
-        __sig += '|n1=' + str(random.random() * 99)
-        __sig += '|n2=' + str(random.random() * 99)
-        __sig += '|kk=' + str(__kk)
-        __sig += '|kv=' + config.keys['crypto'][__kk]
+    # Get string parameters for HMAC
+    # Bug 2.7 https://bugs.python.org/issue5285
+    __sig = str(__sig)
+    __kv = str(config.keys['crypto'][__kk])
 
-        # Get string parameters for HMAC
-        # Bug 2.7 https://bugs.python.org/issue5285
-        __sig = str(__sig)
-        __kv = str(config.keys['crypto'][__kk])
-
-        # Return SHA 256
-        return hmac.new(
-            __kv, __sig, SHA256
-        ).hexdigest().lower()
-
-    except Exception:
-
-        print_exception()
-        return None
+    # Return SHA 256
+    return hmac.new(
+        __kv, __sig, SHA256
+    ).hexdigest().lower()
 
 
 def encrypt_aes256(str_to_encrypt, key):
@@ -140,30 +126,23 @@ def encrypt_aes256(str_to_encrypt, key):
 
     """
 
-    try:
+    # Create Vector
+    __IV = 16 * '\x00'
 
-        # Create Vector
-        __IV = 16 * '\x00'
+    # Configure AES instance
+    __cipher = AES.new(key, AES.MODE_CBC, __IV)
 
-        # Configure AES instance
-        __cipher = AES.new(key, AES.MODE_CBC, __IV)
+    # Configure AES longitude
+    __l = 16 - (len(str_to_encrypt) % 16)
 
-        # Configure AES longitude
-        __l = 16 - (len(str_to_encrypt) % 16)
+    # String padding
+    __str = str_to_encrypt + (chr(__l) * __l)
 
-        # String padding
-        __str = str_to_encrypt + (chr(__l) * __l)
+    # Generate AES 256
+    __str = __cipher.encrypt(__str)
 
-        # Generate AES 256
-        __str = __cipher.encrypt(__str)
-
-        # Return AES base64 value
-        return base64.b64encode(__str)
-
-    except Exception:
-
-        print_exception()
-        return None
+    # Return AES base64 value
+    return base64.b64encode(__str)
 
 
 def decrypt_aes256(str_to_decrypt, key):
@@ -179,25 +158,18 @@ def decrypt_aes256(str_to_decrypt, key):
 
     """
 
-    try:
+    # Create Vector
+    __IV = 16 * '\x00'
 
-        # Create Vector
-        __IV = 16 * '\x00'
+    # Configure AES instance
+    __cipher = AES.new(key, AES.MODE_CBC, __IV)
 
-        # Configure AES instance
-        __cipher = AES.new(key, AES.MODE_CBC, __IV)
+    # Generate decrypted value
+    __str = __cipher.decrypt(base64.b64decode(str_to_decrypt))
+    __str = __str[:-ord(__str[len(__str) - 1:])]
 
-        # Generate decrypted value
-        __str = __cipher.decrypt(base64.b64decode(str_to_decrypt))
-        __str = __str[:-ord(__str[len(__str) - 1:])]
-
-        # Return decoded value
-        return __str.decode('utf-8')
-
-    except Exception:
-
-        print_exception()
-        return None
+    # Return decoded value
+    return __str.decode('utf-8')
 
 
 ##########################################################################
@@ -215,33 +187,26 @@ def encrypt_password(password):
 
     """
 
-    try:
+    # Get key from configuration
+    __crp_key = config.keys['master']
 
-        # Get key from configuration
-        __crp_key = config.keys['master']
+    # Generate signature
+    __sig = ''
+    __n = 0
+    for i in config.keys['crypto']:
+        __sig += '|key(' + str(__n) + ')=' + i
+        __n += 1
+    __sig += '|pwd=' + password
 
-        # Generate signature
-        __sig = ''
-        __n = 0
-        for i in config.keys['crypto']:
-            __sig += '|key(' + str(__n) + ')=' + i
-            __n += 1
-        __sig += '|pwd=' + password
+    # Get string parameters for HMAC
+    # Bug 2.7 https://bugs.python.org/issue5285
+    __sig = str(__sig)
+    __crp_key = str(__crp_key)
 
-        # Get string parameters for HMAC
-        # Bug 2.7 https://bugs.python.org/issue5285
-        __sig = str(__sig)
-        __crp_key = str(__crp_key)
-
-        # Return SHA 256
-        return hmac.new(
-            __crp_key, __sig, SHA256
-        ).hexdigest().lower()
-
-    except Exception:
-
-        print_exception()
-        return None
+    # Return SHA 256
+    return hmac.new(
+        __crp_key, __sig, SHA256
+    ).hexdigest().lower()
 
 
 def encrypt_dict(dict_to_encrypt, key=None):
