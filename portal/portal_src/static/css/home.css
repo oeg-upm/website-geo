@@ -459,16 +459,6 @@
 
 }
 
-@media (min-width: 420px) {
-
-	#contact .title {
-		margin: 40px 0px;
-		padding: 0 20px;
-		line-height: 22px;
-	}
-
-}
-
 @media (min-width: 512px) {
 
 	#hsearch-container > h1 {
@@ -523,6 +513,16 @@
 
 	#update-buttons .services > .map4rdf {
 		margin-top: 0;
+	}
+
+}
+
+@media (min-width: 590px) {
+
+	#contact .title {
+		margin: 40px 0px;
+		padding: 0 20px;
+		line-height: 22px;
 	}
 
 }
