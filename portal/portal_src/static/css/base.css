@@ -129,6 +129,10 @@ section, .elements-column {
     flex-direction: column;
 }
 
+.hidden {
+    display: none;
+}
+
 .elements-row {
     -webkit-box-orient: horizontal;
     -webkit-box-direction: normal;
@@ -210,6 +214,10 @@ section, .elements-column {
     white-space: nowrap;
     overflow: hidden;
     font-size: 16px;
+}
+
+#credits-container .accounts > a:hover ~ i {
+    color: #595959;
 }
 
 #credits-container .accounts > i {

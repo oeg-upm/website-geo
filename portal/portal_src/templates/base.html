@@ -103,12 +103,12 @@
         </script>
         <script type="text/javascript" async src='https://www.google-analytics.com/analytics.js'></script>
         {% endif %}
-        <script type="text/javascript" src="{{url_for('static', filename='js/base.min.js')}}"></script>
-        {% block head_js %}
-        {% endblock %}
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/font-awesome.min.css')}}"/>
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.min.css')}}"/>
         {% block head_css %}
+        {% endblock %}
+        <script type="text/javascript" src="{{url_for('static', filename='js/base.min.js')}}"></script>
+        {% block head_js %}
         {% endblock %}
     </head>
     <body>

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block head_css %}
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/home.min.css')}}"/>
-{% endblock %}
 {% block head_js %}
 <script async src='https://www.google.com/recaptcha/api.js?hl={{ headers.locale }}'></script>
+{% endblock %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/home.min.css')}}"/>
 {% endblock %}
 {% block content %}
 <div id="background">

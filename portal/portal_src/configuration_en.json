@@ -12,6 +12,10 @@
 	"button_dpolicy": "Data policy",
 	"button_search": "Search",
 	"button_send": "Send",
+	"button_edit_profile": "Edit profile",
+	"button_logout": "Logout",
+	"button_read_more": "... Read more",
+	"button_read_less": "... Read less",
 	"placeholder_search": "What are you looking for ?",
 	"error_400_title": "Bad request",
 	"error_400_msg": "The server cannot process the request due to something that is perceived to be a client error.",
@@ -23,6 +27,7 @@
 	"error_404_msg": "The requested resource could not be found but may be available again in the future.",
 	"error_500_title": "Internal error",
 	"error_500_msg": "An unexpected condition was encountered. Sorry.",
+	"map_tiles_attribution": "Attribution: Tiles by Carto, under CC BY 3.0 license. Data by OpenStreetMaps, under ODbL license.",
 	"home_downloads": "Downloads",
 	"home_dreported": "Reported Datasets",
 	"home_resources": "Resources",
@@ -55,9 +60,14 @@
 	"about_web_p2": "The aim of this project is to solve all these needs and problems free of charge and without profit motive, for all types of users. This objective has been established on the premise that any type of user should be able to take advantage of the validity, richness and possibilities offered by open data, in this particular case, geospatial data. So... anyone can search, upload (in the not too distant future), view, combine, download and ultimately have an experience according to their profile according to the use they make of the data mentioned.",
 	"about_web_p3": "The portal is, in this sense, a gateway to the creation of a community of users that will be created over time and share open data licensed for viewing and use, in addition to its subsequent healing and updating. That is: \"a hub where you can find the different datasets and use them regardless of the type of user\".",
 	"about_oeg_title": "Who we are ?",
-	"about_oeg_p1": "The",
-	"about_oeg_p2": "is located in the ETSIInf of the Technical University of Madrid. It ranks eighth out of more than two hundred UfM research groups and is widely recognised in Europe in the areas of Ontological Engineering, Semantic Web, Social and Linked Data, Natural Language, Semantic e-Science, Internet of Things and the Internet of the Future.",
-	"about_oeg_p3": "Our group manages DBpedia in Spanish, participates in various W3C standardization activities and has developed applications in a wide range of domains, including knowledge management, software applications lifecycle management, e-commerce, job search and financing, geolocation, R&D project management, etc.",
+	"about_oeg_p1":"GeoLinked Data (. es) is an initiative for the enrichment of the Data Web with geo-spatial data of the Spanish national territory. This initiative was launched in 2008 with the publication of various geographical information sources from the Spanish National Geographic Institute, making them available as RDF (Resource Description Framework) knowledge bases in accordance with the principles of Linked Data. In this way, Spain was at that time joining the initiative that other countries such as the United Kingdom had also started.",
+	"about_oeg_p2":"Some of the products that were obtained as a result of this work were the following:",
+	"about_oeg_p3":"a library for the generation of geographic RDF. This library was used as a base for the generation of the library,",
+	"about_oeg_p4":", which has been used for the generation of geographical RDF from a large number of European geographical data sources.",
+	"about_oeg_p5":"for the display of linked geographic data, available at a SPARQL endpoint.",
+	"about_oeg_p6": "The",
+	"about_oeg_p7": "is located in the ETSIInf of the Technical University of Madrid. It ranks eighth out of more than two hundred UfM research groups and is widely recognised in Europe in the areas of Ontological Engineering, Semantic Web, Social and Linked Data, Natural Language, Semantic e-Science, Internet of Things and the Internet of the Future.",
+	"about_oeg_p8": "Our group manages DBpedia in Spanish, participates in various W3C standardization activities and has developed applications in a wide range of domains, including knowledge management, software applications lifecycle management, e-commerce, job search and financing, geolocation, R&D project management, etc.",
 	"accounts_login_title": "Log on",
 	"accounts_login_username": "Username",
 	"accounts_login_password": "Password",
@@ -151,8 +161,10 @@
 	"policy_definitions_p11": "Data Controller",
 	"policy_definitions_p12": "The natural person, legal person, public administration or any other body, association or organization with the right, also jointly with another Data Controller, to make decisions regarding the purposes, and the methods of processing of Personal Data and the means used, including the security measures concerning the operation and use of this Open Data Portal. The Data Controller, unless otherwise specified, is the Owner of this Open Data Portal.",
 	"policy_legal_title": "Legal information",
-	"policy_legal_p1": "(EU Users) this privacy statement has been prepared in fulfillment of the obligations under Art. 10 of EC Directive n. 95/46/EC, and under the provisions of Directive 2002/58/EC, as revised by Directive 2009/136/EC, on the subject of Cookies."
-
-
-
+	"policy_legal_p1": "(EU Users) this privacy statement has been prepared in fulfillment of the obligations under Art. 10 of EC Directive n. 95/46/EC, and under the provisions of Directive 2002/58/EC, as revised by Directive 2009/136/EC, on the subject of Cookies.",
+	"profile_organization": "Our organization",
+	"profile_contact": "Contact",
+	"profile_location": "Location",
+	"profile_web": "Go to the Website",
+	"profile_tags": "Linked tags"
 }
