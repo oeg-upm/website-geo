@@ -1,11 +1,159 @@
 {% extends "base.html" %}
 {% block head_css %}
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/about.min.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/accounts.css')}}"/>
+{% if 'coordinates_lat' in info and 'coordinates_long' in info %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"
+   integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ=="
+   crossorigin=""/>
+{% endif %}
+{% endblock %}
+{% block head_js %}
+<script type="text/javascript" src="{{url_for('static', filename='js/accounts.min.js')}}"></script>
+{% if 'coordinates_lat' in info and 'coordinates_long' in info %}
+<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"
+   integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log=="
+   crossorigin=""></script>
+<script type="text/javascript">
+	ready(function() {
+	    var o = {center: [{{ info.coordinates_lat }} + 0.00025, {{ info.coordinates_long }}],
+			dragging: false, doubleClickZoom: false, boxZoom: false, closePopupOnClick: false, zoomControl: false,
+			scrollWheelZoom: false, tap: false, zoom: 17};
+		var a = L.map("org-map", o);
+		var b = L.map("org-map-bottom", o);
+		L.tileLayer("https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png")["addTo"](a);
+		L.tileLayer("https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png")["addTo"](b);
+		L.marker([{{ info.coordinates_lat }}, {{ info.coordinates_long }}])["addTo"](a)["bindPopup"](
+			'{{ info.coordinates_lat }}, {{ info.coordinates_long }}', {closeButton: false}
+		)["openPopup"]();
+		L.marker([{{ info.coordinates_lat }}, {{ info.coordinates_long }}])["addTo"](b)["bindPopup"](
+			'{{ info.coordinates_lat }}, {{ info.coordinates_long }}', {closeButton: false}
+		)["openPopup"]();
+	});
+</script>
+{% endif %}
 {% endblock %}
 {% block content %}
-<div class="about">
+<div class="accounts">
 	<div class="div-container">
-		HAS ENTRADO !
+		<div id="div-details" class="y-centered">
+			{% if headers.session.user_edit == true %}
+			<div class="separator-one-exp y-centered x-centered">
+			{% else %}
+			<div class="separator-one y-centered x-centered">
+			{% endif %}
+				<div id="logo">
+					<div>
+						{% if 'picture' in info %}
+						<img src="{{ info.picture }}">
+						{% else %}
+						<i class="fa fa-users" aria-hidden="true"></i>
+						{% endif %}
+					</div>
+					{% if 'name' in info %}
+					<p>{{ info.name }}</p>
+					{% endif %}
+				</div>
+				{% if headers.session.user_edit == true %}
+				<div id="user-buttons" class="y-centered">
+					<div class="elements-row y-centered x-centered">
+						<i class="fa fa-address-card" aria-hidden="true"></i>
+						<a href="{{ request.path }}/edit">{{ headers.translations.button_edit_profile }}</a>
+					</div>
+					<div id="user-logout" class="elements-row y-centered x-centered">
+						<i class="fa fa-sign-out" aria-hidden="true"></i>
+						<a href="/logout">{{ headers.translations.button_logout }}</a>
+					</div>
+				</div>
+				{% endif %}
+			</div>
+			{% if 'description' in info %}
+			{% if info_flag == true %}
+			<div id="user-description" class="non-expanded">
+			{% else %}
+			<div id="user-description" class="expanded">
+			{% endif %}
+				<p class="title">{{ headers.translations.profile_organization }}</p>
+				<p class="text">{{ info.description }}</p>
+				{% if info_flag == true %}
+				<span id="button-read-more" class="buttons-read shown text-click">{{ headers.translations.button_read_more }}</span>
+				<span id="button-read-less" class="buttons-read hidden text-click">{{ headers.translations.button_read_less }}</span>
+				{% endif %}
+			</div>
+			{% endif %}
+			{% if ('website' in info or 'phone' in info or 'email' in info) and ('address' in info or ('coordinates_lat' in info and 'coordinates_long' in info)) %}
+			<div class="separator-two-exp">
+			{% else %}
+			<div class="separator-two">
+			{% endif %}
+				{% if 'website' in info or 'phone' in info or 'email' in info %}
+				<div id="user-contact">
+					<p class="title">{{ headers.translations.profile_contact }}</p>
+					{% if 'website' in info %}
+					<a href="{{ info.website }}" target="_blank" class="text"><i class="fa fa-link" aria-hidden="true"></i>{{ headers.translations.profile_web }}</a>
+					{% endif %}
+					{% if 'email' in info %}
+					<a href="mailto:{{ info.email }}" class="text"><i class="fa fa-envelope-open-o" aria-hidden="true"></i>{{ info.email }}</a>
+					{% endif %}
+					{% if 'phone' in info %}
+					<a href="tel:{{ info.phone }}" class="text"><i class="fa fa-phone" aria-hidden="true"></i>{{ info.phone }}</a>
+					{% endif %}
+				</div>
+				{% endif %}
+				{% if 'address' in info or ('coordinates_lat' in info and 'coordinates_long' in info) %}
+				<div id="user-location">
+					<p class="title">{{ headers.translations.profile_location }}</p>
+					{% if 'address' in info %}
+					{% if 'coordinates_lat' in info and 'coordinates_long' in info %}
+					<a href="https://www.google.com/maps/search/?api=1&query={{ info.coordinates_lat }}, {{ info.coordinates_long }}" target="_blank" class="text"><i class="fa fa-map-pin" aria-hidden="true"></i>{{ info.address }}</a>
+					{% else %}
+					<p class="text"><i class="fa fa-map-pin" aria-hidden="true"></i>{{ info.address }}</p>
+					{% endif %}
+					{% endif %}
+					{% if 'coordinates_lat' in info and 'coordinates_long' in info %}
+					<div id="org-map"></div>
+					<p id="org-map-attr" class="map-attribution">{{ headers.translations.map_tiles_attribution }}</p>
+					{% endif %}
+				</div>
+				{% endif %}
+			</div>
+			{% if 'coordinates_lat' in info and 'coordinates_long' in info %}
+			<div id="org-map-bottom"></div>
+			<p id="org-map-attr-bottom" class="map-attribution">{{ headers.translations.map_tiles_attribution }}</p>
+			{% endif %}
+			{% if info_tags|length > 0 %}
+			<div id="user-tags">
+				<p class="title">{{ headers.translations.profile_tags }}</p>
+				<ul>
+					{% for tag_key in info_tags.keys() %}
+					<li><a href="/tags/{{ tag_key }}" target="_blank">{{ info_tags[tag_key] }}</a></li>
+					{% endfor %}
+				</ul>
+			</div>
+			{% endif %}
+			{% if info_datasets|length > 0 %}
+			<div id="user-data">
+				<p class="title">{{ headers.translations.profile_datasets }}</p>
+				<table>
+					<thead>
+						<tr>
+							<th>{{ headers.translations.profile_table_name }}</th>
+							<th>{{ headers.translations.profile_table_downloads }}</th>
+							<th>{{ headers.translations.profile_table_date }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for data in info_datasets %}
+						<tr>
+							<td data-title="{{ headers.translations.profile_table_name }}"><a href="/datasets/{{ data['id'] }}">{{ data['name'] }}</a></td>
+							<td data-title="{{ headers.translations.profile_table_downloads }}">{{ data['downloads'] }}</td>
+							<td data-title="{{ headers.translations.profile_table_date }}">{{ data['date'] }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% endif %}
+		</div>
 	</div>
 </div>
 {% endblock %}

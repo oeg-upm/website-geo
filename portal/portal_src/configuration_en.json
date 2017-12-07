@@ -166,5 +166,9 @@
 	"profile_contact": "Contact",
 	"profile_location": "Location",
 	"profile_web": "Go to the Website",
-	"profile_tags": "Linked tags"
+	"profile_tags": "Linked tags",
+	"profile_datasets": "Uploaded datasets",
+	"profile_table_name": "Name",
+	"profile_table_downloads": "Downloads",
+	"profile_table_date": "Last updated at"
 }

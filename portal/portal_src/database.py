@@ -130,7 +130,8 @@ def configure_redis(configuration):
 
             # Disconnect other connection pools
             for __redis_pool_name in __redis_pools.keys():
-                __redis_pools[__redis_pool_name].disconnect()
+                if __redis_pools[__redis_pool_name] is not None:
+                    __redis_pools[__redis_pool_name].disconnect()
 
             return None
 
@@ -141,12 +142,13 @@ def configure_redis(configuration):
                 connection_pool=__redis_pools[__redis_name]
             )
 
+            config.flask_logger.info(
+                'Redis DB (' + __redis_name + ') '
+                'connected at port: ' + str(configuration['port'])
+            )
+
         # Add new number for next connection pool
         __number_redis += 1
-
-    config.flask_logger.info(
-        'Redis DB connected at port: ' + str(configuration['port'])
-    )
 
     return __redis_connections
 
@@ -156,6 +158,10 @@ __redis = configure_redis(config.redis)
 
 # Execute method to create new instance of Redis Cache
 __redis_cache = configure_redis(config.redis_cache)
+
+# Raise exception if any of databases are not connected
+if __redis is None or __redis_cache is None:
+    raise Exception('Bad redis configuration or not running')
 
 
 ##########################################################################
@@ -396,14 +402,15 @@ def set_account_fields(fields, kind):
 
         # Add fields depending on kind
         __fields += ['gender'] if kind == 0 else \
-            ['address', 'phone']
+            ['address', 'phone', 'description',
+             'coordinates_lat', 'coordinates_long']
 
         # Iterate and remove other non-valid fields
         # description* is a valid key because it might be
         # some of these keys at the dictionary
         __user_keys = __user.keys()
         for __key in __user_keys:
-            if __key not in __fields and 'description' not in __key:
+            if __key not in __fields:
                 del __user[__key]
 
         # Generate identifier from values
@@ -492,13 +499,28 @@ def get_account_fields(identifier, fields=None):
 
     # Generate user dictionary from specific fields
     if fields is not None:
-        __user = {it: __user[it] for it in fields if it in __user}
+        __user = {
+            it: __user[it] for it in fields
+            if it in __user
+        }
+
+    # Remove fields without content
+    __user = {
+        it: __user[it] for it in __user.keys()
+        if str(__user[it]).replace(' ', '') != ''
+    }
 
     # Normalize values
+    if 'website' in __user:
+        if 'http' not in __user['website']:
+            __user['website'] = 'http://' + __user['website']
+    if 'coordinates_lat' in __user:
+        __user['coordinates_lat'] = float(__user['coordinates_lat'])
+    if 'coordinates_long' in __user:
+        __user['coordinates_long'] = float(__user['coordinates_long'])
     if 'password' in __user:
         del __user['password']
     if 'kind' in __user:
         __user['kind'] = int(__user['kind'])
-    __user['id'] = identifier
 
     return __user

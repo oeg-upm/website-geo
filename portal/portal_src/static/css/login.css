@@ -26,7 +26,7 @@
     padding: 20px;
     background: #ffffff;
     border-radius: 6px;
-    border: 1px solid #BBBBBB;
+    border: 1px solid #BBB;
     -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
     -webkit-flex-direction: column;
@@ -82,7 +82,7 @@
 .div-container > #login > .input-box > input[type="text"]:active,
 .div-container > #login > .input-box > input[type="password"]:focus,
 .div-container > #login > .input-box > input[type="password"]:active {
-	border: 1px solid #454545;
+	border: 1px solid #595959;
 	color: #454545;
 }
 

@@ -81,7 +81,7 @@ body:fullscreen
 html {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    -webkit-tap-highlight-color: #494949;
+    -webkit-tap-highlight-color: #595959;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
 }
@@ -325,8 +325,8 @@ section, .elements-column {
 }
 
 #nav-search input[type="text"]:focus {
-    color: #494949;
-    border: 1px solid #494949;
+    color: #595959;
+    border: 1px solid #595959;
 }
 
 /* ################################################################## */
@@ -377,9 +377,9 @@ section, .elements-column {
 
 #search-container input[type="text"]:focus,
 #search-container input[type="text"]:active {
-    border-top: 1px solid #494949;
-    border-bottom: 1px solid #494949;
-    color: #494949;
+    border-top: 1px solid #595959;
+    border-bottom: 1px solid #595959;
+    color: #595959;
 }
 
 #search-container input[type="submit"],
@@ -413,7 +413,7 @@ section, .elements-column {
 #nav-search input[type="submit"]:active,
 #search-container input[type="text"]:focus ~ input[type="submit"],
 #nav-search input[type="text"]:focus ~ input[type="submit"] {
-    color: #494949;
+    color: #595959;
 }
 
 /* ################################################################## */
@@ -465,7 +465,7 @@ section, .elements-column {
 }
 
 #burguer-container > .div-container li.selected > a {
-    color: #494949;
+    color: #595959;
 }
 
 #burguer-container > .div-container li > a > i {
