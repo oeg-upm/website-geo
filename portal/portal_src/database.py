@@ -397,13 +397,14 @@ def set_account_fields(fields, kind):
         # Generate common fields
         __fields = [
             'username', 'password', 'email',
-            'name', 'picture', 'website'
+            'name', 'picture', 'website',
+            'description'
         ]
 
         # Add fields depending on kind
         __fields += ['gender'] if kind == 0 else \
-            ['address', 'phone', 'description',
-             'coordinates_lat', 'coordinates_long']
+            ['address', 'phone', 'coordinates_lat',
+             'coordinates_long']
 
         # Iterate and remove other non-valid fields
         # description* is a valid key because it might be

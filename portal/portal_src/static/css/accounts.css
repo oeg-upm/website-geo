@@ -36,7 +36,7 @@
 #logo > div > i {
     font-size: 80px;
     text-align: center;
-    margin: 20px 0;
+    margin: 20px;
 }
 
 #logo > div > img {
@@ -156,6 +156,12 @@
 }
 
 /* ################################################################## */
+
+.no-js #org-map,
+.no-js #org-map-bottom,
+.no-js .map-attribution {
+    display: none;
+}
 
 .separator-two,
 .separator-two-exp,
@@ -388,28 +394,28 @@
         font-size: 14px;
     }
 
-    #org-map,
-    #org-map-attr {
+    .js #org-map,
+    .js #org-map-attr {
         display: none;
     }
 
-    #org-map-bottom {
+    .js #org-map-bottom {
         display: -webkit-box;
         display: -webkit-flex;
         display: -ms-flexbox;
         display: flex;
     }
 
-    #org-map-attr-bottom {
+    .js #org-map-attr-bottom {
         display: block;
     }
 
-    .separator-two-exp > #user-contact,
-    .separator-two-exp > #user-location {
+    .organization-user .separator-two-exp > #user-contact,
+    .organization-user .separator-two-exp > #user-location {
         max-width: 48%;
     }
 
-    .separator-two-exp > #user-contact {
+    .organization-user .separator-two-exp > #user-contact {
         margin-right: 4%;
     }
 
