@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/accounts_edit.min.css')}}"/>
+{% endblock %}
+{% block head_js %}
+<script type="text/javascript" src="{{url_for('static', filename='js/accounts_edit.min.js')}}"></script>
+{% endblock %}
+{% block content %}
+{% if 'error' in request.args %}
+{% set parameters = request.args['error'].split(',') %}
+{% endif %}
+<div class="accounts">
+	<div class="div-container">
+		<div id="div-details" class="y-centered">
+			<form action="{{ request.path }}" method="post">
+				<input name=csrf_token type=hidden value="{{ csrf_token }}">
+				<p class="title">{{ headers.translations.profile_user }}</p>
+				<div>
+					<input data-hotkey="u" name="username" aria-label="{{ headers.translations.profile_user }}" placeholder="{{ headers.translations.profile_user }}" data-unscoped-placeholder="{{ headers.translations.profile_user }}" data-scoped-placeholder="{{ headers.translations.profile_user }}" type="text" value="{{ headers.session.user_name }}">
+					<i class="fa fa-user-o" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'username' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_username }}</p>
+				{% endif %}
+				{% if parameters is not none and 'username_invalid' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_username_db }}</p>
+				{% endif %}
+				<p class="input-rule"> * {{ headers.translations.profile_user_rule }}</p>
+				<p class="title">{{ headers.translations.profile_table_name }}</p>
+				<div>
+					{% if 'name' not in info %}
+					<input data-hotkey="n" name="name" aria-label="{{ headers.translations.profile_table_name }}" placeholder="{{ headers.translations.profile_table_name }}" data-unscoped-placeholder="{{ headers.translations.profile_table_name }}" data-scoped-placeholder="{{ headers.translations.profile_table_name }}" type="text">
+					{% else %}
+					<input data-hotkey="n" name="name" aria-label="{{ headers.translations.profile_table_name }}" placeholder="{{ headers.translations.profile_table_name }}" data-unscoped-placeholder="{{ headers.translations.profile_table_name }}" data-scoped-placeholder="{{ headers.translations.profile_table_name }}" type="text" value="{{ info['name'] }}">
+					{% endif %}
+					<i class="fa fa-address-card-o" aria-hidden="true"></i>
+				</div>
+				<p class="title">{{ headers.translations.profile_picture }}</p>
+				<div>
+					{% if 'picture' not in info %}
+					<input id="input-picture" data-hotkey="p" name="picture" aria-label="{{ headers.translations.profile_picture }}" placeholder="{{ headers.translations.profile_placeholder_picture }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_picture }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_picture }}" type="text" maxlength="2048">
+					<input id="input-picture-flag" name="picture_flag" type=hidden value=false>
+					{% else %}
+					<input id="input-picture" data-hotkey="p" name="picture" aria-label="{{ headers.translations.profile_picture }}" placeholder="{{ headers.translations.profile_placeholder_picture }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_picture }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_picture }}" type="text" maxlength="2048" value="{{ info.picture }}">
+					<input id="input-picture-flag" name="picture_flag" type=hidden value=true>
+					{% endif %}
+					<i class="fa fa-picture-o" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'picture' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_url }}</p>
+				{% endif %}
+				<div id="picture">
+					<div>
+						{% if 'picture' not in info %}
+						<img id="input-picture-img" src="">
+						{% else %}
+						<img id="input-picture-img" src="{{ info.picture }}">
+						{% endif %}
+						<i class="fa fa-picture-o" aria-hidden="true"></i>
+					</div>
+				</div>
+				{% if info['kind'] == 1 %}
+				<p class="title">{{ headers.translations.profile_organization }}</p>
+				{% else %}
+				<p class="title">{{ headers.translations.profile_bio }}</p>
+				{% endif %}
+				<div>
+					<textarea data-hotkey="d" name="description" aria-label="{{ headers.translations.profile_bio }}" placeholder="{{ headers.translations.profile_bio }}" data-unscoped-placeholder="{{ headers.translations.profile_bio }}" data-scoped-placeholder="{{ headers.translations.profile_bio }}" maxlength="2000">{% if 'description' in info %}{{ info['description'] }}{% endif %}</textarea>
+				</div>
+				<p class="title">{{ headers.translations.home_email }}</p>
+				<div>
+					{% if 'email' not in info %}
+					<input data-hotkey="e" name="email" aria-label="{{ headers.translations.home_email }}" placeholder="{{ headers.translations.home_email }}" data-unscoped-placeholder="{{ headers.translations.home_email }}" data-scoped-placeholder="{{ headers.translations.home_email }}" type="text">
+					{% else %}
+					<input data-hotkey="e" name="email" aria-label="{{ headers.translations.home_email }}" placeholder="{{ headers.translations.home_email }}" data-unscoped-placeholder="{{ headers.translations.home_email }}" data-scoped-placeholder="{{ headers.translations.home_email }}" type="text" value="{{ info['email'] }}">
+					{% endif %}
+					<i class="fa fa-envelope-open-o" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'email' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_email }}</p>
+				{% endif %}
+				{% if info['kind'] == 1 %}
+				<p class="title">{{ headers.translations.profile_website }}</p>
+				<div>
+					{% if 'website' not in info %}
+					<input data-hotkey="w" name="website" aria-label="{{ headers.translations.profile_website }}" placeholder="{{ headers.translations.profile_placeholder_website }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_website }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_website }}" type="url">
+					{% else %}
+					<input data-hotkey="w" name="website" aria-label="{{ headers.translations.profile_website }}" placeholder="{{ headers.translations.profile_placeholder_website }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_website }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_website }}" type="url" value="{{ info['website'] }}">
+					{% endif %}
+					<i class="fa fa-link" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'website' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_url }}</p>
+				{% endif %}
+				<p class="title">{{ headers.translations.profile_phone }}</p>
+				<div>
+					{% if 'website' not in info %}
+					<input data-hotkey="p" name="phone" aria-label="{{ headers.translations.profile_phone }}" placeholder="{{ headers.translations.profile_placeholder_phone }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_phone }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_phone }}" type="tel">
+					{% else %}
+					<input data-hotkey="p" name="phone" aria-label="{{ headers.translations.profile_phone }}" placeholder="{{ headers.translations.profile_placeholder_phone }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_phone }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_phone }}" type="tel" value="{{ info['phone'] }}">
+					{% endif %}
+					<i class="fa fa-phone" aria-hidden="true"></i>
+				</div>
+				<p class="title">{{ headers.translations.profile_address }}</p>
+				<div>
+					{% if 'address' not in info %}
+					<input data-hotkey="a" name="address" aria-label="{{ headers.translations.profile_address }}" placeholder="{{ headers.translations.profile_placeholder_address }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_address }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_address }}" type="text">
+					{% else %}
+					<input data-hotkey="a" name="address" aria-label="{{ headers.translations.profile_address }}" placeholder="{{ headers.translations.profile_placeholder_address }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_address }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_address }}" type="text" value="{{ info['address'] }}">
+					{% endif %}
+					<i class="fa fa-map-pin" aria-hidden="true"></i>
+				</div>
+				<div>
+					{% if 'coordinates_lat' not in info %}
+					<input name="coordinates_lat" aria-label="{{ headers.translations.profile_latitude }}" placeholder="{{ headers.translations.profile_placeholder_location }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_location }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_location }}" type="text">
+					{% else %}
+					<input name="coordinates_lat" aria-label="{{ headers.translations.profile_latitude }}" placeholder="{{ headers.translations.profile_placeholder_location }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_location }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_location }}" type="text" value="{{ info['coordinates_lat'] }}">
+					{% endif %}
+					<i class="fa fa-arrows-v" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'coordinates_lat' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_latitude }}</p>
+				{% endif %}
+				<div>
+					{% if 'coordinates_long' not in info %}
+					<input name="coordinates_long" aria-label="{{ headers.translations.profile_longitude }}" placeholder="{{ headers.translations.profile_placeholder_location }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_location }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_location }}" type="text">
+					{% else %}
+					<input name="coordinates_long" aria-label="{{ headers.translations.profile_longitude }}" placeholder="{{ headers.translations.profile_placeholder_location }}" data-unscoped-placeholder="{{ headers.translations.profile_placeholder_location }}" data-scoped-placeholder="{{ headers.translations.profile_placeholder_location }}" type="text" value="{{ info['coordinates_long'] }}">
+					{% endif %}
+					<i class="fa fa-arrows-h" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'coordinates_long' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_longitude }}</p>
+				{% endif %}
+				{% endif %}
+				<p id="password-title" class="title">{{ headers.translations.profile_password }}</p>
+				<div>
+					<input name="current_password" aria-label="{{ headers.translations.profile_current_password }}" placeholder="{{ headers.translations.profile_current_password }}" data-unscoped-placeholder="{{ headers.translations.profile_current_password }}" data-scoped-placeholder="{{ headers.translations.profile_current_password }}" type="password">
+					<i class="fa fa-star" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'password_invalid' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_password_db }}</p>
+				{% endif %}
+				<div>
+					<input name="new_password" aria-label="{{ headers.translations.profile_new_password }}" placeholder="{{ headers.translations.profile_new_password }}" data-unscoped-placeholder="{{ headers.translations.profile_new_password }}" data-scoped-placeholder="{{ headers.translations.profile_new_password }}" type="password">
+					<i class="fa fa-star-o" aria-hidden="true"></i>
+				</div>
+				<div>
+					<input name="verify_password" aria-label="{{ headers.translations.profile_verify_password }}" placeholder="{{ headers.translations.profile_verify_password }}" data-unscoped-placeholder="{{ headers.translations.profile_verify_password }}" data-scoped-placeholder="{{ headers.translations.profile_verify_password }}" type="password">
+					<i class="fa fa-star-o" aria-hidden="true"></i>
+				</div>
+				{% if parameters is not none and 'password_mismatch' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_password_mis }}</p>
+				{% endif %}
+				{% if parameters is not none and 'password' in parameters %}
+				<p class="input-error">* {{ headers.translations.profile_error_password }}</p>
+				{% endif %}
+				<div>
+					<input value="{{ headers.translations.button_save }}" type="submit">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock %}

@@ -7,11 +7,11 @@
     <form action='/login' method="post" id="login" class="flex y-centered x-centered">
         <h3 class="title">{{ headers.translations.accounts_login_title }}</h3>
         <div class="input-box">
-            <input data-hotkey="u" name="username" aria-label="{{ headers.translations.accounts_login_username }}" placeholder="{{ headers.translations.accounts_login_username }}" data-unscoped-placeholder="{{ headers.translations.accounts_login_username }}" data-scoped-placeholder="{{ headers.translations.accounts_login_username }}" autocapitalize="off" type="text" required>
+            <input data-hotkey="u" name="username" aria-label="{{ headers.translations.accounts_login_username }}" placeholder="{{ headers.translations.accounts_login_username }}" data-unscoped-placeholder="{{ headers.translations.accounts_login_username }}" data-scoped-placeholder="{{ headers.translations.accounts_login_username }}" type="text" required>
             <i class="fa fa-user-o" aria-hidden="true"></i>
         </div>
         <div class="input-box marg">
-            <input data-hotkey="p" name="password" aria-label="{{ headers.translations.accounts_login_password }}" placeholder="{{ headers.translations.accounts_login_password }}" data-unscoped-placeholder="{{ headers.translations.accounts_login_password }}" data-scoped-placeholder="{{ headers.translations.accounts_login_password }}" autocapitalize="off" type="password" required>
+            <input data-hotkey="p" name="password" aria-label="{{ headers.translations.accounts_login_password }}" placeholder="{{ headers.translations.accounts_login_password }}" data-unscoped-placeholder="{{ headers.translations.accounts_login_password }}" data-scoped-placeholder="{{ headers.translations.accounts_login_password }}" type="password" required>
             <i class="fa fa-key" aria-hidden="true"></i>
         </div>
         {% if request.args.get('error_msg') is not none %}

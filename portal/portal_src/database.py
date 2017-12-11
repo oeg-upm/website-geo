@@ -44,6 +44,24 @@ expire_one_month = 2419200
 regex_username = re.compile('^[A-Za-z0-9_.]{4,20}$')
 regex_email = re.compile('^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$')
 regex_password = re.compile('^[A-Za-z0-9@#$%^&+=]{8,}$')
+regex_url = re.compile(
+    r'^(?:[a-z0-9\.\-\+]*)://'  # scheme
+    r'(?:\S+(?::\S*)?@)?'  # user:pass authentication
+    r'(?:' + r'(?:25[0-5]|2[0-4]\d|[0-1]?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}' +  # ipv4
+    '|' + r'\[[0-9a-f:\.]+\]' +  # ipv6
+    '|' + '(' + r'[a-z' + '\u00a1-\uffff' + r'0-9](?:[a-z' + '\u00a1-\uffff' +
+    r'0-9-]{0,61}[a-z' + '\u00a1-\uffff' + r'0-9])?' + r'(?:\.(?!-)[a-z' +
+    '\u00a1-\uffff' + r'0-9-]{1,63}(?<!-))*' + (
+        r'\.'  # dot
+        r'(?!-)'  # can't start with a dash
+        r'(?:[a-z' + '\u00a1-\uffff' + '-]{2,63}'  # domain
+        r'|xn--[a-z0-9]{1,59})'  # punycode
+        r'(?<!-)'  # can't end with a dash
+        r'\.?'  # may have a trailing dot
+    ) + '|localhost)' + ')'
+    r'(?::\d{2,5})?'  # port
+    r'(?:[/?#][^\s]*)?'  # resource path
+    r'\Z', re.IGNORECASE)
 
 
 def print_exception(e=None, skip=True):
@@ -207,10 +225,24 @@ def check_csrf(headers, csrf_token):
     if __redis_cache['tokens'].exists(
         headers['device_token']
     ):
-        # Check if CSRF is the same
-        return __redis_cache['tokens'].get(
+
+        # Get CSRF token
+        __csrf = __redis_cache['tokens'].get(
             headers['device_token']
-        ) == csrf_token
+        )
+
+        if __csrf is None:
+
+            return False
+
+        else:
+
+            # Delete CSRF token
+            __redis_cache['tokens'].delete(
+                headers['device_token']
+            )
+
+            return __csrf == csrf_token
 
     else:
         return False
@@ -402,9 +434,12 @@ def set_account_fields(fields, kind):
         ]
 
         # Add fields depending on kind
-        __fields += ['gender'] if kind == 0 else \
-            ['address', 'phone', 'coordinates_lat',
-             'coordinates_long']
+        if kind == 1:
+            __fields += [
+                'address', 'phone',
+                'coordinates_lat',
+                'coordinates_long'
+            ]
 
         # Iterate and remove other non-valid fields
         # description* is a valid key because it might be
@@ -459,7 +494,7 @@ def set_account_credentials(identifier, device_token, cookie):
     __redis['tokens'].expire(__cookie_key, expire_one_month)
 
 
-def get_account_fields(identifier, fields=None):
+def get_account_fields(identifier, fields=None, privacy=False):
     """ This function allows to get information about a
         specific user and you can specify the fields that
         you want to receive.
@@ -467,6 +502,7 @@ def get_account_fields(identifier, fields=None):
     Args:
         identifier (string): internal user id
         fields (list): list of fields (optional)
+        privacy (bool): password flag
 
     Returns:
         dict: information about user or None
@@ -519,9 +555,196 @@ def get_account_fields(identifier, fields=None):
         __user['coordinates_lat'] = float(__user['coordinates_lat'])
     if 'coordinates_long' in __user:
         __user['coordinates_long'] = float(__user['coordinates_long'])
-    if 'password' in __user:
+    if not privacy and 'password' in __user:
         del __user['password']
     if 'kind' in __user:
         __user['kind'] = int(__user['kind'])
 
     return __user
+
+
+def update_account_fields(identifier, fields):
+    """ This function allows to update a user with specific values.
+
+    Args:
+        identifier (string): internal user id
+        fields (dict): parameters of user
+
+    Returns:
+        dict: fields with errors
+        # Length = 0 -> all ok
+        # Length > 0 -> something went wrong
+
+    """
+
+    # Get all previous values for the specific user
+    __user = get_account_fields(identifier, None, True)
+
+    # Create structure to check fields
+    __basic_args = ['description', 'name']
+    __args = [
+        'username', 'current_password', 'new_password',
+        'verify_password', 'email', 'picture',
+        'picture_flag', 'website'
+    ]
+
+    # Add more fields if the user is an organization
+    if __user['kind'] == 1:
+        __basic_args += ['address', 'phone']
+        __args += ['coordinates_lat', 'coordinates_long']
+    __args += __basic_args
+
+    # Rebuild structure with fields and remove the
+    # fields that are not valid (XSS attacks)
+    __args = {
+        __arg: fields[__arg]
+        for __arg in fields.keys()
+        if __arg in __args
+    }
+
+    # Create structure for errors
+    __bad_args = []
+    __old_md5 = None
+    __new_md5 = None
+
+    # Validate coordinates (org)
+    if __user['kind'] == 1:
+        if 'coordinates_lat' in __args:
+            try:
+                __args['coordinates_lat'] = \
+                    float(__args['coordinates_lat'])
+                if __args['coordinates_lat'] > 90 or \
+                   __args['coordinates_lat'] < -90:
+                    __bad_args.append('coordinates_lat')
+                else:
+                    if __user['coordinates_lat'] != \
+                       __args['coordinates_lat']:
+                        __user['coordinates_lat'] = \
+                            __args['coordinates_lat']
+            except Exception:
+                __bad_args.append('coordinates_lat')
+        if 'coordinates_long' in __args:
+            try:
+                __args['coordinates_long'] = \
+                    float(__args['coordinates_long'])
+                if __args['coordinates_long'] > 180 or \
+                        __args['coordinates_long'] < -180:
+                    __bad_args.append('coordinates_long')
+                else:
+                    if __user['coordinates_long'] != \
+                       __args['coordinates_long']:
+                        __user['coordinates_long'] = \
+                            __args['coordinates_long']
+            except Exception:
+                __bad_args.append('coordinates_long')
+
+    # Validate Website URL
+    try:
+        if 'website' in __args and \
+           __user['website'] != __args['website']:
+            if bool(regex_url.search(__args['website'])) or \
+               __args['website'] == '':
+                __user['website'] = __args['website']
+            else:
+                __bad_args.append('website')
+    except Exception:
+        __bad_args.append('website')
+
+    # Validate Picture URL
+    try:
+        if 'picture' in __args and \
+           'picture_flag' in __args and \
+           __user['picture'] != __args['picture']:
+            if bool(__args['picture_flag']) and (
+             bool(regex_url.search(__args['picture'])) or
+             __args['picture'] == ''
+            ):
+                __user['picture'] = __args['picture']
+            else:
+                __bad_args.append('picture')
+    except Exception:
+        __bad_args.append('picture')
+
+    # Validate Email
+    try:
+        if 'email' in __args and \
+           __user['email'] != __args['email']:
+            if regex_email.match(
+                __args['email']
+            ) is None:
+                __bad_args.append('email')
+            else:
+                __user['email'] = __args['email']
+    except Exception:
+        __bad_args.append('email')
+
+    # Validate username
+    try:
+        if 'username' in __args and \
+           __user['username'] != __args['username']:
+            if regex_username.match(
+                __args['username']
+            ) is None:
+                __bad_args.append('username')
+            elif check_account_username(
+                __args['username']
+            ) is not None:
+                __bad_args.append('username_invalid')
+            else:
+                __old_md5 = crypto.encrypt_md5(__user['username'])
+                __new_md5 = crypto.encrypt_md5(__args['username'])
+                __user['username'] = __args['username']
+    except Exception:
+        __bad_args.append('username')
+
+    # Break (1) flow if there are some errors
+    if len(__bad_args):
+        return __bad_args
+
+    # Validate password
+    try:
+        if 'current_password' in __args and \
+           'new_password' in __args and \
+           'verify_password' in __args and \
+           __args['current_password'] != '' and \
+           __args['new_password'] != '' and \
+           __args['verify_password']:
+            if __args['new_password'] != \
+               __args['verify_password']:
+                __bad_args.append('password_mismatch')
+            elif regex_password.match(
+                __args['new_password']
+            ) is None:
+                __bad_args.append('password')
+            elif crypto.encrypt_password(
+                __args['current_password']
+            ) != __user['password']:
+                __bad_args.append('password_invalid')
+            else:
+                __user['password'] = crypto.encrypt_password(
+                    __args['new_password']
+                )
+    except Exception:
+        __bad_args.append('password')
+
+    # Validate other values
+    for __arg in __basic_args:
+        if __user[__arg] != __args[__arg]:
+            __user[__arg] = __args[__arg]
+
+    # Break (2) flow if there are some errors
+    if len(__bad_args):
+        return __bad_args
+
+    # Rebuild links if it is necessary
+    if __old_md5 is not None and __new_md5 is not None:
+        __redis['users'].delete(__old_md5)
+        __redis['users'].set(__new_md5, identifier)
+
+    # Remove cache
+    __redis_cache['users'].delete(identifier)
+
+    # Set new values on database
+    __redis['users'].hmset(identifier, __user)
+
+    return []
