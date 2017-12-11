@@ -187,22 +187,30 @@ section, .elements-column {
 }
 
 #credits-container .logo-rdf {
-    width: 26px;
-    height: 22px;
+    width: 18px;
+    height: 15px;
     background: url("../img-logo/logo-rdf@2x.png") no-repeat top left;
     background-size: contain;
 }
 
 #credits-container .logo-open {
-    width: 105px;
-    height: 21px;
-    margin-left: 16px;
+    width: 80px;
+    height: 16px;
+    margin-left: 5px;
     background: url("../img-logo/logo-open@2x.png") no-repeat top left;
     background-size: contain;
 }
 
+#credits-container .logo-cc {
+    width: 40px;
+    height: 15px;
+    margin-left: 5px;
+    background: url("../img-logo/logo-cc@2x.png") no-repeat top left;
+    background-size: contain;
+}
+
 #credits-container .accounts {
-    max-width: 110px;
+    max-width: 112px;
     -webkit-box-pack: end;
     -webkit-justify-content: flex-end;
     -ms-flex-pack: end;
@@ -591,7 +599,7 @@ table {
 @media (min-width: 320px) {
 
     #credits-container .accounts {
-        max-width: 125px;
+        max-width: 130px;
     }
 
 }
@@ -606,6 +614,23 @@ table {
 
 @media (min-width: 410px) {
 
+    #credits-container .logo-rdf {
+        width: 20px;
+        height: 16px;
+    }
+
+    #credits-container .logo-open {
+        width: 86px;
+        height: 17px;
+        margin-left: 8px;
+    }
+
+    #credits-container .logo-cc {
+        width: 43px;
+        height: 16px;
+        margin-left: 8px;
+    }
+
     #credits-container .accounts {
         max-width: 210px;
     }
@@ -614,8 +639,25 @@ table {
 
 @media (min-width: 450px) {
 
+    #credits-container .logo-rdf {
+        width: 24px;
+        height: 20px;
+    }
+
+    #credits-container .logo-open {
+        width: 106px;
+        height: 21px;
+        margin-left: 12px;
+    }
+
+    #credits-container .logo-cc {
+        width: 54px;
+        height: 20px;
+        margin-left: 8px;
+    }
+
     #credits-container .accounts {
-        max-width: 100%;
+        max-width: none;
     }
 
 }
