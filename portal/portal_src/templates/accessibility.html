@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/accessibility.min.css')}}"/>
+{% endblock %}
+{% block content %}
+<div id="accessibility">
+	<div class="div-container">
+        <h3 class="title">{{ headers.translations.button_accessibility }}</h3>
+        <div class="img logo-wcag" title="WCAG-AAA 2.1 - W3C Logo"></div>
+        <p>{{ headers.translations.accessibility_wcag_p1 }}<a class="strong" href="https://www.w3.org/TR/2008/REC-WCAG20-20081211/">WCAG 2.0</a> {{ headers.translations.accessibility_wcag_p2 }}</p>
+        <p>{{ headers.translations.accessibility_wcag_p3 }}</p>
+        <p>{{ headers.translations.accessibility_wcag_p4 }}<a class="strong" href="https://www.w3.org/TR/WCAG21/">WCAG 2.1</a> {{ headers.translations.accessibility_wcag_p5 }}</p>
+        <p>{{ headers.translations.accessibility_wcag_p6 }}</p>
+        <div class="img logo-wai" title="WAI-ARIA 1.1 - W3C Logo"></div>
+        <p>{{ headers.translations.accessibility_wai_p1 }}<a class="strong" href="https://www.w3.org/TR/2014/REC-wai-aria-20140320/">WAI-ARIA 1.0</a> {{ headers.translations.accessibility_wai_p2 }}<a class="strong" href="https://www.w3.org/TR/html51/">HTML5</a> {{ headers.translations.accessibility_wai_p3 }}<a class="strong" href="https://www.w3.org/TR/SVG2/">SVG2</a> {{ headers.translations.accessibility_wai_p4 }}</p>
+	</div>
+</div>
+{% endblock %}

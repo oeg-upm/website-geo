@@ -1,0 +1,126 @@
+/*
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Ontology Engineering Group
+        http://www.oeg-upm.net/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Copyright (C) 2017 Ontology Engineering Group.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  GeoLinkeddata Open Data Portal is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
+/* ################################################################## */
+
+#accessibility {
+	margin-bottom: 40px;
+}
+
+/* ################################################################## */
+
+.title,
+.subtitle {
+	text-align: center;
+	font-weight: 600;
+	padding: 0 30px;
+	line-height: 30px;
+}
+
+.title {
+    margin: 40px 0;
+    font-size: 22px;
+    padding: 0 30px;
+	line-height: 30px;
+}
+
+.subtitle {
+    margin: 0 0 40px 0;
+    font-size: 18px;
+    padding: 0 26px;
+	line-height: 26px;
+}
+
+.subtitle.marg {
+    margin-top: 24px;
+}
+
+.img {
+    width: 242px;
+    height: 88px;
+    margin: 0 auto 40px;
+    border: 2px solid #595959;
+}
+
+.logo-wcag {
+    background: url("../img-logo/logo-wcag@2x.png") no-repeat top left;
+    background-size: contain;
+}
+
+.logo-wai {
+    margin-top: 40px;
+    background: url("../img-logo/logo-wai@2x.png") no-repeat top left;
+    background-size: contain;
+}
+
+h5.subtitle {
+    font-weight: 400;
+}
+
+h5.nomarg {
+    margin: 0;
+}
+
+h5.browser {
+    margin: 16px 0 0 0;
+}
+
+p {
+	text-align: justify;
+	margin-bottom: 16px;
+}
+
+p.nomarg {
+    margin-bottom: 0;
+}
+
+p.center {
+    text-align: center;
+    line-height: 30px;
+}
+
+p a {
+    margin-left: 4px;
+    cursor: pointer;
+}
+
+p strong,
+p a.strong {
+	font-weight: 600;
+}
+
+/* ################################################################## */
+
+@media (min-width: 320px) {
+
+	p a {
+		margin-left: 5px;
+	}
+
+}
+
+/* ################################################################## */
+
+@media (-webkit-min-device-pixel-ratio: 3),
+    only screen and (min-resolution: 3dppx),
+    only screen and (min-resolution: 350dpi)
+    {
+
+        .logo-wcag {
+            background-image: url("../img-logo/logo-wcag@3x.png");
+        }
+
+        .logo-wai {
+            background-image: url("../img-logo/logo-wai@3x.png");
+        }
+
+    }
