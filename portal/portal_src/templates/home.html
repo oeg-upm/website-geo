@@ -6,6 +6,9 @@
 <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/home.min.css')}}"/>
 {% endblock %}
 {% block content %}
+{% if 'error' in request.args %}
+{% set parameters = request.args['error'].split(',') %}
+{% endif %}
 <div id="background">
 	<div class="div-container y-centered">
 		<div id="hsearch-container" class="x-centered y-centered">
@@ -86,25 +89,43 @@
 						<input data-hotkey="n" name="name" aria-label="{{ headers.translations.home_name }}" placeholder="{{ headers.translations.home_name }}" data-unscoped-placeholder="{{ headers.translations.home_name }}" data-scoped-placeholder="{{ headers.translations.home_name }}" type="text" maxlength="50" required>
 						<i class="fa fa-user-o" aria-hidden="true"></i>
 					</div>
+					{% if parameters is not none and 'name' in parameters %}
+					<p class="input-error">* {{ headers.translations.contact_error_name }}</p>
+					{% endif %}
 					<div class="input-box marg">
 						<input data-hotkey="m" name="email" aria-label="{{ headers.translations.home_email }}" placeholder="{{ headers.translations.home_email }}" data-unscoped-placeholder="{{ headers.translations.home_email }}" data-scoped-placeholder="{{ headers.translations.home_email }}" type="email" required>
 						<i class="fa fa-envelope-open-o" aria-hidden="true"></i>
 					</div>
+					{% if parameters is not none and 'email' in parameters %}
+					<p class="input-error">* {{ headers.translations.profile_error_email }}</p>
+					{% endif %}
 					<div class="input-box marg">
 						<input data-hotkey="a" name="subject" aria-label="{{ headers.translations.home_subject }}" placeholder="{{ headers.translations.home_subject }}" data-unscoped-placeholder="{{ headers.translations.home_subject }}" data-scoped-placeholder="{{ headers.translations.home_subject }}" type="text" maxlength="80" required>
 						<i class="fa fa-paper-plane-o" aria-hidden="true"></i>
 					</div>
+					{% if parameters is not none and 'subject' in parameters %}
+					<p class="input-error">* {{ headers.translations.contact_error_subject }}</p>
+					{% endif %}
 				</div>
 				<div class="contact-section marg description">
 					<textarea data-hotkey="a" name="description" aria-label="{{ headers.translations.home_description }}" placeholder="{{ headers.translations.home_description }}" data-unscoped-placeholder="{{ headers.translations.home_description }}" data-scoped-placeholder="{{ headers.translations.home_description }}" maxlength="500" required></textarea>
 				</div>
+				{% if parameters is not none and 'description' in parameters %}
+				<p class="input-error">* {{ headers.translations.contact_error_description }}</p>
+				{% endif %}
 			</div>
 			<div class="contact-row right">
 				<div class="contact-section g-recaptcha" data-sitekey="{{ headers.tokens.captcha }}"></div>
+				{% if parameters is not none and 'captcha' in parameters %}
+				<p class="input-error right">* {{ headers.translations.contact_error_captcha }}</p>
+				{% endif %}
 				<div class="contact-section marg">
 					<div class="elements-row">
 						<span class="contact-check-title"><input class="contact-check" name="terms" value="checked" type="checkbox" required>{{ headers.translations.home_legal_title }}<a class="contact-check-link" href="/policy#contact-form" target="_blank">{{ headers.translations.home_legal_link }}</a></span>
 					</div>
+					{% if parameters is not none and 'terms' in parameters %}
+					<p class="input-error right">* {{ headers.translations.contact_error_terms }}</p>
+					{% endif %}
 					<p class="contact-disclaimer">{{ headers.translations.home_legal_fields }}</p>
 					<input value="{{ headers.translations.button_send }}" type="submit">
 				</div>

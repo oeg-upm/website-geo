@@ -221,28 +221,20 @@ def check_csrf(headers, csrf_token):
 
     """
 
-    # Check if device exists
-    if __redis_cache['tokens'].exists(
+    # Get CSRF token
+    __csrf = __redis_cache['tokens'].get(
         headers['device_token']
-    ):
+    )
 
-        # Get CSRF token
-        __csrf = __redis_cache['tokens'].get(
+    # Check if device exists
+    if __csrf is not None:
+
+        # Delete CSRF token
+        __redis_cache['tokens'].delete(
             headers['device_token']
         )
 
-        if __csrf is None:
-
-            return False
-
-        else:
-
-            # Delete CSRF token
-            __redis_cache['tokens'].delete(
-                headers['device_token']
-            )
-
-            return __csrf == csrf_token
+        return __csrf == csrf_token
 
     else:
         return False
@@ -273,6 +265,98 @@ def set_csrf(headers):
     )
 
     return __csrf
+
+
+##########################################################################
+
+
+def validate_contact_fields(fields):
+    """ This function allows validate if contact form and
+        its values are good.
+
+    Args:
+        fields (dict): parameters of contact form
+
+    Returns:
+        tuple: list of fields with errors and list with good values
+        # Length = 0 -> all ok
+        # Length > 0 -> something went wrong
+
+    """
+
+    # Check if terms are checked
+    if 'terms' not in fields or \
+            fields['terms'] != 'checked':
+        return ['terms'], []
+
+    # Check if reCAPTCHA is not valid
+    if 'g-recaptcha-response' not in fields or \
+       fields['g-recaptcha-response'] == '' or not \
+       crypto.verify_google_captcha(fields['g-recaptcha-response']):
+        return ['captcha'], []
+
+    # Create structures
+    __bad_args = []
+    __args = []
+
+    # Check if any of the fields are missing (XSS attacks)
+    for __arg in ['name', 'email', 'subject', 'description']:
+        if __arg not in fields:
+            __bad_args.append(__arg)
+        elif fields[__arg] == '':
+            __bad_args.append(__arg)
+        else:
+            __args.append(fields[__arg])
+
+    # Break (1) flow if there are some errors
+    if len(__bad_args):
+        return __bad_args, []
+
+    # Validate Email
+    try:
+        if regex_email.match(
+            fields['email']
+        ) is None:
+            __bad_args.append('email')
+    except Exception:
+        __bad_args.append('email')
+
+    return __bad_args, __args
+
+
+##########################################################################
+
+
+def get_stats_organizations():
+    """ This function allows display number of organizations.
+
+    Returns:
+        int: number of organizations
+
+    """
+
+    # Check and get the number of organizations
+    __number = __redis_cache['stats'].get(
+        'organizations'
+    )
+    if __number is not None:
+        return int(__number)
+    else:
+
+        # Init counter
+        __count = 0
+
+        # Iterate over all the users
+        for __user in __redis['users'].scan_iter('*'):
+            if __redis['users'].type(__user) == 'hash':
+                if __redis['users'].hget(__user, 'kind') == '1':
+                    __count += 1
+
+        # Save count to cache
+        __redis_cache['stats'].set('organizations', __count)
+        __redis_cache['stats'].expire('organizations', expire_one_day)
+
+        return __count
 
 
 ##########################################################################
@@ -324,8 +408,8 @@ def check_account_username(username):
     # Generate MD5 from username
     __md5 = crypto.encrypt_md5(username)
 
-    return __redis['users'].get(__md5) \
-        if __redis['users'].exists(__md5) else None
+    # Get identifier from database
+    return __redis['users'].get(__md5)
 
 
 def check_account_password(identifier, password):
@@ -571,7 +655,7 @@ def update_account_fields(identifier, fields):
         fields (dict): parameters of user
 
     Returns:
-        dict: fields with errors
+        list: fields with errors
         # Length = 0 -> all ok
         # Length > 0 -> something went wrong
 
