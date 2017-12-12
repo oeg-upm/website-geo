@@ -1,0 +1,18 @@
+{
+  "celery": {
+    "url": "rabbithost",
+    "port": 5672,
+    "username": "rabbitmq",
+    "password": "password"
+  },
+  "mail": {
+    "host": "mail.xxx.com",
+    "server": "mail.xxx.com",
+    "port": 465,
+    "inbox": "xxx@mail.com",
+    "sender": "xxx@mail.com",
+    "password": ""
+  },
+  "logging": "/var/log/portal-mailer.log",
+  "debug": false
+}
