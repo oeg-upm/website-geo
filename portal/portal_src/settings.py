@@ -129,6 +129,7 @@ class Config(object):
         # SECURITY KEYS
         self.keys = {
             'captcha': settings['keys']['google_captcha'],
+            'captcha_server': settings['keys']['google_captcha_server'],
             'analytics': settings['keys']['google_analytics'],
             'crypto': settings['keys']['cryptography'],
             'master': settings['keys']['master']

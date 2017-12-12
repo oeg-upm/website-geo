@@ -19,6 +19,7 @@ import hmac
 import json
 import base64
 import random
+import requests
 import datetime
 import settings
 import traceback
@@ -271,3 +272,39 @@ def decrypt_dict(dict_to_decrypt, key=None):
 
     # Return decoded value
     return decrypt_aes256(json.loads(dict_to_decrypt), __crp_key)
+
+
+##########################################################################
+
+
+def verify_google_captcha(response):
+    """ This function allows to verify if a user token
+        is validated on Google reCAPTCHA API.
+
+    Args:
+        response (string): captcha user token
+
+    Returns:
+        bool: True if everything was good or False otherwise
+
+    """
+
+    # Request trough Google API
+    try:
+
+        # Get information from Google Geocode API
+        __response = requests.post(
+            'https://www.google.com/recaptcha/api/siteverify', data={
+                'secret': config.keys['captcha_server'],
+                'response': response
+            }, verify=False
+        )
+
+        # Check if request was good
+        if __response.status_code == 200:
+            return __response.json().get('success')
+
+    except Exception:
+        pass
+
+    return False
