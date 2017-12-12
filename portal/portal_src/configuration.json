@@ -9,10 +9,32 @@
     "username": "rabbitmq",
     "password": "password"
   },
-  "logging": "/var/log/portal.log",
-  "debug": false,
+  "redis": {
+    "host": "redishost",
+    "port": 6379,
+    "pass": "",
+    "dbs": [
+      "users",
+      "tokens"
+    ]
+  },
+  "redis_cache": {
+    "host": "redishostcache",
+    "port": 6379,
+    "pass": "",
+    "dbs": [
+      "users",
+      "tokens",
+      "stats"
+    ]
+  },
   "keys": {
+    "master": "",
     "google_captcha": "",
-    "google_analytics": ""
-  }
+    "google_captcha_server": "",
+    "google_analytics": "",
+    "cryptography": []
+  },
+  "logging": "/var/log/portal.log",
+  "debug": false
 }
