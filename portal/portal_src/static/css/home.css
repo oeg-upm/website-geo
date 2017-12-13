@@ -317,7 +317,7 @@
 	position: absolute;
 	color: #1d5995;
 	margin-left: 12px;
-	margin-top: 12px;
+	margin-top: 17px;
 }
 
 #contact .input-box > input {
@@ -327,6 +327,7 @@
 	color: #1d5995;
 	border: 1px solid #1d5995;
 	font-size: 16px;
+	line-height: 1.5;
 }
 
 #contact .input-box > input:focus,
@@ -351,7 +352,7 @@
 	font-size: 16px;
 	height: 90px;
 	resize: none;
-	max-width: 498px;
+	max-width: 494px;
 	width: calc(100% - 32px);
 	margin: 0 auto;
 }
@@ -626,7 +627,7 @@
 	}
 
     #contact .contact-section.description > textarea {
-    	max-width: 392px;
+    	max-width: 388px;
     }
 
 }

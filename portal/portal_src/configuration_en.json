@@ -17,6 +17,8 @@
 	"button_logout": "Logout",
 	"button_read_more": "... Read more",
 	"button_read_less": "... Read less",
+	"button_english": "English",
+	"button_spanish": "Spanish",
 	"placeholder_search": "What are you looking for ?",
 	"error_400_title": "Bad request",
 	"error_400_msg": "The server cannot process the request due to something that is perceived to be a client error.",
@@ -39,7 +41,7 @@
 	"home_name": "Name",
 	"home_email": "Email",
 	"home_subject": "Subject",
-	"home_description": "Description",
+	"home_description": "Description (1000 char.)",
 	"home_legal_title": "Check here if you accept",
 	"home_legal_link": "our terms",
 	"home_legal_fields": "All the fields are required",
@@ -219,5 +221,9 @@
 	"profile_error_longitude": "The longitude entered is not valid (WGS84 format or not bounds), please provide another one.",
 	"profile_error_password": "The password entered is not valid or does not follow the recommendations given, please try again.",
 	"profile_error_password_db": "The current password is not the same that you entered, please try again.",
-	"profile_error_password_mis": "The password entered is not the same that the verification."
+	"profile_error_password_mis": "The password entered is not the same that the verification.",
+	"upload_step_one": "Upload dataset",
+	"upload_step_two": "Validation",
+	"upload_step_three": "Semantic",
+	"upload_step_four": "Publication"
 }

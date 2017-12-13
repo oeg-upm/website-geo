@@ -17,6 +17,8 @@
 	"button_logout": "Desconectar",
 	"button_read_more": "... Leer más",
 	"button_read_less": "... Leer menos",
+	"button_english": "Inglés",
+	"button_spanish": "Español",
 	"placeholder_search": "¿ Qué estás buscando ?",
 	"error_400_title":"Petición inválida",
 	"error_400_msg":"El servidor no puede procesar la solicitud debido a un error.",
@@ -39,7 +41,7 @@
 	"home_name": "Nombre",
 	"home_email": "E-mail",
 	"home_subject": "Asunto",
-	"home_description": "Descripción",
+	"home_description": "Descripción (1000 carac.)",
 	"home_legal_title": "Clickea aquí si aceptas",
 	"home_legal_link": "nuestos términos",
 	"home_legal_fields": "Todos los campos son obligatorios",
@@ -219,5 +221,9 @@
 	"profile_error_longitude": "La longitud introducida no es válida (formato WGS84 o límites dados), por favor proporcione otra.",
 	"profile_error_password": "La contraseña no es válida o no sigue las recomendaciones. Inténtelo de nuevo.",
 	"profile_error_password_db": "La contraseña no es la misma que usted introdujo. Inténtelo de nuevo.",
-	"profile_error_password_mis": "La contraseña no es válida no es la misma que la verificación."
+	"profile_error_password_mis": "La contraseña no es válida no es la misma que la verificación.",
+	"upload_step_one": "Subir dataset",
+	"upload_step_two": "Validación",
+	"upload_step_three": "Semántica",
+	"upload_step_four": "Publicación"
 }

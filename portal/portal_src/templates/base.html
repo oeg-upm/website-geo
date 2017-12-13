@@ -249,6 +249,10 @@
                                 <a href="https://twitter.com/oeg_upm"><i class="fa fa-twitter-square" aria-hidden="true"></i>oeg</a>
                             </li>
                         </ol>
+                        <ol>
+                            <li><a href="{{ request.path }}?language=en">{{ headers.translations.button_english }}</a></li>
+                            <li><a href="{{ request.path }}?language=es">{{ headers.translations.button_spanish }}</a></li>
+                        </ol>
                         <span>{{ headers.time.year }} &#169; Ontology Engineering Group</span>
                     </nav>
                 </footer>
