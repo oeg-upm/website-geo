@@ -83,7 +83,7 @@
 #user-contact,
 #user-location,
 #user-tags,
-#user-data {
+.user-data {
     width: 100%;
 }
 
@@ -100,7 +100,7 @@
 #user-contact .title,
 #user-location .title,
 #user-tags .title,
-#user-data .title,
+.user-data .title,
 #user-description .text {
     text-align: justify;
 }
@@ -129,7 +129,7 @@
 #user-contact .title,
 #user-location .title,
 #user-tags .title,
-#user-data .title {
+.user-data .title {
     font-size: 14px;
     border-bottom: 1px solid #BBB;
     font-weight: 600;
@@ -241,45 +241,55 @@
 
 /* ################################################################## */
 
-#user-data {
+.user-data {
     margin-top: 20px;
 }
 
-#user-data > table {
+.user-data > table {
     width: 100%;
     max-width: 100%;
 }
 
-#user-data > table > thead,
-#user-data > table > tfoot {
+.user-data > table > thead,
+.user-data > table > tfoot {
     display: none;
 }
 
-#user-data > table > tbody {
+.user-data > table > tbody {
     display: block;
 }
 
-#user-data > table > tbody > tr {
+.user-data > table > thead > tr > th.date {
+    max-width: 135px;
+    width: 135px;
+}
+
+.user-data > table > thead > tr > th.middle {
+    max-width: 260px;
+    width: 260px;
+}
+
+.user-data > table > tbody > tr {
     display: block;
     border: 1px solid #BBB;
     border-radius: 6px;
     margin-top: 20px;
 }
 
-#user-data > table > tbody > tr > td {
+.user-data > table > tbody > tr > td {
     padding: 10px;
     border: 0;
     vertical-align: middle;
     display: block;
     text-align: right;
-    word-break: break-all;
     white-space: normal;
 }
 
-#user-data > table > tbody > tr > td[data-title]:before {
+.user-data > table > tbody > tr > td[data-title]:before {
     content: attr(data-title);
     float: left;
     color: #BBB;
+    padding-right: 20px;
 }
 
 /* ################################################################## */
@@ -386,7 +396,7 @@
     #user-contact .title,
     #user-location .title,
     #user-tags .title,
-    #user-data .title {
+    .user-data .title {
         font-size: 16px;
     }
 
@@ -419,57 +429,69 @@
         margin-right: 4%;
     }
 
-    #user-data > table > thead > tr > th,
-    #user-data > table > tbody > tr > th,
-    #user-data > table > tfoot > tr > th,
-    #user-data > table > thead > tr > td,
-    #user-data > table > tbody > tr > td,
-    #user-data > table > tfoot > tr > td {
+    .user-data.marg {
+        margin-top: 40px;
+    }
+
+    .user-data > table > thead > tr > th,
+    .user-data > table > tbody > tr > th,
+    .user-data > table > tfoot > tr > th,
+    .user-data > table > thead > tr > td,
+    .user-data > table > tbody > tr > td,
+    .user-data > table > tfoot > tr > td {
         text-align: left;
         padding: 20px;
         vertical-align: middle;
         border: 0;
     }
 
-    #user-data > table {
-        max-width: 80%;
+    .user-data > table {
+        max-width: 95%;
         margin: 20px auto 0;
     }
 
-    #user-data > table > thead {
+    .user-data > table > thead {
         display: table-header-group;
     }
 
-    #user-data > table > thead > tr > th {
+    .user-data > table > thead > tr > th {
         font-weight: 600;
     }
 
-    #user-data > table > tbody {
+    .user-data > table > tbody {
         display: table-row-group;
     }
 
-    #user-data > table > tbody > tr {
+    .user-data > table > tbody > tr {
         display: table-row;
     }
 
-    #user-data > table > tbody > tr > td {
+    .user-data > table > tbody > tr > td {
         display: table-cell;
         max-width: 400px;
     }
 
-    #user-data > table > tbody > tr > td[data-title]:before {
+    .user-data > table > tbody > tr > td[data-title]:before {
         display: none;
     }
 
-    #user-data > table > thead,
-    #user-data > table > tbody > tr {
+    .user-data > table > thead,
+    .user-data > table > tbody > tr {
         border-bottom: 1px solid #BBB;
     }
 
-    #user-data > table > tbody > tr:hover > td,
-    #user-data > table > tbody > tr:hover > th {
+    .user-data > table > tbody > tr:hover > td,
+    .user-data > table > tbody > tr:hover > th {
         background-color: #e8f1fc;
         font-weight: 600;
+    }
+
+}
+
+@media (min-width: 1024px) {
+
+    .user-data > table {
+        max-width: 75%;
     }
 
 }

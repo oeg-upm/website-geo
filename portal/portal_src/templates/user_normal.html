@@ -80,15 +80,48 @@
 				</ul>
 			</div>
 			{% endif %}
+			{% if info_datasets_pending is not none and info_datasets_pending|length > 0 %}
+			<div class="user-data">
+				<p class="title">{{ headers.translations.profile_datasets_pending }}</p>
+				<table>
+					<thead>
+						<tr>
+							<th>{{ headers.translations.profile_table_name }}</th>
+							<th class="middle">{{ headers.translations.profile_table_status }}</th>
+							<th class="date">{{ headers.translations.profile_table_date }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for data in info_datasets_pending %}
+						<tr>
+							<td data-title="{{ headers.translations.profile_table_name }}"><a href="/datasets/{{ data['id'] }}">{{ data['name'] }}</a></td>
+							{% if data['status'] == -1 %}
+							<td data-title="{{ headers.translations.profile_table_status }}">{{ headers.translations.profile_table_status_0 }}</td>
+							{% elif data['status'] == 0 %}
+							<td data-title="{{ headers.translations.profile_table_status }}">{{ headers.translations.profile_table_status_1 }}</td>
+							{% else %}
+							<td data-title="{{ headers.translations.profile_table_status }}">{{ headers.translations.profile_table_status_2 }}</td>
+							{% endif %}
+							<td data-title="{{ headers.translations.profile_table_date }}">{{ data['date'] }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% endif %}
 			{% if info_datasets|length > 0 %}
-			<div id="user-data">
+			{% if info_datasets_pending is not none and info_datasets_pending|length > 0 %}
+			<div class="user-data marg">
+			{% else %}
+			<div class="user-data">
+			{% endif %}
 				<p class="title">{{ headers.translations.profile_datasets }}</p>
 				<table>
 					<thead>
 						<tr>
 							<th>{{ headers.translations.profile_table_name }}</th>
-							<th>{{ headers.translations.profile_table_downloads }}</th>
-							<th>{{ headers.translations.profile_table_date }}</th>
+							<th class="middle">{{ headers.translations.profile_table_downloads }}</th>
+							<th class="date">{{ headers.translations.profile_table_date }}</th>
 						</tr>
 					</thead>
 					<tbody>
