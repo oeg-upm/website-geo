@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload.min.css')}}"/>
+{% endblock %}
+{% block head_js %}
+<script type="text/javascript" src="{{url_for('static', filename='js/upload.min.js')}}"></script>
+{% endblock %}
+{% block content %}
+<div class="div-container y-centered">
+    <div id="breadcrumb">
+        <div class="step marked active elements-row y-centered">
+            <p class="counter">1</p>
+            <p>{{ headers.translations.upload_step_one }}</p>
+        </div>
+        <div class="step elements-row y-centered">
+            <p class="counter">2</p>
+            <p>{{ headers.translations.upload_step_two }}</p>
+        </div>
+        <div class="step elements-row y-centered">
+            <p class="counter">3</p>
+            <p>{{ headers.translations.upload_step_three }}</p>
+        </div>
+        <div class="step elements-row y-centered">
+            <p class="counter">4</p>
+            <p>{{ headers.translations.upload_step_four }}</p>
+        </div>
+    </div>
+    <div id="file-zone">
+        <form id="file-form" class="flex" action="/upload" method="POST">
+            <div id="file">
+                <div id="file-kind">
+                    <p>{{ headers.translations.upload_kind_file }}</p>
+                    <label for="file-shp">
+                        <input class="file-radio" type="radio" id="file-shp" name="file-kind" value="shp" checked/>
+                        <p>Shapefile (.shp)</p>
+                    </label>
+                    <label for="file-kml">
+                        <input class="file-radio" type="radio" id="file-kml" name="file-kind" value="kml"/>
+                        <p>Keyhole Markup Language (.kml)</p>
+                    </label>
+                    <label for="file-geo">
+                        <input class="file-radio" type="radio" id="file-geo" name="file-kind" value="geo"/>
+                        <p>GeoJSON (.geojson)</p>
+                    </label>
+                    <label for="file-csv">
+                        <input class="file-radio" type="radio" id="file-csv" name="file-kind" value="csv"/>
+                        <p>Comma-Separated Values (.csv)</p>
+                    </label>
+                </div>
+                <div id="file-container">
+                    <p>{{ headers.translations.upload_chooser }}</p>
+                    <label for="file-chooser">
+                        <input id="file-chooser" type="file" required>
+                        <div class="x-centered y-centered">
+                            <i id="file-icon" class="fa fa-angle-double-up" aria-hidden="true"></i>
+                            <p id="file-info" class="hidden"></p>
+                            <p id="file-error" class="hidden">{{ headers.translations.upload_error }}</p>
+                            <p id="file-disclaimer" class="hidden">{{ headers.translations.upload_again }}</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div id="file-submit">
+                <input value="{{ headers.translations.button_upload }}" type="submit">
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

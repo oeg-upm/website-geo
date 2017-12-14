@@ -13,6 +13,7 @@
 	"button_search": "Search",
 	"button_send": "Send",
 	"button_save": "Save",
+    "button_upload": "Upload",
 	"button_edit_profile": "Edit profile",
 	"button_logout": "Logout",
 	"button_read_more": "... Read more",
@@ -225,5 +226,9 @@
 	"upload_step_one": "Upload dataset",
 	"upload_step_two": "Validation",
 	"upload_step_three": "Semantic",
-	"upload_step_four": "Publication"
+	"upload_step_four": "Publication",
+	"upload_kind_file": "Select the type of file to upload",
+	"upload_chooser": "Select the file to upload",
+    "upload_again": "Click to choose other file",
+    "upload_error": "File or type of file is bad"
 }

@@ -13,6 +13,7 @@
 	"button_search": "Buscar",
 	"button_send": "Enviar",
 	"button_save": "Guardar",
+    "button_upload": "Subir",
 	"button_edit_profile": "Editar perfil",
 	"button_logout": "Desconectar",
 	"button_read_more": "... Leer más",
@@ -225,5 +226,9 @@
 	"upload_step_one": "Subir dataset",
 	"upload_step_two": "Validación",
 	"upload_step_three": "Semántica",
-	"upload_step_four": "Publicación"
+	"upload_step_four": "Publicación",
+	"upload_kind_file": "Selecciona el tipo de fichero a subir",
+	"upload_chooser": "Selecciona el fichero a subir",
+    "upload_again": "Click para elegir otro fichero",
+    "upload_error": "El fichero o tipo es erróneo"
 }

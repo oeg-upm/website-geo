@@ -1,0 +1,330 @@
+/*
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Ontology Engineering Group
+        http://www.oeg-upm.net/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Copyright (C) 2017 Ontology Engineering Group.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  GeoLinkeddata Open Data Portal is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
+/* ################################################################## */
+
+#main-container {
+    background-color: #f9f9f9;
+}
+
+#main-container .div-container {
+    height: 100%;
+    min-height: 540px;
+    margin-bottom: 40px;
+}
+
+#breadcrumb {
+    width: 92%;
+    display: inline-block;
+    overflow: hidden;
+    border-radius: 8px;
+    background: white;
+    height: 176px;
+    border: 2px solid #BBB;
+    margin-top: 20px;
+}
+
+#breadcrumb > .step {
+    width: 100%;
+    float: left;
+    height: 44px;
+    border-bottom: 2px solid #BBB;
+}
+
+#breadcrumb > .step:after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    width: 20px;
+    height: 20px;
+    transform: rotate(135deg);
+    background: white;
+    box-shadow: 3px -3px 0 0 #BBB;
+    border-radius: 0 2px 0 100%;
+    z-index: 1000;
+    bottom: -8px;
+}
+
+#breadcrumb > .step:last-child {
+    content: none;
+}
+
+#breadcrumb > .step.marked:after {
+    background: #e8f1fc;
+}
+
+#breadcrumb > .step.marked {
+    background: #e8f1fc;
+}
+
+#breadcrumb > .step.active {
+    font-weight: 600;
+    display: -webkit-box;
+	display: -webkit-flex;
+	display: -ms-flexbox;
+	display: flex;
+}
+
+#breadcrumb > .step > p {
+	line-height: 1.5;
+    display: block;
+    float: left;
+}
+
+#breadcrumb > .step > .counter {
+	font-size: 12px;
+    line-height: 1.5;
+    width: 18px;
+    padding: 0;
+    text-align: center;
+    border-radius: 50%;
+    background-color: white;
+    height: 18px;
+    border: 1px solid #BBB;
+    margin: 0 21px;
+}
+
+#breadcrumb > .step.active > p {
+    color: #595959;
+}
+
+#breadcrumb > .step.active > .counter {
+    border: 2px solid #BBB;
+    margin: 0 20px;
+}
+
+/* ################################################################## */
+
+#file,
+#file-zone,
+#file-kind,
+#file-submit,
+#file-container {
+    width: 100%;
+    max-width: 260px;
+}
+
+#file-zone > form {
+    width: 100%;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+#file-kind > p,
+#file-container > p {
+    font-size: 14px;
+    text-align: center;
+    font-weight: 600;
+}
+
+#file-zone,
+#file-submit,
+#file-container,
+#file-kind > label,
+#file-container > label {
+    margin-top: 30px;
+}
+
+#file-kind > label {
+    margin-left: 10px;
+}
+
+#file-kind input[type="radio"],
+#file-container input[type="file"] {
+    display: none;
+    position: absolute;
+    top: -1000px;
+    left: -1000px;
+}
+
+#file-kind input[type="radio"] + p,
+#file-kind input[type="radio"] + p:before {
+    cursor: pointer;
+    color: #1d5995;
+}
+
+#file-kind input[type="radio"] + p:before {
+    font-family: 'FontAwesome';
+    padding-right: 16px;
+    font-size: 25px;
+}
+
+#file-kind input[type="radio"]:checked + p,
+#file-kind input[type="radio"]:checked + p:before {
+    color: #595959;
+}
+
+#file-kind #file-shp + p:before {
+    content: "\f1c6";
+}
+
+#file-kind #file-kml + p:before {
+    content: "\f0f6";
+}
+
+#file-kind #file-geo + p:before {
+    content: "\f1c9";
+}
+
+#file-kind #file-csv + p:before {
+    content: "\f1c3";
+}
+
+#file-container input[type="file"] + div {
+    margin: 0 auto;
+    border: 1px dashed #BBB;
+    width: 260px;
+    height: 260px;
+    cursor: pointer;
+    color: #1d5995;
+}
+
+#file-container input[type="file"] + div > p {
+    font-size: 12px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+#file-container input[type="file"] + div > i {
+    font-size: 120px;
+}
+
+#file-container input[type="file"] + div:hover {
+    color: #595959;
+}
+
+#file-submit input[type="submit"] {
+	margin: 0 auto;
+	width: 100%;
+	height: 50px;
+	padding: 0;
+	font-size: 20px;
+	color: white;
+	text-align: center;
+	background: #1d5995;
+	border: 0;
+	cursor: pointer;
+}
+
+#file-submit input[type="submit"]:focus,
+#file-submit input[type="submit"]:active {
+	color: white;
+}
+
+/* ################################################################## */
+
+@media (min-width: 375px) {
+
+    #breadcrumb,
+    #file-zone {
+        width: 90%;
+    }
+
+}
+
+@media (min-width: 768px) {
+
+    #breadcrumb {
+        height: 44px;
+    }
+
+    #breadcrumb > .step {
+        width: 25%;
+        border: none;
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+    }
+
+    #breadcrumb > .step:after {
+        right: -10px;
+        width: 44px;
+        height: 44px;
+        transform: rotate(45deg);
+        bottom: 0;
+    }
+
+    #breadcrumb > .step > .counter,
+    #breadcrumb > .step.active > .counter {
+        margin: 0 10px 0 0;
+    }
+
+}
+
+@media (min-width: 1024px) {
+
+    #main-container > .div-container {
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        margin-bottom: 0;
+    }
+
+    #breadcrumb {
+        margin-top: 0;
+    }
+
+    #file-zone,
+    #file-zone > form > #file {
+        max-width: none;
+    }
+
+    #file-zone {
+        margin-top: 60px;
+        width: 90%;
+    }
+
+    #file-zone > form > #file {
+        -webkit-box-orient: horizontal;
+	    -webkit-box-direction: normal;
+	    -webkit-flex-direction: row;
+	    -ms-flex-direction: row;
+	    flex-direction: row;
+        -webkit-box-pack: center;
+	    -webkit-justify-content: center;
+	    -ms-flex-pack: center;
+	    justify-content: center;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+    }
+
+    #file-container {
+        margin-top: 0;
+        margin-left: 40px;
+    }
+
+    #file-kind > p,
+    #file-container > p {
+        font-size: 16px;
+    }
+
+    #file-container input[type="file"] + div {
+        width: 177px;
+        height: 177px;
+    }
+
+    #file-container input[type="file"] + div > i {
+        font-size: 55px;
+    }
+
+    #file-submit {
+        margin: 60px auto 0 auto;
+    }
+
+}
