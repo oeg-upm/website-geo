@@ -32,8 +32,7 @@ var resetForm = function resetForm(e)
     var fileInfo = document['getElementById']('file-info');
     if (fileError !== null && fileError['className'] === '')
         fileError['className'] = 'hidden';
-    if (fileInfo !== null && fileInfo['className'] === '')
-        fileInfo['className'] = 'hidden';
+    fileInfo['innerHTML'] = fileSize + 'MB max.';
 
     // Change icon element
     var iconFile = document['getElementById']('file-icon');
@@ -67,27 +66,38 @@ var readFile = function readFile(e)
             'input[type="radio"]:checked'
         )['value'];
         var iconNewFile = '';
-        if (radioValue === 'shp' &&
-            fileInformation['type'] === 'application/zip')
+
+        // Check kind and size (50MB)
+        var resetFormFlag = false;
+        if ((fileInformation['size'] / 1024 / 1024) < fileSize)
         {
-            iconNewFile = 'fa fa-file-archive-o';
+            if (radioValue === 'shp' &&
+                fileInformation['type'] === 'application/zip') {
+                iconNewFile = 'fa fa-file-archive-o';
+            }
+            else if (radioValue === 'kml' &&
+                fileInformation['type'] === 'application/vnd.google-earth.kml+xml') {
+                iconNewFile = 'fa fa-file-text-o';
+            }
+            else if (radioValue === 'geojson' &&
+                fileInformation['type'] === 'application/json') {
+                iconNewFile = 'fa fa-file-code-o';
+            }
+            else if (radioValue === 'csv' &&
+                fileInformation['type'] === 'text/csv') {
+                iconNewFile = 'fa fa-file-excel-o'
+            }
+            else resetFormFlag = true;
         }
-        else if (radioValue === 'kml' &&
-            fileInformation['type'] === 'application/vnd.google-earth.kml+xml')
+        else resetFormFlag = true;
+
+        // Show icon and reset form
+        if (resetFormFlag === true)
         {
-            iconNewFile = 'fa fa-file-text-o';
+            // Reset form values
+            document['getElementById']('file-form')['reset']();
+            iconNewFile = 'fa fa-close';
         }
-        else if (radioValue === 'geojson' &&
-            fileInformation['type'] === 'application/json')
-        {
-            iconNewFile = 'fa fa-file-code-o';
-        }
-        else if (radioValue === 'csv' &&
-            fileInformation['type'] === 'text/csv')
-        {
-            iconNewFile = 'fa fa-file-excel-o'
-        }
-        else iconNewFile = 'fa fa-close';
         iconFile['className'] = iconNewFile;
 
         // Show disclaimer
@@ -101,7 +111,7 @@ var readFile = function readFile(e)
         // Show error /name if it is necessary
         var fileError = document['getElementById']('file-error');
         var fileInfo = document['getElementById']('file-info');
-        if (iconNewFile === 'fa fa-close')
+        if (resetFormFlag === true)
         {
             if (fileError !== null && fileError['className'] === 'hidden')
                 fileError['className'] = '';

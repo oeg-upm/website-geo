@@ -3,6 +3,7 @@
 <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload.min.css')}}"/>
 {% endblock %}
 {% block head_js %}
+<script type="text/javascript">var fileSize={{ file_size }};</script>
 <script type="text/javascript" src="{{url_for('static', filename='js/upload.min.js')}}"></script>
 {% endblock %}
 {% block content %}
@@ -26,7 +27,7 @@
         </div>
     </div>
     <div id="file-zone">
-        <form id="file-form" class="flex" action="/upload" method="POST">
+        <form id="file-form" class="flex" action="/upload" method="POST" enctype="multipart/form-data">
             <div id="file">
                 <div id="file-kind">
                     <p>{{ headers.translations.upload_kind_file }}</p>
@@ -50,10 +51,10 @@
                 <div id="file-container">
                     <p>{{ headers.translations.upload_chooser }}</p>
                     <label for="file-chooser">
-                        <input id="file-chooser" type="file" required>
+                        <input id="file-chooser" name='file-data' type="file">
                         <div class="x-centered y-centered">
                             <i id="file-icon" class="fa fa-angle-double-up" aria-hidden="true"></i>
-                            <p id="file-info" class="hidden"></p>
+                            <p id="file-info">{{ file_size }}MB max.</p>
                             <p id="file-error" class="hidden">{{ headers.translations.upload_error }}</p>
                             <p id="file-disclaimer" class="hidden">{{ headers.translations.upload_again }}</p>
                         </div>

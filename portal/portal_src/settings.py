@@ -109,7 +109,7 @@ class Config(object):
         self.flask_host = settings['web']['url'] if self.flask_port == 80 or \
             self.flask_port == 443 else settings['web']['url'] + \
             ':' + str(self.flask_port)
-        self.flask_keys = settings['keys']
+        self.flask_size = settings['web']['max_size']
 
         # CELERY CONFIGURATION
         self.celery_port = settings['celery']['port']

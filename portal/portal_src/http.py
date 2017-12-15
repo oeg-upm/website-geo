@@ -224,17 +224,17 @@ def generate_redirection(
     return __response
 
 
-def generate_render(app, html_name, headers, values=None):
+def generate_render(html_name, headers, values=None, status=200):
     """ This function allows to generate the render of a
         custom path of the domain. It allows to set a
         specific language and also injected parameters
         to the html file through Jinja2 template.
 
     Args:
-        app (Flask): flask application to load the render
         html_name (string): name to search on templates
         headers (dict): dict with values about request
         values (dict): dict to be merged with kargs
+        status (int): status code of HTTP response
 
     Returns:
         Response: rendered template
@@ -262,7 +262,10 @@ def generate_render(app, html_name, headers, values=None):
         __values['error'] = False
 
     # Return rendered template
-    r = app.make_response(render_template(__html_name, **__values))
+    r = make_response(
+        render_template(__html_name, **__values),
+        status
+    )
     r.headers['content-type'] = 'text/html; charset=utf-8'
     r.headers['content-language'] = __locale
 
