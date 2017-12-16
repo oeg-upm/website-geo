@@ -208,6 +208,21 @@ def generate_identifier(dictionary, kind):
         kind + str(randint(0, 10000))
 
 
+def generate_file_identifier(source_file):
+    """ This function allows to generate a specific
+        identifier from a specific file
+
+        Args:
+            source_file (file): file to be cyphered
+
+        Returns:
+            string: SHA 256 identifier or None
+
+        """
+
+    return crypto.encrypt_sha256_file(source_file)
+
+
 def check_csrf(headers, csrf_token):
     """ This function allows to check if a specific
         csrf token exists

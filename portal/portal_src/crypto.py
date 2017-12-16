@@ -103,7 +103,7 @@ def encrypt_sha256(str_to_encrypt):
     __sig += '|kk=' + str(__kk)
     __sig += '|kv=' + config.keys['crypto'][__kk]
 
-    # Get string parameters for HMAC
+    # Get string parameters for H-MAC
     # Bug 2.7 https://bugs.python.org/issue5285
     __sig = str(__sig)
     __kv = str(config.keys['crypto'][__kk])
@@ -112,6 +112,38 @@ def encrypt_sha256(str_to_encrypt):
     return hmac.new(
         __kv, __sig, SHA256
     ).hexdigest().lower()
+
+
+def encrypt_sha256_file(source_file):
+    """ This function allows to generate an SHA 256 string
+        from specific file
+
+    Args:
+        source_file (file): file to be cyphered
+
+    Returns:
+        string: SHA 256 or None
+
+    """
+
+    def hash_iterator(bytes_iteration, hash_iteration):
+        for block in bytes_iteration:
+            hash_iteration.update(block)
+        return hash_iteration.hexdigest().lower()
+
+    def file_as_block(src_file):
+        __block_size = SHA256.block_size * 64
+        __block = src_file.read(__block_size)
+        while len(__block) > 0:
+            yield __block
+            __block = src_file.read(
+                __block_size
+            )
+
+    return hash_iterator(
+        file_as_block(source_file),
+        SHA256.new()
+    )
 
 
 def encrypt_aes256(str_to_encrypt, key):
@@ -199,7 +231,7 @@ def encrypt_password(password):
         __n += 1
     __sig += '|pwd=' + password
 
-    # Get string parameters for HMAC
+    # Get string parameters for H-MAC
     # Bug 2.7 https://bugs.python.org/issue5285
     __sig = str(__sig)
     __crp_key = str(__crp_key)
