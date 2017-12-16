@@ -224,6 +224,27 @@ def generate_redirection(
     return __response
 
 
+def generate_error_render(headers, value=''):
+    """ This function allows to generate the render of a
+        custom path of the domain. It allows to set a
+        specific language and also injected parameters
+        to the html file through Jinja2 template.
+
+    Args:
+        headers (dict): dict with values about request
+        value (string): string to be merged with values
+
+    Returns:
+        Response: rendered template
+
+    """
+
+    return generate_render(
+        'error', headers, {'error': value},
+        int(value.split('-')[0])
+    )
+
+
 def generate_render(html_name, headers, values=None, status=200):
     """ This function allows to generate the render of a
         custom path of the domain. It allows to set a

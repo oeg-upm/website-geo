@@ -5,7 +5,7 @@
 {% block content %}
 <div class="div-container y-centered x-centered">
     <i class="fa fa-globe" aria-hidden="true"></i>
-    <h3>{{ headers.translations['error_' + error|string + '_title'] }}</h3>
-    <h4>{{ headers.translations['error_' + error|string + '_msg'] }}</h4>
+    <h3>{{ headers.translations['error_' + error[:3] + '_title'] }}</h3>
+    <h4>{{ headers.translations['error_' + error + '_msg'] }}</h4>
 </div>
 {% endblock %}
