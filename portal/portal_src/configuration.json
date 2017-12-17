@@ -1,17 +1,17 @@
 {
   "web": {
     "port": 8000,
-    "url": "https://www.geolinkeddata.es"
+    "url": "http://127.0.0.1"
   },
   "celery": {
-    "url": "rabbithost",
+    "url": "127.0.0.1",
     "port": 5672,
     "username": "rabbitmq",
     "password": "password"
   },
   "redis": {
-    "host": "redishost",
-    "port": 6379,
+    "host": "127.0.0.1",
+    "port": 9000,
     "pass": "",
     "dbs": [
       "users",
@@ -19,13 +19,27 @@
     ]
   },
   "redis_cache": {
-    "host": "redishostcache",
-    "port": 6379,
+    "host": "127.0.0.1",
+    "port": 9100,
     "pass": "",
     "dbs": [
       "users",
       "tokens",
       "stats"
+    ]
+  },
+  "redis_worker": {
+    "host": "127.0.0.1",
+    "port": 9200,
+    "pass": "",
+    "dbs": [
+      "tasks",
+      "status",
+      "files",
+      "mapping-i",
+      "mapping-i-m",
+      "mapping-e",
+      "mapping-e-m"
     ]
   },
   "keys": {
@@ -34,6 +48,19 @@
     "google_captcha_server": "",
     "google_analytics": "",
     "cryptography": []
+  },
+  "upload": {
+    "max_size": 20,
+    "max_uploads": 5,
+    "tmp": "/tmp/geo",
+    "folder": "/home/geo/resources",
+    "types": {
+      ".zip": "application/zip",
+      ".kml": "application/vnd.google-earth.kml+xml",
+      ".geojson": "application/json",
+      ".json": "application/json",
+      ".csv": "text/csv"
+    }
   },
   "logging": "/var/log/portal.log",
   "debug": false
