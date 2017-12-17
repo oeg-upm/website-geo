@@ -114,12 +114,12 @@ def encrypt_sha256(str_to_encrypt):
     ).hexdigest().lower()
 
 
-def encrypt_sha256_file(source_file):
+def encrypt_sha256_file(file_content):
     """ This function allows to generate an SHA 256 string
         from specific file
 
     Args:
-        source_file (file): file to be cyphered
+        file_content (BinaryIO): file to be cyphered
 
     Returns:
         string: SHA 256 or None
@@ -141,7 +141,7 @@ def encrypt_sha256_file(source_file):
             )
 
     return hash_iterator(
-        file_as_block(source_file),
+        file_as_block(file_content),
         SHA256.new()
     )
 

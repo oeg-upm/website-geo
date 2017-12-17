@@ -16,6 +16,7 @@
 import os
 import sys
 import json
+import shutil
 import logging.handlers
 
 if sys.version_info < (3, 0):
@@ -47,6 +48,30 @@ class Config(object):
     __metaclass__ = Singleton
 
     def __init__(self):
+
+        def check_upload_folder(path):
+            """ This function allows you to check if the
+                path is accessible. If it is False, it will
+                create the folder for the application.
+
+            Args:
+                path (string): path of the folder
+
+            """
+
+            try:
+
+                # Create directory directly
+                os.makedirs(path)
+                return True
+            except OSError:
+
+                # If the directory does not exist
+                if not os.path.isdir(path):
+                    raise Exception(
+                        'Check the upload folder: ' + path
+                    )
+                return True
 
         def get_configuration_file():
             """ This function allows you to load a configuration from file.
@@ -109,7 +134,19 @@ class Config(object):
         self.flask_host = settings['web']['url'] if self.flask_port == 80 or \
             self.flask_port == 443 else settings['web']['url'] + \
             ':' + str(self.flask_port)
-        self.flask_size = settings['web']['max_size']
+
+        # UPLOAD CONFIGURATION
+        if check_upload_folder(settings['upload']['folder']):
+            self.upload_folder = settings['upload']['folder']
+        shutil.rmtree(
+            settings['upload']['tmp'],
+            ignore_errors=True
+        )
+        if check_upload_folder(settings['upload']['tmp']):
+            self.upload_tmp_folder = settings['upload']['tmp']
+        self.upload_limit = settings['upload']['max_uploads']
+        self.upload_size = settings['upload']['max_size']
+        self.upload_mime = settings['upload']['types']
 
         # CELERY CONFIGURATION
         self.celery_port = settings['celery']['port']
@@ -122,6 +159,7 @@ class Config(object):
         # DATABASE CONFIGURATION
         self.redis = settings['redis']
         self.redis_cache = settings['redis_cache']
+        self.redis_worker = settings['redis_worker']
 
         # TRANSLATIONS
         self.translations = get_configuration_translations()

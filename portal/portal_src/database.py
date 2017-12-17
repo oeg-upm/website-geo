@@ -15,6 +15,7 @@
 
 import re
 import sys
+import time
 import redis
 import crypto
 import settings
@@ -172,13 +173,33 @@ def configure_redis(configuration):
 
 
 # Execute method to create new instance Redis
+# 0) users
+#    Users' information
+#    Users' name MD5 => User identifier
+# 1) tokens - Users' Credentials
+# 2) tasks
+#    tasks list (pending)
+#    tasks list of Users
 __redis = configure_redis(config.redis)
 
-# Execute method to create new instance of Redis Cache
+# Execute method to create new instance of Redis - Worker
+# 0) tasks - Control about lock / unlock tasks
+# 1) status - Status about finished tasks
+# 2) files - Information about files from tasks
+# 3) mapping-i - Initial mapping
+# 4) mapping-i-m - Initial mapping messages
+# 5) mapping-e - Extended mapping
+# 6) mapping-e-m - Extended mapping messages
+__redis_worker = configure_redis(config.redis_worker)
+
+# Execute method to create new instance of Redis - Cache
+# 0) users - Users' information (all fields)
+# 1) tokens - Users' CSRF tokens
+# 2) stats - Statistics
 __redis_cache = configure_redis(config.redis_cache)
 
 # Raise exception if any of databases are not connected
-if __redis is None or __redis_cache is None:
+if __redis is None or __redis_worker is None or __redis_cache is None:
     raise Exception('Bad redis configuration or not running')
 
 
@@ -206,21 +227,6 @@ def generate_identifier(dictionary, kind):
     # Generate identifier
     return crypto.encrypt_sha256(__values)[0:16] + \
         kind + str(randint(0, 10000))
-
-
-def generate_file_identifier(source_file):
-    """ This function allows to generate a specific
-        identifier from a specific file
-
-        Args:
-            source_file (file): file to be cyphered
-
-        Returns:
-            string: SHA 256 identifier or None
-
-        """
-
-    return crypto.encrypt_sha256_file(source_file)
 
 
 def check_csrf(headers, csrf_token):
@@ -339,9 +345,6 @@ def validate_contact_fields(fields):
     return __bad_args, __args
 
 
-##########################################################################
-
-
 def get_stats_organizations():
     """ This function allows display number of organizations.
 
@@ -372,6 +375,43 @@ def get_stats_organizations():
         __redis_cache['stats'].expire('organizations', expire_one_day)
 
         return __count
+
+
+##########################################################################
+
+
+def check_task_id(identifier):
+    """ This function allows to check if a task exists
+
+    Args:
+        identifier (string): id to check
+
+    Returns:
+        bool: True if exists or False otherwise
+
+    """
+
+    return __redis_worker['files'].exists(identifier)
+
+
+def set_task_fields(identifier, extension, file_storage):
+    """ This function allows to save a task with specific values.
+
+    Args:
+        identifier (string): task internal id
+        extension (string): extension of file linked with the task
+        file_storage (FileStorage): Flask's file
+
+    """
+
+    __redis_worker['files'].hmset(
+        identifier, {
+            'uploaded_at': str(int(time.time())),
+            'filename': file_storage.filename,
+            'extension': extension[1:],
+            'content-type': file_storage.mimetype
+        }
+    )
 
 
 ##########################################################################
@@ -487,6 +527,24 @@ def check_account_credentials(identifier, device_token, cookie):
             return False
         else:
             return True
+
+
+def check_account_tasks_limit(identifier):
+    """ This function allows to check a user can
+        execute more operations / upload.
+
+    Args:
+        identifier (string): internal user id
+
+    Returns:
+        True if user can execute one more or False otherwise
+
+    """
+
+    # Hint: Return 0 if key does not exist
+    return __redis['users'].scard(
+        identifier + '_pending'
+    ) < config.upload_limit
 
 
 def set_account_fields(fields, kind):
