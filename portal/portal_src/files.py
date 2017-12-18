@@ -96,6 +96,57 @@ def extract_zip(src_path, dst_path):
         return False
 
 
+def check_shapefiles_path(path):
+    """ This function allows you to check
+        all the files inside a folder and verify
+        if the shapefile is (possible) good
+
+    Args:
+        path (string): path of resource
+
+    Returns:
+        tuple: boolean status and file name if it is good
+
+    """
+
+    # Shapefile name
+    __name = None
+
+    # Shapefile valid extensions
+    __shp_ext = [
+        '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
+        '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
+    ]
+
+    try:
+        # Iterate over files of path
+        for __file in os.listdir(path):
+
+            # Check if file is original zip file
+            if __file != 'file.zip':
+
+                # Check if Shapefile's name is empty
+                # First iteration
+                if __name is None:
+
+                    # Generate path structure
+                    __path_info = parse_path(__file)
+
+                    # Check valid extensions
+                    if __path_info['extension'] in __shp_ext:
+                        __name = __path_info['name']
+
+                else:
+                    if not __file.startswith(__name):
+                        return False, None
+
+    except Exception as e:
+        print_exception(e)
+        return False, None
+
+    return True, __name
+
+
 def save_temporal_path(file_storage):
     """ This function allows you to save a
         Flask FileStorage on a temporal path.

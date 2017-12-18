@@ -394,22 +394,20 @@ def check_task_id(identifier):
     return __redis_worker['files'].exists(identifier)
 
 
-def set_task_fields(identifier, extension, file_storage):
+def set_task_fields(identifier, file_info):
     """ This function allows to save a task with specific values.
 
     Args:
         identifier (string): task internal id
-        extension (string): extension of file linked with the task
-        file_storage (FileStorage): Flask's file
+        file_info (dict): info from Flask's file
 
     """
 
     __redis_worker['files'].hmset(
         identifier, {
             'uploaded_at': str(int(time.time())),
-            'filename': file_storage.filename,
-            'extension': extension[1:],
-            'content-type': file_storage.mimetype
+            'filename': file_info['name'],
+            'extension': file_info['extension']
         }
     )
 
