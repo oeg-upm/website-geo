@@ -13,17 +13,16 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-
 import os
 import sys
-import json
 import shutil
 from os.path import splitext
 from celery.task import task
+from gis_worker_src import settings
 from celery.utils.log import get_task_logger
-from gis_worker_helpers.geo_worker_gis import WorkerGIS
-from gis_worker_helpers.geo_worker_xml import WorkerXML
-from gis_worker_helpers.geo_worker_db import WorkerRedis
+from gis_worker_src.gis import WorkerGIS
+from gis_worker_src.xml import WorkerXML
+from gis_worker_src.database import WorkerRedis
 
 if sys.version_info < (3, 0):
     reload(sys)
@@ -40,50 +39,7 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-print_styles = ['info', 'warn', 'error']
-
-
-def get_configuration_file():
-    """ This function allows you to load a configuration from file.
-
-    Returns:
-         dict: configuration fields and values.
-
-    """
-
-    # Configuration folder
-    __config_base_path = './gis_worker_config'
-    __debug = False
-
-    # Check if application is on Debug mode
-    if int(os.environ.get('GEO_WORKER_DEBUG', 1)) == 1:
-
-        # Get development configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_DEV', __config_base_path + '/config_debug.json'
-        )
-
-        # Set debug flag
-        __debug = True
-
-    else:
-
-        # Get production configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_PROD', __config_base_path + '/configuration.json'
-        )
-
-    # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
-
-    # Open file to load configuration
-    with open(cwd + __config_path) as __file_data:
-
-        # Return dictionary as configuration
-        __dict = dict(json.load(__file_data))
-        __dict['debug'] = __debug
-
-        return __dict
+config = settings.Config()
 
 
 ##########################################################################
@@ -102,11 +58,8 @@ def get_redis_instance():
     __redis_db = WorkerRedis()
 
     # Check if redis configuration is good
-    if not __redis_db.status:
-        raise Exception(
-            'Redis configuration is not valid or\n * Redis '
-            'is not running'
-        )
+    if __redis_db.redis is None:
+        raise Exception('Bad redis configuration or not running')
 
     return __redis_db
 
@@ -150,169 +103,13 @@ def get_libraries():
 ##########################################################################
 
 
-def print_to_logger(messages, logger=None):
-    """ This function allows to print messages to the logger or
-        stdout with print function.
-
-    Args:
-        messages (dict): information from outputs
-        logger (Logger): logger class to write messages
-
-    """
-
-    # Set prefix for all messages
-    __prefix = '\n * '
-    __prefix_kind = {
-        'info': 'INFO',
-        'warn': 'WARN',
-        'error': 'ERROR'
-    }
-
-    # Save messages to logger
-    __logger_msg = {
-        'info': '',
-        'warn': '',
-        'error': ''
-    }
-
-    # Iterate kind of messages
-    for __k in print_styles:
-
-        # Detect if there are any messages
-        if len(messages[__k]):
-
-            # Print jump depending on logger
-            if logger is None:
-                print('')
-            else:
-                __logger_msg[__k] += '\n'
-
-            # Log messages
-            for __m in messages[__k]:
-
-                # Print / save messages depending on logger
-                if logger is None:
-                    print(' * [' + __prefix_kind[__k] + '] ' + __m)
-                else:
-                    __logger_msg[__k] += __prefix + __m
-
-    # Print jump / messages depending on logger
-    if logger is not None:
-
-        # Iterate kind of messages
-        for __k in print_styles:
-
-            # Detect if there are any messages
-            if len(__logger_msg[__k]):
-
-                # Print messages
-                getattr(logger, __k)(__logger_msg[__k] + '\n')
-
-
-def print_not_found_message():
-    """ This function returns a message when identifier
-        is not found on the database.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            '* ------------ Errors -------------\n',
-            'Record was not found, the task was received, but '
-            'there is no saved record for this identifier.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_extension():
-    """ This function returns a message when
-        file has not valid extension.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'Extension is not valid. Please, check the file path.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_worker_status(status, logger=None):
-    """ This function allows to print a specific message depending on
-        returned Celery worker's status.
-
-    Args:
-        status (int): kind of task's status
-        logger (Logger): logger class to write messages
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    if status == 1:
-
-        # Create message when the configuration is wrong
-        __message = ['Skipped task (redis is not running)']
-
-    elif status == 2:
-
-        # Create message when the task is locked
-        __message = ['Skipped task (locked by other worker)']
-
-    else:
-
-        # Create message when the task is finished
-        __message = ['Skipped task (finished by other worker)']
-
-    # Print messages
-    print_to_logger({
-        'warn': __message,
-        'info': [],
-        'error': []
-    }, logger)
-
-
-def print_worker_errors(messages, logger=None):
-    """ This function allows print errors to logger.
-
-    Args:
-        messages (dict): information from outputs
-        logger (Logger): logger class to write messages
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    # Print messages
-    print_to_logger({
-        'error': messages,
-        'warn': [],
-        'info': []
-    }, logger)
-
-
-##########################################################################
-
-
-def transform_with_path(path, ext_dst, logger):
+def transform_with_path(path, extension, logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
     Args:
         path (string): file's path
-        ext_dst (string): extension of transformation
+        extension (string): extension of transformation
         logger (Logger): logger class to write messages
 
     Return:
@@ -322,10 +119,10 @@ def transform_with_path(path, ext_dst, logger):
 
     # Transform resource and return result
     __t_info, __ln_info, __lmd5_info, __li_info, __fn_info = \
-        get_gdal_instance().transform(path, ext_dst)
+        get_gdal_instance().transform(path, extension)
 
-    # Detect if external logger was activated
-    if logger is None:
+    # Detect if logger is not Celery logger
+    if isinstance(logger, settings.WorkerLogger):
         if len(__t_info['error']):
             __t_info['error'] = [
                 '* ------------ Errors -------------\n'
@@ -341,8 +138,8 @@ def transform_with_path(path, ext_dst, logger):
             for __fn in __fn_info['raw']:
                 __t_info['info'] += __fn
 
-        # Log messages to stdout
-        print_to_logger(__t_info, logger)
+        # Log messages
+        settings.dump_messages(logger, __t_info)
 
     # Return status code and messages
     return {
@@ -360,14 +157,13 @@ def transform_with_path(path, ext_dst, logger):
     }
 
 
-def transform_with_id(identifier, ext_dst, rd, logger):
+def transform_with_id(identifier, information, logger):
     """ This function transforms a gis or geometries path to
         other kind of geometry through GDAL libraries.
 
     Args:
         identifier (string): task internal id
-        ext_dst (string): extension of transformation
-        rd (WorkerRedis): instance of WorkerRedis
+        information (dict): information about task
         logger (Logger): logger class to write messages
 
     Return:
@@ -375,27 +171,13 @@ def transform_with_id(identifier, ext_dst, rd, logger):
 
     """
 
-    # Check if database has metadata for this identifier
-    if rd.check_existence(identifier, 'files'):
+    # Generate path from configuration
+    __path = config.upload_folder + os.sep + \
+        identifier + os.sep + information['filename'] + \
+        information['extension']
 
-        # Get extension about the specific identifier
-        __f_ext = rd.redis['files'].hget(
-            identifier, 'extension'
-        )
-
-        # Generate path
-        __config = get_configuration_file()
-        __path = __config['folder'] + os.sep + \
-            identifier + os.sep + identifier + \
-            '.' + __f_ext
-
-        # Transform resource and get result
-        return transform_with_path(__path, ext_dst, logger)
-
-    else:
-
-        # Return not found message
-        return {'status': 1, 'messages': print_not_found_message()}
+    # Transform resource and get result
+    return transform_with_path(__path, '.shp', logger)
 
 
 def transform_revert_with_id(identifier):
@@ -408,8 +190,7 @@ def transform_revert_with_id(identifier):
     """
 
     # Generate path
-    __config = get_configuration_file()
-    __path = __config['folder'] + os.sep + \
+    __path = config.upload_folder + os.sep + \
         identifier + os.sep
     __path_shp = __path + 'shp' + os.sep
     __path_trs = __path + 'trs' + os.sep
@@ -429,13 +210,8 @@ def transform_revert_with_id(identifier):
     # Remove any GeoJSON VRT file:
     for __f in os.listdir(__path):
 
-        # Get extension from path
-        __file_ext = '.'.join(__f.split('.')[-2:]) \
-            if len(__f.split('.')) > 2 \
-            else os.path.splitext(__f)[1]
-
         # Check extension
-        if __file_ext == '.vrt':
+        if os.path.splitext(__f)[1] == '.vrt':
             os.remove(__path + __f)
 
 
@@ -456,8 +232,8 @@ def info_with_path(path, logger, inc_layers=False):
     # Get information resource and return result
     __t_info = get_gdal_instance().get_info(path, inc_layers)
 
-    # Detect if external logger was activated
-    if logger is None:
+    # Detect if logger is not Celery logger
+    if isinstance(logger, settings.WorkerLogger):
         if len(__t_info['error']):
             __t_info['error'] = [
                 '* ------------ Errors -------------\n'
@@ -471,8 +247,8 @@ def info_with_path(path, logger, inc_layers=False):
                 '* --------- Information -----------\n'
             ] + __t_info['info']
 
-        # Log messages to stdout
-        print_to_logger(__t_info, logger)
+        # Log messages
+        settings.dump_messages(logger, __t_info)
 
     # Return status code and messages
     return {
@@ -499,8 +275,8 @@ def fields_with_path(path, logger, inc_layers=False):
     # Get information resource and return result
     __t_info = get_gdal_instance().get_fields(path, inc_layers)
 
-    # Detect if external logger was activated
-    if logger is None:
+    # Detect if logger is not Celery logger
+    if isinstance(logger, settings.WorkerLogger):
         if len(__t_info['error']):
             __t_info['error'] = [
                 '* ------------ Errors -------------\n'
@@ -514,8 +290,8 @@ def fields_with_path(path, logger, inc_layers=False):
                '* ------------ Fields -------------\n'
             ] + __t_info['info']
 
-        # Log messages to stdout
-        print_to_logger(__t_info, logger)
+        # Log messages
+        settings.dump_messages(logger, __t_info)
 
     # Return status code and messages
     return {
@@ -539,14 +315,10 @@ def execute_geo_job_with_path(path, logger, checks):
 
     """
 
-    # Get extension from path
-    __ext_src = '.'.join(path.split('.')[-2:]) \
-        if len(path.split('.')) > 2 \
-        else splitext(path)[1]
-
     # Get information about XML file
     __t_info = WorkerXML().check_job(path, checks) \
-        if __ext_src == '.kjb' else print_error_extension()
+        if splitext(path)[1] == '.kjb' else \
+        settings.generate_error_extension_not_valid()
 
     # Check if there is any error
     if not len(__t_info['error']):
@@ -581,8 +353,8 @@ def execute_geo_job_with_path(path, logger, checks):
                 ] + __tj_info['info']
             __t_info['warn'] += __tj_info['warn']
 
-    # Detect if external logger was activated
-    if logger is None:
+    # Detect if logger is not Celery logger
+    if isinstance(logger, settings.WorkerLogger):
         if len(__t_info['error']):
             __t_info['error'] = [
                 '* ------------ Errors -------------\n'
@@ -592,8 +364,8 @@ def execute_geo_job_with_path(path, logger, checks):
                 '* ----------- Warnings ------------\n'
             ] + __t_info['warn']
 
-        # Log messages to stdout
-        print_to_logger(__t_info, logger)
+        # Log messages
+        settings.dump_messages(logger, __t_info)
 
     # Return status code and messages
     return {
@@ -617,27 +389,8 @@ def execute_geo_job_with_id(identifier, rd, logger):
         dict: information about the outputs and status code
 
     """
-    # Check if database has metadata for this identifier
-    if rd.check_existence(identifier, 'files'):
 
-        # Get information about the specific identifier
-        __f_info = rd.redis['files'].hgetall(identifier)
-
-        # Generate path
-        __config = get_configuration_file()
-        __path = __config['folder'] + os.sep + \
-            identifier + os.sep + __f_info['name'] + \
-            __f_info['extension']
-
-        # Transform resource and get result
-        return execute_geo_transform_with_path(
-            __path, logger, False
-        )
-
-    else:
-
-        # Return not found message
-        return {'status': 1, 'messages': print_not_found_message()}
+    return
 
 
 def execute_geo_transform_with_path(path, logger, checks):
@@ -655,14 +408,10 @@ def execute_geo_transform_with_path(path, logger, checks):
 
     """
 
-    # Get extension from path
-    __ext_src = '.'.join(path.split('.')[-2:]) \
-        if len(path.split('.')) > 2 \
-        else splitext(path)[1]
-
     # Get information about XML file
     __t_info = WorkerXML().check_transform(path, checks) \
-        if __ext_src == '.ktr' else print_error_extension()
+        if splitext(path)[1] == '.ktr' else \
+        settings.generate_error_extension_not_valid()
 
     # Check if there is any error
     if not len(__t_info['error']):
@@ -692,8 +441,8 @@ def execute_geo_transform_with_path(path, logger, checks):
             ] + __tj_info['info']
             __t_info['warn'] += __tj_info['warn']
 
-    # Detect if external logger was activated
-    if logger is None:
+    # Detect if logger is not Celery logger
+    if isinstance(logger, settings.WorkerLogger):
         if len(__t_info['error']):
             __t_info['error'] = [
                 '* ------------ Errors -------------\n'
@@ -704,7 +453,7 @@ def execute_geo_transform_with_path(path, logger, checks):
             ] + __t_info['warn']
 
         # Log messages to stdout
-        print_to_logger(__t_info, logger)
+        settings.dump_messages(logger, __t_info)
 
     # Return status code and messages
     return {
@@ -729,39 +478,18 @@ def execute_geo_transform_with_id(identifier, rd, logger):
 
     """
 
-    # Check if database has metadata for this identifier
-    if rd.check_existence(identifier, 'files'):
-
-        # Get information about the specific identifier
-        __f_info = rd.redis['files'].hgetall(identifier)
-
-        # Generate path
-        __config = get_configuration_file()
-        __path = __config['folder'] + os.sep + \
-            identifier + os.sep + __f_info['name'] + \
-            __f_info['extension']
-
-        # Transform resource and get result
-        return execute_geo_transform_with_path(
-            __path, logger, False
-        )
-
-    else:
-
-        # Return not found message
-        return {'status': 1, 'messages': print_not_found_message()}
+    return
 
 
 ##########################################################################
 
 
-def init_mapping(identifier, rd, logger):
+def init_mapping(identifier, logger):
     """ This function allows create or update an initial mapping
         on the database for a specific identifier.
 
     Args:
         identifier (string): task internal id
-        rd (WorkerRedis): instance of WorkerRedis
         logger (Logger): logger class to write messages
 
     """
@@ -769,17 +497,27 @@ def init_mapping(identifier, rd, logger):
     # Remove previous files
     transform_revert_with_id(identifier)
 
+    # Get instance of Redis Database
+    __redis = get_redis_instance()
+
     # Lock the execution for this task. In this case we will use
     # the Redis SETNX to ensure that other remote machines won't do
     # the same task.
-    __lock_status = rd.lock(identifier, 'mapping-i')
+    __lock_status = __redis.lock(identifier, 'mapping-i')
 
     # Check status of the lock
     if __lock_status == 0:
 
-        # Transform to Shapefile
-        __o_info = transform_with_id(
-            identifier, '.shp', rd, logger
+        # Get information about identifier
+        __file_info = __redis.get_information(identifier)
+
+        # Transform to Shapefile depending if
+        # information is good or not
+        __o_info = {
+            'status': 1,
+            'messages': settings.generate_error_identifier_not_found()
+        } if __file_info is None else transform_with_id(
+            identifier, __file_info, logger
         )
 
         # Flags for errors
@@ -789,19 +527,19 @@ def init_mapping(identifier, rd, logger):
         # Detect flags
         if not __flag_not_exist and not __flag_error:
 
-            # Save messages
-            for __k in print_styles:
+            # Save messages on database
+            for __k in settings.kind_logs:
                 if len(__o_info['messages'][__k]):
-                    rd.save_record_log(
+                    __redis.save_record_log(
                         identifier, 'mapping-i', __k,
                         __o_info['messages'][__k]
                     )
 
             # Delete previous values
-            rd.remove_records(identifier)
+            __redis.remove_records(identifier)
 
             # Save information from layers
-            rd.save_record_info(
+            __redis.save_record_info(
                 identifier,
                 __o_info['information']['names'],
                 __o_info['information']['names_md5'],
@@ -809,14 +547,14 @@ def init_mapping(identifier, rd, logger):
             )
 
             # Save fields from layers
-            rd.save_record_fields(
+            __redis.save_record_fields(
                 identifier,
                 __o_info['information']['names'],
                 __o_info['information']['fields']
             )
 
             # Save status for tracking success
-            rd.save_record_status(
+            __redis.save_record_status(
                 identifier,
                 'mapping-i', 0
             )
@@ -826,13 +564,13 @@ def init_mapping(identifier, rd, logger):
 
             # Save error messages
             if len(__o_info['messages']['error']):
-                rd.save_record_log(
+                __redis.save_record_log(
                     identifier, 'mapping-i', 'error',
                     __o_info['messages']['error']
                 )
 
             # Save status for tracking success
-            rd.save_record_status(
+            __redis.save_record_status(
                 identifier, 'mapping-i', 1
             )
 
@@ -842,26 +580,42 @@ def init_mapping(identifier, rd, logger):
         if __flag_not_exist:
 
             # Show not found message
-            print_to_logger(
-                print_not_found_message(), logger
+            settings.dump_messages(
+                logger, settings.generate_error_identifier_not_found()
             )
 
         # Release lock
-        rd.unlock(identifier + ':mapping-i', True)
+        __redis.unlock(identifier + ':mapping-i', True)
 
     else:
 
-        # Log status
-        print_worker_status(__lock_status, logger)
+        # Show lock status error
+        __message = 'Skipped task ('
+        __message += 'locked by other worker' if \
+            __lock_status == 1 else 'finished by other worker'
+        __message += ')'
+
+        # Show lock status error
+        settings.dump_messages(
+            logger, {
+                'info': [],
+                'warn': [__message],
+                'error': []
+            }
+        )
 
 
 ##########################################################################
 
 
 @task(bind=True, name='gis_worker_tasks.create_mapping', max_retries=5)
-def create_mapping(self):
+def create_mapping(self, identifier):
     """ This function allows create an initial mapping
         from a specific task from AMQP messages.
+
+    Args:
+        self (Task): internal pointer to Celery task
+        identifier (string): task internal id
 
     """
 
@@ -870,31 +624,20 @@ def create_mapping(self):
 
     try:
 
-        # Get instance of Redis Database instance
-        __redis = get_redis_instance()
-
-        # Create identifier from task_id
-        __identifier = self.request.id
-
         # Execute new initial mapping generation
-        init_mapping(__identifier, __redis, __logger)
-
-        # Close redis
-        __redis.exit()
+        init_mapping(identifier, __logger)
 
     except Exception as e:
 
-        __logger.info(e)
-
-        # Print error message
-        print_to_logger({
+        # Dump messages to logger
+        settings.dump_messages(__logger, {
             'error': [
                 '* ------------ Errors -------------\n',
                 str(e.message if e.message != '' else e)
             ],
             'warn': [],
             'info': []
-        }, __logger)
+        })
 
         # Retry task (max 5) to wait for loading libraries
         if self.request.retries < 5:
@@ -913,10 +656,20 @@ def default(self):
     """ This function allows to receive the messages from
         the default queue from AMQP messages.
 
+    Args:
+        self (Task): internal pointer to Celery task
+
     """
     
     # Create logger to log messages to specific log file
-    logger = get_task_logger(__name__)
+    __logger = get_task_logger(__name__)
 
-    # Print message
-    logger.warn('\n * Received task from default queue')
+    # Dump messages to logger
+    settings.dump_messages(__logger, {
+        'error': [],
+        'warn': [
+            '* ----------- Warnings ------------\n',
+            'Received task from default queue'
+        ],
+        'info': []
+    })

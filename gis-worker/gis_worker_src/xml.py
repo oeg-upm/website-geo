@@ -16,6 +16,7 @@
 import os
 import sys
 import utils
+import settings
 import defusedxml.ElementTree
 
 if sys.version_info < (3, 0):
@@ -33,165 +34,10 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-def print_error_vulnerabilities():
-    """ This function returns a message when XML file
-        has or might have vulnerabilities or exploits.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'Might be vulnerabilities or errors on this XML file.',
-            'Check this website: https://docs.python.org/2/'
-            'library/xml.html#xml-vulnerabilities'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_not_found():
-    """ This function returns a message when file is
-        not found.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'File is not found. Please, check the file path.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_node_not_found(tag):
-    """ This function returns a message when there is
-        no nodes on XML GeoKettle file.
-
-    Args:
-        tag (string): kind of node
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'There was an error at checking file path. Please, '
-            'review it because no ' + tag + ' were found.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_srs():
-    """ This function returns a message when there is
-        no SRS transformation on XML GeoKettle file.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'EPSG:4326 transformation is not found. Please, '
-            'check the file path.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_not_allowed(nodes, tag):
-    """ This function returns a message when a node
-        or nodes are not valid at a XML GeoKettle file.
-
-    Args:
-        nodes (list): nodes not allowed
-        tag (string): kind of node
-
-
-    Returns:
-        dict: Information structure with error
-
-
-    """
-
-    # Create error structure
-    __error = []
-
-    # Iterate over steps list
-    for __node in nodes:
-
-        # Append message
-        __error.append('The ' + __node + ' ' + tag + ' is not allowed.')
-
-    # Append last message
-    __error.append('Please, review configuration or XML file.')
-
-    return {
-        'error': __error,
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_paths(paths):
-    """ This function returns a message when a path
-        or paths are not valid at a XML GeoKettle file.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    # Create error structure
-    __error = []
-
-    # Iterate over steps list
-    for __path in paths:
-
-        # Append message
-        __error.append(__path + ' is not allowed for GeoKettle.')
-
-    # Append last message
-    __error.append('Please, review configuration or filesystem permissions.')
-
-    return {
-        'error': __error,
-        'warn': [],
-        'info': []
-    }
+config = settings.Config()
 
 
 ##########################################################################
-
-
-class Singleton(type):
-    """ This constructor creates only an instance of a
-        specific type following the singleton pattern
-        (software design pattern).
-
-    Returns:
-        class: Super class of specific instance
-
-    """
-
-    def __call__(cls, *args, **kwargs):
-        try:
-            return cls.__instance
-        except AttributeError:
-            return super(Singleton, cls).__call__(*args, **kwargs)
 
 
 class WorkerXML(object):
@@ -204,13 +50,6 @@ class WorkerXML(object):
         class: XML Worker
 
     """
-
-    # Create singleton instance
-    __metaclass__ = Singleton
-
-    def __init__(self):
-
-        self.config = utils.get_configuration_file()
 
     def get_node_folder(self, path, node_path):
         """ This function allows you to parse and verify if
@@ -235,7 +74,7 @@ class WorkerXML(object):
         __node_flag = False
 
         # Iterate over XML variables
-        for folder in utils.get_geokettle_special_folders():
+        for folder in config.xml_special_paths:
 
             # Check if path is a variable
             if __node_path.startswith(folder):
@@ -294,9 +133,6 @@ class WorkerXML(object):
         __no_steps = []
         __valid_steps = set()
 
-        # Get allowed types for XML files
-        __allowed_types = self.config['xml']['steps']
-
         # Get steps from XML file
         __steps = xml_tree.findall('step')
 
@@ -318,13 +154,13 @@ class WorkerXML(object):
 
                 # Check if there is config
                 # All allowed
-                if not len(__allowed_types):
+                if not len(config.xml_allowed_steps):
                     __valid_steps.add(__type)
 
                 else:
 
                     # Check type is good
-                    if __type not in __allowed_types:
+                    if __type not in config.xml_allowed_steps:
                         __no_steps.append(__type)
                     else:
                         __valid_steps.add(__type)
@@ -348,9 +184,6 @@ class WorkerXML(object):
         __no_entries = []
         __valid_entries = set()
 
-        # Get allowed types for XML files
-        __allowed_types = self.config['xml']['entries']
-
         # Get entries from XML file
         __entries = xml_tree.findall('entry')
 
@@ -372,13 +205,13 @@ class WorkerXML(object):
 
                 # Check if there is config
                 # All allowed
-                if not len(__allowed_types):
+                if not len(config.xml_allowed_entries):
                     __valid_entries.add(__type)
 
                 else:
 
                     # Check type is good
-                    if __type not in __allowed_types:
+                    if __type not in config.xml_allowed_entries:
                         __no_entries.append(__type)
                     else:
                         __valid_entries.add(__type)
@@ -405,9 +238,6 @@ class WorkerXML(object):
         __no_nodes = []
         __no_folders = []
         __valid_folders = set()
-
-        # Get allowed folders for XML files
-        __allowed_folders = self.config['xml']['folders']
 
         # Get all nodes
         __nodes = xml_tree.findall(node_name)
@@ -476,13 +306,13 @@ class WorkerXML(object):
             else:
 
                 # Check if there is config
-                if not len(__allowed_folders):
+                if not len(config.xml_allowed_paths):
                     __valid_folders.add(__node_f)
 
                 else:
 
                     # Check folder is good
-                    if __folder not in __allowed_folders:
+                    if __folder not in config.xml_allowed_paths:
                         __no_folders.append(__node_f)
 
                     else:
@@ -616,7 +446,7 @@ class WorkerXML(object):
 
         # Check if path is a correct file and exists
         if not os.path.exists(path) or not os.path.isfile(path):
-            return print_error_not_found()
+            return settings.generate_error_file_not_found()
 
         # Detect flag of checking errors
         if not checks:
@@ -629,29 +459,29 @@ class WorkerXML(object):
         # Check vulnerabilities
         __xml_tree = self.check_issues(path)
         if __xml_tree is None:
-            return print_error_vulnerabilities()
+            return settings.generate_error_xml_vulnerabilities()
 
         # Check if steps are valid
         __no_steps, __valid_steps = self.check_steps(__xml_tree)
         if len(__no_steps):
-            return print_error_not_allowed(__no_steps, 'step')
+            return settings.generate_error_xml_nodes_invalid(__no_steps, 'step')
 
         if not len(__valid_steps):
-            return print_error_node_not_found('steps')
+            return settings.generate_error_xml_node_not_found('steps')
 
         # Check if there is any folder and they are valid
         __no_steps, __no_folders, __valid_folders = \
             self.check_paths(path, __xml_tree, 'step')
 
         if len(__no_steps):
-            return print_error_not_allowed(__no_steps, 'step')
+            return settings.generate_error_xml_nodes_invalid(__no_steps, 'step')
 
         if len(__no_folders):
-            return print_error_paths(__no_folders)
+            return settings.generate_error_xml_path_invalid(__no_folders)
 
         # Check if there is a mandatory target SRS
         if not self.check_srs(__xml_tree):
-            return print_error_srs()
+            return settings.generate_error_xml_node_srs_error()
 
         # Create return structure
         return {
@@ -684,12 +514,12 @@ class WorkerXML(object):
 
         # Check if path is a correct file and exists
         if not os.path.exists(path) or not os.path.isfile(path):
-            return print_error_not_found()
+            return settings.generate_error_file_not_found()
 
         # Check vulnerabilities
         __xml_tree = self.check_issues(path)
         if __xml_tree is None:
-            return print_error_vulnerabilities()
+            return settings.generate_error_xml_vulnerabilities()
 
         # Detect flag of checking errors
         if not checks:
@@ -703,25 +533,25 @@ class WorkerXML(object):
         # Check if there is any folder and they are valid
         __xml_tree = __xml_tree.find('entries')
         if __xml_tree is None:
-            return print_error_vulnerabilities()
+            return settings.generate_error_xml_vulnerabilities()
 
         # Check if entries are valid
         __no_entries, __valid_entries = self.check_entries(__xml_tree)
         if len(__no_entries):
-            return print_error_not_allowed(__no_entries, 'entry')
+            return settings.generate_error_xml_nodes_invalid(__no_entries, 'entry')
 
         if not len(__valid_entries):
-            return print_error_node_not_found('entries')
+            return settings.generate_error_xml_node_not_found('entries')
 
         # Check if there is any folder and they are valid
         __no_entries, __no_folders, __valid_folders = \
             self.check_paths(path, __xml_tree, 'entry')
 
         if len(__no_entries):
-            return print_error_not_allowed(__no_entries, 'entry')
+            return settings.generate_error_xml_nodes_invalid(__no_entries, 'entry')
 
         if len(__no_folders):
-            return print_error_paths(__no_folders)
+            return settings.generate_error_xml_path_invalid(__no_folders)
 
         # Create return structure
         __return = {

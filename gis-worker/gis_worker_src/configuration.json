@@ -1,0 +1,43 @@
+{
+  "celery": {
+    "url": "127.0.0.1",
+    "port": 5672,
+    "username": "rabbitmq",
+    "password": "password"
+  },
+  "redis_worker": {
+    "host": "127.0.0.1",
+    "port": 9200,
+    "pass": "",
+    "dbs": [
+      "tasks",
+      "status",
+      "files",
+      "mapping-i",
+      "mapping-i-m",
+      "mapping-e",
+      "mapping-e-m"
+    ]
+  },
+  "upload": {
+    "folder": "/home/alejfc/geo/resources",
+    "types": {
+      ".shp": [".shp", ".shx", ".shx", ".prj", ".sbn", ".sbx", ".dbf", ".fbn", ".fbx", ".ain", ".aih", ".shp.xml"],
+      ".geojson": [".geojson", ".json"],
+      ".kml": [".kml"],
+      ".csv": ".csv"
+    },
+    "drivers": {
+      ".shp": "ESRI Shapefile",
+      ".kml": "LIBKML",
+      ".json": "GeoJSON",
+      ".geojson": "GeoJSON"
+    }
+  },
+  "xml": {
+    "steps": [],
+    "entries": [],
+    "folders": []
+  },
+  "debug": false
+}

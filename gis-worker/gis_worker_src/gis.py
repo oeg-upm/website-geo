@@ -16,6 +16,7 @@
 import os
 import sys
 import utils
+import settings
 from dateutil.parser import parse
 from subprocess import Popen, PIPE
 
@@ -29,6 +30,12 @@ __credits__ = ["Alejandro F. Carrera", "Oscar Corcho"]
 __license__ = "Creative Commons Attribution-Noncommercial license"
 __maintainer__ = "Alejandro F. Carrera"
 __email__ = "alejfcarrera@mail.ru"
+
+
+##########################################################################
+
+
+config = settings.Config()
 
 
 ##########################################################################
@@ -176,19 +183,10 @@ def get_ogr_driver(extension):
     Returns:
         string: GDAL driver.
 
-    Todo:
-        * Extend for other drivers ...
-
     """
 
-    if extension == '.shp':
-        return 'ESRI Shapefile'
-    elif extension == '.kml':
-        return 'LIBKML'
-    elif extension == '.geojson':
-        return 'GeoJSON'
-    else:
-        return ''
+    return None if extension not in config.upload_drivers else \
+        str(config.upload_drivers[extension])
 
 
 def get_ogr_file_extensions(extension):
@@ -202,32 +200,11 @@ def get_ogr_file_extensions(extension):
     Returns:
         list: group of extensions.
 
-    Todo:
-        * Extend for other extensions ...
-
     """
-
-    # Define group of extensions files
-    __extensions = [
-
-        # Shapefile -> shp
-        [
-            '.shp', '.shx', '.shx', '.prj', '.sbn', '.sbx',
-            '.dbf', '.fbn', '.fbx', '.ain', '.aih', '.shp.xml'
-        ],
-
-        # KML -> kml
-        ['.kml'],
-
-        # GeoJSON -> geojson
-        ['.geojson']
-
-    ]
-
     # Find extensions group
-    for __ext in __extensions:
-        if extension in __ext:
-            return __ext
+    for __mime_key in config.upload_mime.keys():
+        if extension in config.upload_mime[__mime_key]:
+            return config.upload_mime[__mime_key]
 
     # Return empty list if there is no found
     return []
@@ -664,8 +641,7 @@ def parse_geo_return(outputs, errors):
 
     # Check Java exception is present
     if 'Exception in thread' in errors:
-
-        return print_error_java_exception(errors)
+        return settings.generate_error_java_exception(errors)
 
     # Create index structure to improve performance
     # of looking for characters in specific log string
@@ -703,63 +679,6 @@ def parse_geo_return(outputs, errors):
 ##########################################################################
 
 
-def print_error_extension():
-    """ This function returns a message when
-        file has not valid extension.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'Extension is not valid. Please, check the file path.'
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-def print_error_java_exception(java_message):
-    """ This function returns a message when
-        java from GeoKettle raise an exception.
-
-    Returns:
-        dict: Information structure with error
-
-    """
-
-    return {
-        'error': [
-            'Java Exception was raised from GeoKettle.',
-            'Check the file on GeoKettle standalone version.',
-            java_message
-        ],
-        'warn': [],
-        'info': []
-    }
-
-
-##########################################################################
-
-
-class Singleton(type):
-    """ This constructor creates a super class of defined type
-        from parameter.
-
-    Returns:
-        class: Super class of specific instance
-
-    """
-    
-    def __call__(cls, *args, **kwargs):
-        try:
-            return cls.__instance
-        except AttributeError:
-            return super(Singleton, cls).__call__(*args, **kwargs)
-
-
 class WorkerGIS(object):
     """ This constructor creates only an instance of a
         GIS library for doing transformations or getting
@@ -771,9 +690,6 @@ class WorkerGIS(object):
 
     """
 
-    # Create singleton instance
-    __metaclass__ = Singleton
-
     def __init__(self):
 
         # Set init values
@@ -784,9 +700,12 @@ class WorkerGIS(object):
         if utils.check_env_path(['ogr2ogr', 'ogrinfo']):
 
             # Check GDAL 2.2.0 version
-            from osgeo import gdal
-            version_num = int(gdal.VersionInfo('VERSION_NUM'))
-            self.gis_status = version_num > 2020000
+            try:
+                from osgeo import gdal
+                version_num = int(gdal.VersionInfo('VERSION_NUM'))
+                self.gis_status = version_num > 2020000
+            except Exception:
+                self.gis_status = False
 
         self.geo_status = utils.check_env_path(['kitchen.sh', 'pan.sh'])
         self.status = self.gis_status and self.geo_status
@@ -809,7 +728,7 @@ class WorkerGIS(object):
 
         # Check driver (extension)
         if __driver is None:
-            return print_error_extension()
+            return settings.generate_error_extension_not_valid()
 
         # Get information from path
         __path = utils.parse_path(path)
@@ -819,9 +738,8 @@ class WorkerGIS(object):
         # Check if transformation paths exist
         if os.path.exists(__path_shp) and \
            os.path.exists(__path_trs):
-            return {'info': [], 'warn': [], 'error': [
-                'Delete the previous transformation before proceed.'
-            ]}, None, None, None, None
+            return settings.generate_error_duplicated_transformation(), \
+                None, None, None, None
 
         # Create arguments for transforming to Shapefile
         __command = [__driver, __path_shp, path]
@@ -985,23 +903,23 @@ class WorkerGIS(object):
                 ] + __raw_fields_info
                 __layers_fields_info['raw'].append(__raw_fields_info)
 
-        # Generate VRT for GeoJSON transformation
-        __vrt_path = set_vrt(
-            __path, __layers_name,
-            __paths_index_delete
-        )
+        # Check if file is not a GeoJSON
+        if get_ogr_driver(__path['extension']) != 'GeoJSON':
 
-        # Get driver for geojson properly
-        __driver = get_ogr_driver('.geojson')
+            # Generate VRT for GeoJSON transformation
+            __vrt_path = set_vrt(
+                __path, __layers_name,
+                __paths_index_delete
+            )
 
-        # Check folder of transformations
-        if not os.path.exists(__path_trs) or \
-           not os.path.isdir(__path_trs):
-            os.mkdir(__path_trs)
+            # Check folder of transformations
+            if not os.path.exists(__path_trs) or \
+               not os.path.isdir(__path_trs):
+                os.mkdir(__path_trs)
 
-        # Execute transformation to GeoJSON
-        __geo_path = __path_trs + __path['name'] + '.geojson'
-        cmd_ogr2ogr([__driver, __geo_path, __vrt_path])
+            # Execute transformation to GeoJSON
+            __geo_path = __path_trs + __path['name'] + '.geojson'
+            cmd_ogr2ogr(['GeoJSON', __geo_path, __vrt_path])
 
         # Delete bad layers
         __layers_name = [
@@ -1148,7 +1066,8 @@ class WorkerGIS(object):
         # Remove unnecessary information
         __info['info'] = [
             __o for __o in __info['info'] 
-            if 'Geometry:' not in __o and 'Feature Count:' not in __o
+            if 'Geometry:' not in __o
+            and 'Feature Count:' not in __o
             and 'Extent: (' not in __o
         ]
 
@@ -1170,7 +1089,9 @@ class WorkerGIS(object):
 
                 # Save field info
                 __field_type = __f.replace(__field_name, '')[2:]
-                __field_type = __field_type[:__field_type.index('(') - 1]
+                __field_type = __field_type[
+                    :__field_type.index('(') - 1
+                ]
                 __field_type = str(__field_type).lower()
 
                 # Check field info

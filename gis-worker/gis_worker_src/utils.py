@@ -16,7 +16,6 @@
 import re
 import os
 import sys
-import json
 import hashlib
 import unicodedata
 from os.path import splitext
@@ -34,41 +33,6 @@ __email__ = "alejfcarrera@mail.ru"
 
 
 ##########################################################################
-
-
-def get_configuration_file():
-    """ This function allows you to load a configuration from file.
-
-    Returns:
-         dict: configuration fields and values.
-
-    """
-
-    # Configuration folder
-    __config_path = os.path.dirname(os.path.realpath(__file__)) + \
-        os.sep + 'configuration.json'
-
-    # Open file to load configuration
-    with open(__config_path) as __file_data:
-
-        # Return dictionary as configuration
-        __dict = dict(json.load(__file_data))
-
-        return __dict
-
-
-def get_geokettle_special_folders():
-    """ This function allows you to get geokettle special folders.
-
-    Returns:
-        list: folders to be parsed.
-
-    """
-
-    return [
-        '${Internal.Transformation.Filename.Directory}',
-        '${Internal.Job.Filename.Directory}'
-    ]
 
 
 def check_env_path(executables):
@@ -103,13 +67,6 @@ def check_env_path(executables):
             # Check if length of s is the same of source
             if len(s) == len(executables):
                 return True
-
-            # Return if kitchen and pan exists at the same folder
-            if 'ogr2ogr' in path_files and 'ogrinfo' in path_files:
-                # Check GDAL 2.2.0 version
-                from osgeo import gdal
-                version_num = int(gdal.VersionInfo('VERSION_NUM'))
-                return version_num > 2020000
 
     # Executables were not found
     return False
@@ -150,7 +107,7 @@ def md5_string(string):
         string_encode = string
     return hashlib.md5(
         string_encode +
-        's4lt_g30_l1nk3d_d4t4'
+        's4lt0.g30l4nk3dd4t4.3s'
     ).hexdigest()
 
 

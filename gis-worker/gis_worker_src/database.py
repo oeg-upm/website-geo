@@ -16,7 +16,7 @@
 import sys
 import time
 import redis
-import utils
+import settings
 from redis import TimeoutError, ConnectionError
 
 if sys.version_info < (3, 0):
@@ -32,6 +32,9 @@ __email__ = "alejfcarrera@mail.ru"
 
 
 ##########################################################################
+
+
+config = settings.Config()
 
 
 def create_redis_pool(redis_host, redis_port, redis_pass, redis_db):
@@ -77,10 +80,10 @@ def configure_redis(configuration):
         configuration saved on configuration parameter.
 
     Args:
-        configuration (dict): Redis databases configuration
+        configuration (dict): settings for Redis
 
     Returns:
-        tuple: Redis clients and pools
+        dict: Redis connection pools
 
     """
 
@@ -89,14 +92,12 @@ def configure_redis(configuration):
     __redis_pools = {}
 
     # Generate connection pools to Redis Database
-    for __redis_name in configuration['redis']['db_ids']:
+    for __redis_name in configuration['dbs']:
 
         # Create new connection pool
         __redis_pools[__redis_name] = create_redis_pool(
-            configuration['redis']['db']['host'],
-            configuration['redis']['db']['port'],
-            configuration['redis']['db']['pass'],
-            __number_redis
+            configuration['host'], configuration['port'],
+            configuration['pass'], __number_redis
         )
 
         # Test connection pool
@@ -104,7 +105,8 @@ def configure_redis(configuration):
 
             # Disconnect other connection pools
             for __redis_pool_name in __redis_pools.keys():
-                __redis_pools[__redis_pool_name].disconnect()
+                if __redis_pools[__redis_pool_name] is not None:
+                    __redis_pools[__redis_pool_name].disconnect()
 
             return None
 
@@ -118,26 +120,10 @@ def configure_redis(configuration):
         # Add new number for next connection pool
         __number_redis += 1
 
-    return __redis_connections, __redis_pools
+    return __redis_connections
 
 
 ##########################################################################
-
-
-class Singleton(type):
-    """ This constructor creates a super class of defined type
-        from parameter.
-
-    Returns:
-        class: Super class of specific instance
-
-    """
-    
-    def __call__(cls, *args, **kwargs):
-        try:
-            return cls.__instance
-        except AttributeError:
-            return super(Singleton, cls).__call__(*args, **kwargs)
 
 
 class WorkerRedis(object):
@@ -150,19 +136,34 @@ class WorkerRedis(object):
 
     """
 
-    # Create singleton instance
-    __metaclass__ = Singleton
-
     def __init__(self):
-        
-        # Get current configuration
-        self.config = utils.get_configuration_file()
 
-        # Create configuration for Redis
-        self.redis, self.redis_pools = configure_redis(self.config)
+        # Execute method to create new instance of Redis - Worker
+        # 0) tasks - Control about lock / unlock tasks
+        # 1) status - Status about finished tasks
+        # 2) files - Information about files from tasks
+        # 3) mapping-i - Initial mapping
+        # 4) mapping-i-m - Initial mapping messages
+        # 5) mapping-e - Extended mapping
+        # 6) mapping-e-m - Extended mapping messages
+        self.redis = configure_redis(config.redis_worker)
 
-        # Set status of Redis configuration
-        self.status = self.redis is not None
+    def get_information(self, identifier):
+        """ This function allows to get all the information
+            from a specific key.
+
+        Args:
+            identifier (string): key to check
+
+        Returns:
+            dict: information or None
+
+        """
+
+        # Get information from database
+        __info = self.redis['files'].hgetall(identifier)
+
+        return None if not len(__info) else __info
 
     def check_existence(self, identifier, database):
         """ This function allows to check if key exists.
@@ -175,10 +176,6 @@ class WorkerRedis(object):
             bool: True if exists, False otherwise
 
         """
-
-        # Check Redis configuration
-        if not self.status:
-            return False
 
         # Return status
         return self.redis[database].exists(identifier)
@@ -318,10 +315,6 @@ class WorkerRedis(object):
 
         """
 
-        # Check Redis configuration
-        if not self.status:
-            return False
-
         # Check if lock exists
         if self.redis['tasks'].exists(identifier):
         
@@ -351,15 +344,10 @@ class WorkerRedis(object):
         Returns:
             int: status returned
                 0 = lock is created.
-                1 = lock is not created by redis.
-                2 = lock is not created by worker.
-                3 = lock is not created by status.
+                1 = lock is not created by worker.
+                2 = lock is not created by status.
 
         """
-
-        # Check Redis configuration
-        if not self.status:
-            return 1
 
         # Create lock flag
         __lock_status = False
@@ -396,22 +384,7 @@ class WorkerRedis(object):
             self.unlock(__identifier, True)
 
             # Lock must be removed for always
-            return 3
+            return 2
 
         # Return status depending previous lock
-        return 0 if __lock_status else 2
-
-    def exit(self):
-        """ This function allows to close Redis connections.
-
-        """
-
-        # Iterate over Connection Pools
-        for __redis_name in self.redis_pools.keys():
-
-            # Disconnect all clients
-            self.redis_pools[__redis_name].disconnect()
-
-        # Clear memory
-        self.redis_pools = None
-        self.redis = None
+        return 0 if __lock_status else 1

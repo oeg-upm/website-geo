@@ -13,12 +13,12 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 """
 
-import os
 import sys
-import json
 import argparse
+from celery.utils.log import get_task_logger
 from celery import Celery
 from kombu import Exchange, Queue
+from gis_worker_src import settings
 
 if sys.version_info < (3, 0):
     reload(sys)
@@ -35,68 +35,6 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-def get_configuration_file():
-    """ This function allows you to load a configuration from file.
-
-    Returns:
-         dict: configuration fields and values.
-
-    """
-
-    # Configuration folder
-    __config_base_path = './gis_worker_config'
-    __debug = False
-
-    # Check if application is on Debug mode
-    if int(os.environ.get('GEO_WORKER_DEBUG', 1)) == 1:
-
-        # Get development configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_DEV', __config_base_path + '/config_debug.json'
-        )
-
-        # Set debug flag
-        __debug = True
-
-    else:
-
-        # Get production configuration
-        __config_path = os.environ.get(
-            'GEO_WORKER_CFG_PROD', __config_base_path + '/configuration.json'
-        )
-
-    # Load current directory of geo_worker.py
-    cwd = os.path.dirname(os.path.realpath(__file__)) + os.sep
-
-    # Open file to load configuration
-    with open(cwd + __config_path) as __file_data:
-
-        # Return dictionary as configuration
-        __dict = dict(json.load(__file_data))
-        __dict['debug'] = __debug
-        
-        return __dict
-
-
-##########################################################################
-
-
-class Singleton(type):
-    """ This constructor creates only an instance of a specific type
-        following the singleton pattern (software design pattern).
-
-    Returns:
-        class: Super class of specific instance
-
-    """
-    
-    def __call__(cls, *args, **kwargs):
-        try:
-            return cls.__instance
-        except AttributeError:
-            return super(Singleton, cls).__call__(*args, **kwargs)
-
-
 class Worker(object):
     """ This constructor creates only an instance of a Worker
         following the singleton pattern (software design pattern).
@@ -105,9 +43,6 @@ class Worker(object):
         class: Worker
 
     """
-
-    # Create singleton instance
-    __metaclass__ = Singleton
 
     def configure_celery(self):
         """ This function allows to configure a Celery instance.
@@ -122,10 +57,8 @@ class Worker(object):
 
         # Get RabbitMQ URL
         celery_app.conf.broker_url = 'pyamqp://' + \
-            str(self.config['celery']['broker_user']) + ':' + \
-            str(self.config['celery']['broker_pass']) + '@' + \
-            str(self.config['celery']['broker_host']) + ':' + \
-            str(self.config['celery']['broker_port']) + '//'
+            self.config.celery_user + ':' + self.config.celery_pwd + '@' + \
+            self.config.celery_host + '//'
 
         # Compatibility with previous AMQP protocols
         celery_app.conf.task_protocol = 1
@@ -178,7 +111,7 @@ class Worker(object):
     def __init__(self):
 
         # Get configuration of worker
-        self.config = get_configuration_file()
+        self.config = settings.Config()
 
         # Init Celery worker
         self.celery = self.configure_celery()
@@ -242,39 +175,42 @@ def main_script():
     # Import python script with real methods
     import gis_worker_tasks
 
+    # Create Logger from settings
+    __logger = settings.WorkerLogger()
+
     # Option: convert + id
     if __args.transform is not None:
 
         sys.exit(gis_worker_tasks.transform_with_path(
-            __args.transform[0], '.shp', None
+            __args.transform[0], '.shp', __logger
         )['status'])
 
     # Option: info + id
     elif __args.info is not None:
 
         sys.exit(gis_worker_tasks.info_with_path(
-            __args.info[0], None, True
+            __args.info[0], __logger, True
         )['status'])
 
     # Option: fields + id
     elif __args.fields is not None:
 
         sys.exit(gis_worker_tasks.fields_with_path(
-            __args.fields[0], None, True
+            __args.fields[0], __logger, True
         )['status'])
 
     # Option: job + file
     elif __args.geo_job is not None:
 
         sys.exit(gis_worker_tasks.execute_geo_job_with_path(
-            __args.geo_job[0], None, True
+            __args.geo_job[0], __logger, True
         )['status'])
 
     # Option: transform + file
     elif __args.geo_transform is not None:
 
         sys.exit(gis_worker_tasks.execute_geo_transform_with_path(
-            __args.geo_transform[0], None, True
+            __args.geo_transform[0], __logger, True
         )['status'])
 
     else:
