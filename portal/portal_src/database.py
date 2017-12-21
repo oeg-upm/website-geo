@@ -21,6 +21,7 @@ import crypto
 import settings
 import traceback
 from random import randint
+from datetime import datetime
 from redis import TimeoutError, ConnectionError
 
 if sys.version_info < (3, 0):
@@ -394,24 +395,6 @@ def check_task_id(identifier):
     return __redis_worker['files'].exists(identifier)
 
 
-def set_task_fields(identifier, file_info):
-    """ This function allows to save a task with specific values.
-
-    Args:
-        identifier (string): task internal id
-        file_info (dict): info from Flask's file
-
-    """
-
-    __redis_worker['files'].hmset(
-        identifier, {
-            'uploaded_at': str(int(time.time())),
-            'filename': file_info['name'],
-            'extension': file_info['extension']
-        }
-    )
-
-
 ##########################################################################
 
 
@@ -647,6 +630,178 @@ def set_account_credentials(identifier, device_token, cookie):
     # Save code on database
     __redis['tokens'].set(__cookie_key, cookie)
     __redis['tokens'].expire(__cookie_key, expire_one_month)
+
+
+def set_account_task(identifier, task_identifier, file_info):
+    """ This function allows to save a task with specific values.
+
+    Args:
+        identifier (string): user internal id
+        task_identifier (string): task internal id
+        file_info (dict): info from Flask's file
+
+    """
+
+    # Generate timestamp
+    __time = int(time.time())
+    __date = datetime.fromtimestamp(__time).strftime('%d-%m-%Y')
+
+    # Save record on database
+    __redis['tasks'].sadd(identifier, task_identifier)
+
+    # Save status of task
+    __redis_worker['status'].zadd(
+        identifier, 'upload', __time
+    )
+
+    # Save information on worker database
+    __redis_worker['files'].hmset(
+        task_identifier, {
+            'phase': 1,
+            'uploaded_at': __date,
+            'modified_at': __date,
+            'downloads': 0,
+            'filename': file_info['name'],
+            'extension': file_info['extension']
+        }
+    )
+
+
+def get_account_tasks(identifier):
+    """ This function allows to get information about a
+        specific user and its finished tasks.
+
+    Args:
+        identifier (string): internal user id
+
+    Returns:
+        list: information about tasks
+
+    """
+
+    # Get all the tasks from the specific user
+    __tasks = __redis['tasks'].smembers(identifier + ':end')
+
+    # Check tasks
+    if not len(__tasks):
+        return []
+
+    # Create structure for tasks
+    __tasks_info = []
+
+    # Iterate over ids
+    for __task in __tasks:
+
+        # Get information from task
+        __task_info = __redis_worker['files'].hgetall(__task)
+
+        # Check task id and delete trace
+        # if it is necessary
+        if not len(__task_info):
+
+            # Remove task from user
+            __redis['tasks'].srem(identifier, __task)
+
+            # Remove any other trace
+            __databases = [
+                'status', 'mapping-i', 'mapping-i-m',
+                'mapping-e', 'mapping-e-m'
+            ]
+            for __d in __databases:
+                for __k in __redis_worker[__d].scan_iter(__task + '*'):
+                    __redis_worker[__d].delete(__k)
+
+            # Jump to other task
+            continue
+
+        # Append information
+        __tasks_info.append({
+            'id': __task,
+            'name': __task_info['name'],
+            'downloads': __task_info['downloads'],
+            'date': __task_info['modified_at']
+        })
+
+    return __tasks_info
+
+
+def get_account_tasks_pend(identifier):
+    """ This function allows to get information about a
+        specific user and its pending tasks.
+
+    Args:
+        identifier (string): internal user id
+
+    Returns:
+        dict: information about tasks
+
+    """
+
+    # Get all the tasks from the specific user
+    __tasks = __redis['tasks'].smembers(identifier)
+
+    # Check tasks
+    if not len(__tasks):
+        return []
+
+    # Create structure for tasks
+    __tasks_info = []
+
+    for __task in __tasks:
+
+        # Get information from task
+        __task_info = __redis_worker['files'].hgetall(__task)
+
+        # Get status from task
+        __status = __redis_worker['status'].zrevrange(
+            identifier, start=0, end=0
+        )
+
+        # Check task id and delete trace
+        # if it is necessary
+        if not len(__task_info) or not len(__status):
+
+            # Remove task from user
+            __redis['tasks'].srem(identifier, __task)
+
+            # Remove any other trace
+            __databases = [
+                'status', 'mapping-i', 'mapping-i-m',
+                'mapping-e', 'mapping-e-m'
+            ]
+            for __d in __databases:
+                for __k in __redis_worker[__d].scan_iter(__task + '*'):
+                    __redis_worker[__d].delete(__k)
+
+            # Jump to other task
+            continue
+
+        # Check phase of task
+        if __task_info['phase'] == '0':
+
+            # Delete from not finished tasks
+            __redis['tasks'].srem(identifier, __task)
+
+            # Add to finished tasks
+            __redis['tasks'].sadd(identifier + ':end', __task)
+
+            # Jump to other task
+            continue
+
+        # Parse status
+        __status = __status[0]
+        __status = 0 if __status == 'upload' else 2 if \
+            __status == 'mapping-i:0' else 1
+
+        # Append information
+        __tasks_info.append({
+            'id': __task,
+            'name': __task[0:6] + '... ' + __task[-6:],
+            'date': __task_info['modified_at'],
+            'status': __status
+        })
+
+    return __tasks_info
 
 
 def get_account_fields(identifier, fields=None, privacy=False):

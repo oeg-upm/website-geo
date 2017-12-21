@@ -32,6 +32,8 @@ var resetForm = function resetForm(e)
     var fileInfo = document['getElementById']('file-info');
     if (fileError !== null && fileError['className'] === '')
         fileError['className'] = 'hidden';
+    if (fileInfo !== null && fileInfo['className'] === 'hidden')
+        fileInfo['className'] = '';
     fileInfo['innerHTML'] = fileSize + 'MB max.';
 
     // Change icon element
@@ -59,6 +61,7 @@ var readFile = function readFile(e)
     {
         // Get file info
         var fileInformation = target['files'][0];
+        var fileExtension = fileInformation['name'].split('.').pop();
 
         // Change icon element
         var iconFile = document['getElementById']('file-icon');
@@ -75,16 +78,22 @@ var readFile = function readFile(e)
                 fileInformation['type'] === 'application/zip') {
                 iconNewFile = 'fa fa-file-archive-o';
             }
-            else if (radioValue === 'kml' &&
-                fileInformation['type'] === 'application/vnd.google-earth.kml+xml') {
+            else if (radioValue === 'kml' && (
+                fileInformation['type'] === 'application/vnd.google-earth.kml+xml' ||
+                fileExtension === radioValue))
+            {
                 iconNewFile = 'fa fa-file-text-o';
             }
-            else if (radioValue === 'geojson' &&
-                fileInformation['type'] === 'application/json') {
+            else if (radioValue === 'geojson' && (
+                fileInformation['type'] === 'application/json' ||
+                fileExtension === radioValue))
+            {
                 iconNewFile = 'fa fa-file-code-o';
             }
-            else if (radioValue === 'csv' &&
-                fileInformation['type'] === 'text/csv') {
+            else if (radioValue === 'csv' && (
+                fileInformation['type'] === 'text/csv' ||
+                fileExtension === radioValue))
+            {
                 iconNewFile = 'fa fa-file-excel-o'
             }
             else resetFormFlag = true;

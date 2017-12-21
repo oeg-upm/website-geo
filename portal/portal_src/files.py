@@ -122,20 +122,17 @@ def check_shapefiles_path(path):
         # Iterate over files of path
         for __file in os.listdir(path):
 
+            # Generate path structure
+            __path_info = parse_path(__file)
+
             # Check if file is original zip file
-            if __file != 'file.zip':
+            if __path_info['extension'] != '.zip':
 
                 # Check if Shapefile's name is empty
                 # First iteration
-                if __name is None:
-
-                    # Generate path structure
-                    __path_info = parse_path(__file)
-
-                    # Check valid extensions
-                    if __path_info['extension'] in __shp_ext:
-                        __name = __path_info['name']
-
+                if __name is None and \
+                   __path_info['extension'] in __shp_ext:
+                    __name = __path_info['name']
                 else:
                     if not __file.startswith(__name):
                         return False, None
@@ -159,10 +156,13 @@ def save_temporal_path(file_storage):
 
     """
 
+    # Generate clean name
+    __name = clean_string(file_storage.filename)
+
     # Generate path for specific file
     __temporal_path = os.path.join(
         config.upload_tmp_folder,
-        file_storage.filename
+        __name
     )
 
     # Save specific file on folder
@@ -171,13 +171,14 @@ def save_temporal_path(file_storage):
     return __temporal_path
 
 
-def save_task_path(identifier, path, extension):
+def save_task_path(identifier, path, name, extension):
     """ This function allows you to move a
         temporal file to task path.
 
     Args:
         identifier (string): internal task id
         path (string): temporal file's path
+        name (string): name of file
         extension (string): extension of file
 
     Returns:
@@ -198,7 +199,7 @@ def save_task_path(identifier, path, extension):
 
     # Create path for file
     __f_file = os.path.join(
-        __f, 'file' + extension
+        __f, name + extension
     )
 
     # Move file to new folder
@@ -261,7 +262,8 @@ def parse_path(path):
 
 def clean_string(string):
     """ This function allows you to remove
-        latin characters and spaces or from any string.
+        latin characters and spaces or bad chars
+        from any string.
 
     Args:
         string (string): value to be parsed
@@ -276,4 +278,3 @@ def clean_string(string):
     return re.sub(r'[^a-zA-Z0-9]', '', u"".join(
         [c for c in form if not unicodedata.combining(c)]
     )).lower()
-
