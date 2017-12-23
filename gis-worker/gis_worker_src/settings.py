@@ -300,14 +300,17 @@ def generate_error_xml_vulnerabilities():
 
 class WorkerLogger(object):
 
+    def print_message(self, message):
+        print(message)
+
     def info(self, message):
-        print(' * [INFO] ' + message)
+        self.print_message(message)
 
     def warn(self, message):
-        print(' * [WARN] ' + message)
+        self.print_message(message)
 
     def error(self, message):
-        print(' * [ERROR] ' + message)
+        self.print_message(message)
 
 
 class Config(object):

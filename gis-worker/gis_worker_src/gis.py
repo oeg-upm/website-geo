@@ -749,6 +749,10 @@ class WorkerGIS(object):
 
         # Detect if there were any errors
         if len(__g_info['error']):
+            __g_info['error'][-1] += '\n'
+            __g_info['error'] = [
+                'GDAL transformation\n'
+            ] + __g_info['warn']
             return __g_info, None, \
                 None, None, None
 
@@ -904,7 +908,7 @@ class WorkerGIS(object):
                 __layers_fields_info['raw'].append(__raw_fields_info)
 
         # Check if file is not a GeoJSON
-        if get_ogr_driver(__path['extension']) != 'GeoJSON':
+        if __driver != 'GeoJSON':
 
             # Generate VRT for GeoJSON transformation
             __vrt_path = set_vrt(

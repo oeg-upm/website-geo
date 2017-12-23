@@ -180,26 +180,27 @@ class WorkerRedis(object):
         # Return status
         return self.redis[database].exists(identifier)
 
-    def remove_records(self, identifier):
+    def remove_records(self, identifier, mapping, all=False):
         """ This function allows to delete the information
             and all the fields for specific identifier.
 
         Args:
             identifier (string): key to delete it
+            mapping (string): kind of mapping
+            all (bool): flag to delete everything
 
         """
 
-        # Iterate over old info and remove
-        for __k in self.redis['files'].scan_iter(
-            identifier + ':layer:*'
-        ):
-            self.redis['files'].delete(__k)
+        # Remove any other trace
+        __databases = [mapping, mapping + '-m']
+        for __d in __databases:
+            for __k in self.redis[__d].scan_iter(identifier + '*'):
+                self.redis[__d].delete(__k)
 
-        # Iterate over old fields and remove
-        for __k in self.redis['mapping-i'].scan_iter(
-            identifier + ':layer:*'
-        ):
-            self.redis['mapping-i'].delete(__k)
+        # Delete everything if flag is activated
+        if all:
+            self.redis['status'].delete(identifier)
+            self.redis['files'].delete(identifier)
 
     def save_record_info(self, identifier, layers, layers_md5, layers_info):
         """ This function allows to save the new parameters.
@@ -299,9 +300,10 @@ class WorkerRedis(object):
         ]
 
         # Save structure
-        self.redis[database + '-m'].rpush(
-            identifier + __kind, *__messages
-        )
+        for __message in __messages:
+            self.redis[database + '-m'].rpush(
+                identifier + __kind, __message
+            )
 
     def unlock(self, identifier, forced=False):
         """ This function allows to remove a Redis lock.

@@ -511,78 +511,80 @@ def init_mapping(identifier, logger):
         # Get information about identifier
         __file_info = __redis.get_information(identifier)
 
-        # Transform to Shapefile depending if
-        # information is good or not
-        __o_info = {
-            'status': 1,
-            'messages': settings.generate_error_identifier_not_found()
-        } if __file_info is None else transform_with_id(
-            identifier, __file_info, logger
-        )
-
-        # Flags for errors
-        __flag_error = __o_info['status'] == 2
-        __flag_not_exist = __o_info['status'] == 1
-
-        # Detect flags
-        if not __flag_not_exist and not __flag_error:
-
-            # Save messages on database
-            for __k in settings.kind_logs:
-                if len(__o_info['messages'][__k]):
-                    __redis.save_record_log(
-                        identifier, 'mapping-i', __k,
-                        __o_info['messages'][__k]
-                    )
-
-            # Delete previous values
-            __redis.remove_records(identifier)
-
-            # Save information from layers
-            __redis.save_record_info(
-                identifier,
-                __o_info['information']['names'],
-                __o_info['information']['names_md5'],
-                __o_info['information']['properties']
-            )
-
-            # Save fields from layers
-            __redis.save_record_fields(
-                identifier,
-                __o_info['information']['names'],
-                __o_info['information']['fields']
-            )
-
-            # Save status for tracking success
-            __redis.save_record_status(
-                identifier,
-                'mapping-i', 0
-            )
-
-        # Detect error flag
-        if __flag_error:
-
-            # Save error messages
-            if len(__o_info['messages']['error']):
-                __redis.save_record_log(
-                    identifier, 'mapping-i', 'error',
-                    __o_info['messages']['error']
-                )
-
-            # Save status for tracking success
-            __redis.save_record_status(
-                identifier, 'mapping-i', 1
-            )
-
-            # Remove generated files
-            transform_revert_with_id(identifier)
-
-        if __flag_not_exist:
+        # Check information
+        if __file_info is None:
 
             # Show not found message
             settings.dump_messages(
                 logger, settings.generate_error_identifier_not_found()
             )
+
+        else:
+
+            # Transform to Shapefile
+            __o_info = transform_with_id(
+                identifier, __file_info, logger
+            )
+
+            # Delete previous records
+            __redis.remove_records(
+                identifier, 'mapping-i',
+                __o_info['status'] > 0
+            )
+
+            if __o_info['status'] == 1:
+
+                # Show not found message
+                settings.dump_messages(
+                    logger, settings.generate_error_identifier_not_found()
+                )
+
+            elif __o_info['status'] == 2:
+
+                # Save error messages
+                if len(__o_info['messages']['error']):
+                    __redis.save_record_log(
+                        identifier, 'mapping-i', 'error',
+                        __o_info['messages']['error']
+                    )
+
+                # Save status for tracking
+                __redis.save_record_status(
+                    identifier, 'mapping-i', 1
+                )
+
+                # Remove generated files
+                transform_revert_with_id(identifier)
+
+            else:
+
+                # Save messages on database
+                for __k in settings.kind_logs:
+                    if len(__o_info['messages'][__k]):
+                        __redis.save_record_log(
+                            identifier, 'mapping-i', __k,
+                            __o_info['messages'][__k]
+                        )
+
+                # Save information from layers
+                __redis.save_record_info(
+                    identifier,
+                    __o_info['information']['names'],
+                    __o_info['information']['names_md5'],
+                    __o_info['information']['properties']
+                )
+
+                # Save fields from layers
+                __redis.save_record_fields(
+                    identifier,
+                    __o_info['information']['names'],
+                    __o_info['information']['fields']
+                )
+
+                # Save status for tracking success
+                __redis.save_record_status(
+                    identifier, 'mapping-i', 0
+                )
 
         # Release lock
         __redis.unlock(identifier + ':mapping-i', True)
@@ -597,11 +599,7 @@ def init_mapping(identifier, logger):
 
         # Show lock status error
         settings.dump_messages(
-            logger, {
-                'info': [],
-                'warn': [__message],
-                'error': []
-            }
+            logger, {'info': [], 'warn': [__message], 'error': []}
         )
 
 
