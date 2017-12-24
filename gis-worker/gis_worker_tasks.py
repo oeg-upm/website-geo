@@ -529,7 +529,7 @@ def init_mapping(identifier, logger):
             # Delete previous records
             __redis.remove_records(
                 identifier, 'mapping-i',
-                __o_info['status'] > 0
+                __o_info['status'] == 1
             )
 
             if __o_info['status'] == 1:
