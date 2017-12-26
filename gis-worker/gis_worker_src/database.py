@@ -180,14 +180,14 @@ class WorkerRedis(object):
         # Return status
         return self.redis[database].exists(identifier)
 
-    def remove_records(self, identifier, mapping, all=False):
+    def remove_records(self, identifier, mapping, files=False):
         """ This function allows to delete the information
             and all the fields for specific identifier.
 
         Args:
             identifier (string): key to delete it
             mapping (string): kind of mapping
-            all (bool): flag to delete everything
+            files (bool): flag to delete links / layers
 
         """
 
@@ -198,8 +198,7 @@ class WorkerRedis(object):
                 self.redis[__d].delete(__k)
 
         # Delete everything if flag is activated
-        if all:
-            self.redis['status'].delete(identifier)
+        if files:
             self.redis['files'].delete(identifier)
 
     def save_record_info(self, identifier, layers, layers_md5, layers_info):

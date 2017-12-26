@@ -41,47 +41,24 @@ config = settings.Config()
 ##########################################################################
 
 
-def check_geo_has_features(information):
-    """ This function allows you to check if the
-        information has any features
-
-    Args:
-        information (list): files' information
-
-    Returns:
-        bool: True or False
-
-    """
-
-    return int([
-        o for o in information if
-        'Feature' in o
-    ][0].split(': ')[1]) > 0
-
-
 def check_geo_has_extent(information):
     """ This function allows you to check if the
         information has good extent
 
     Args:
-        information (list): files' information
+        information (string): bounding box info
 
     Returns:
         bool: True or False
 
     """
 
-    # Get Extent value from information
-    __value = [
-        o for o in information if 'Extent' in o
-    ][0].split(': ')[1]
-
-    # Check if Extent is good
-    __value = __value.replace('(', '').\
-        replace(')', '').replace(' - ', ', ').split(', ')
-
-    # Return check
-    return all(float(s) != 0.0 for s in __value)
+    return not all(
+        float(s) == 0.0 for s in
+        information[1:][:-1].replace(
+            ') - (', ', '
+        ).split(', ')
+    )
 
 
 ##########################################################################
@@ -210,20 +187,35 @@ def get_ogr_file_extensions(extension):
     return []
 
 
-def get_ogr_value(value):
+def parse_ogr_value(value, kind):
     """ This function returns the parsed value
         from specific ogr data.
 
+        types => int = 0,
+            int64 (long) = 12,
+            real (float) = 2,
+            str = 4,
+            date = 9
+
     Args:
         value (string): value to check
+        kind (OGRType): kind to check
 
     Returns:
-        type: Python real data
+        dict: parsed information
 
     """
 
-    # Check if data is String
-    if type(value) == str:
+    def parse_ogr_number(number):
+        if type(number) == float:
+            return {'value': number, 'ogr': 2}
+        elif type(number) == long:
+            return {'value': number, 'ogr': 12}
+        else:
+            return {'value': number, 'ogr': 0}
+
+    # Check if data is a String
+    if kind == 4:
 
         # Deep copy
         try:
@@ -235,18 +227,26 @@ def get_ogr_value(value):
         try:
             __value = parse(__value)
             if len(value) >= 8 and __value is not None:
-                return __value.strftime('%Y-%m-%d')
+                return {
+                    'value': __value.strftime('%Y-%m-%d'),
+                    'ogr': 9
+                }
         except Exception:
             pass
 
         # Check possible number
         try:
-            return eval(value)
+            return parse_ogr_number(eval(value))
         except Exception:
-            return value
+            return {'value': value, 'ogr': 4}
 
+    # Check if data is a Date
+    elif kind == 9:
+        return {'value': value, 'ogr': 9}
+
+    # data must be a Number
     else:
-        return value
+        return parse_ogr_number(value)
 
 
 def validate_ogr_fields(path, fields):
@@ -279,49 +279,98 @@ def validate_ogr_fields(path, fields):
     __file = ogr.GetDriverByName(__driver)
     __file_src = __file.Open(path, 1)
     __file_layer = __file_src.GetLayer()
+    __file_layer.ResetReading()
     __file_layer_def = __file_layer.GetLayerDefn()
+
+    # Create structure for remove features
+    __file_feat_rem = []
 
     # Iterate over features of the layer
     __file_feat = __file_layer.GetNextFeature()
+
     while __file_feat is not None:
+
+        print __file_feat.ExportToJson()
+
+        # Get Feature internal ID
+        __file_feat_id = __file_feat.GetFID()
+
+        # Check if feature has geometry (valid & non-empty)
+        __file_feat_geo = __file_feat.GetGeometryRef()
+        if __file_feat_geo is None or __file_feat_geo.IsEmpty() or \
+           not __file_feat_geo.IsValid():
+            __file_feat_rem.append(__file_feat_id)
+
+            # Go to Next feature
+            __file_feat = __file_layer.GetNextFeature()
+            continue
 
         # Iterate over fields of the Shapefile
         for __field in fields:
 
-            # Check if field is checking at least once
+            # Check if field info is saved (first time)
             if __field not in __fields_flags:
-                __fields_flags[__field] = {'b': False}
+                __fields_flags[__field] = {'b': False, 'd': {}}
+
+            # Check if field has at least one value and it is not
+            # necessary to check all the values of that column
+            if __fields_flags[__field]['b'] and \
+               not len(__fields_flags[__field]['d']):
+                continue
 
             # Get real index
             __index = __file_feat.GetFieldIndex(__field)
-
-            # Check if field is String and non empty
-            __value = __file_feat.GetField(__index)
-            if __file_feat.GetFieldType(__index) == 4 and \
-               __value is not None:
-
-                # Determine real value for specific data
-                __real_value = get_ogr_value(__value)
-
-                # Change if data is equals to old data
-                if __value != __real_value:
-                    __file_feat.SetField(
-                        __index, __real_value
-                    )
-                    __file_layer.SetFeature(__file_feat)
-
-            # Check if field is True (has value)
-            if __fields_flags[__field]['b']:
-                continue
-
-            # Get if the feature has value
-            __fields_flags[__field]['b'] = \
-                not __file_feat.IsFieldNull(__index) and \
-                __file_feat.IsFieldSet(__index)
             __fields_flags[__field]['i'] = __index
+
+            # Only these types are allowed on Shapefiles
+            # int = 0, int64 (double) = 12, real (float) = 2
+            # str = 4 and date = 9
+
+            # Get original value from field
+            __field_v = __file_feat.GetField(__index)
+
+            # Check if original value is valid
+            if __field_v is not None:
+
+                # Set Flag to not be deleted
+                __fields_flags[__field]['b'] = True
+
+                # Get original kind of field
+                __field_k = __file_feat.GetFieldType(__index)
+
+                # Parse value and kind to verify them
+                __field_info = parse_ogr_value(__field_v, __field_k)
+
+                # Check if real and ogr types are different
+                if __field_k != __field_info['ogr']:
+
+                    # Check if there is more than one type
+                    # on the same column, big mistake
+                    if 't' in __fields_flags[__field] and \
+                       __fields_flags[__field]['t']['new'] != \
+                       __field_info['ogr']:
+                        __fields_flags[__field]['d'] = {}
+                        continue
+
+                    elif 't' not in __fields_flags[__field]:
+                        __fields_flags[__field]['t'] = {
+                            'old': __field_k,
+                            'new': __field_info['ogr']
+                        }
+
+                    # Save data to create new column
+                    __fields_flags[__field]['d'][__file_feat_id] = \
+                        __field_info['value']
 
         # Go to Next feature
         __file_feat = __file_layer.GetNextFeature()
+
+    # Set Iterator at the beginning
+    __file_layer.ResetReading()
+
+    # Remove features without geometry
+    for __file_feat in __file_feat_rem:
+        __file_layer.DeleteFeature(__file_feat)
 
     # Set structures for removing fields
     __sorted_fields = [
@@ -333,6 +382,8 @@ def validate_ogr_fields(path, fields):
     __f_pad = 0
     __f_counter = 0
     __rem_fields = []
+
+    # Iterate and rebuild fields
     for __field in __sorted_fields:
 
         # Index of the field
@@ -349,25 +400,87 @@ def validate_ogr_fields(path, fields):
         # Rename to lowercase non-empty fields
         else:
 
-            # Clean name of the field
-            __file_field = __file_layer_def.GetFieldDefn(__index)
-            __file_name = utils.clean_string(__field).encode('utf-8')
+            # Generate cleaned field's name
+            __field_n = utils.clean_string(__field).encode('utf-8')
 
-            # Change name if it is necessary
-            if __file_name != __field:
-                __file_field.SetName(__file_name)
-                __file_layer.AlterFieldDefn(
-                    __index, __file_field,
-                    ogr.ALTER_NAME_FLAG
-                )
+            # Check if field needs to be renamed
+            if not len(__fields_flags[__field]['d']):
+
+                # Clean name of the field
+                __file_field = __file_layer_def.GetFieldDefn(__index)
+
+                # Change name if it is necessary
+                if __field_n != __field:
+                    __file_field.SetName(__field_n)
+                    __file_layer.AlterFieldDefn(
+                        __index, __file_field,
+                        ogr.ALTER_NAME_FLAG
+                    )
+
+                # Remove field from flags structure
+                del __fields_flags[__field]
+
+            else:
+
+                # Save name on fields
+                __fields_flags[__field]['n'] = __field_n
+
+                # Create temporal field
+                __file_layer.CreateField(ogr.FieldDefn(
+                    __field_n + '_tmp',
+                    __fields_flags[__field]['t']['new']
+                ))
 
         # Increase counter
         __f_counter += 1
 
+    # Iterate over fields to be re-generated
+    for __field in __fields_flags.keys():
+
+        # Get index for temporal field
+        __index = __file_layer.FindFieldIndex(
+            __field + '_tmp', 1
+        )
+
+        # Iterate over features of the layer
+        __file_feat = __file_layer.GetNextFeature()
+        while __file_feat is not None:
+
+            # Get Feature internal ID
+            __file_feat_id = __file_feat.GetFID()
+
+            # Check if there is a saved value
+            if __file_feat_id in __fields_flags[__field]['d']:
+
+                # Set value to feature
+                __file_feat.SetField(
+                    __index, __fields_flags[__field]['d'][__file_feat_id]
+                )
+
+            # Go to Next feature
+            __file_layer.SetFeature(__file_feat)
+            __file_feat = __file_layer.GetNextFeature()
+
+        # Delete original field
+        __index = __file_layer.FindFieldIndex(__field, 1)
+        __file_layer.DeleteField(__index)
+
+        # Get new field and rename to original name
+        __index = __file_layer.FindFieldIndex(__field + '_tmp', 1)
+        __file_field = __file_layer_def.GetFieldDefn(__index)
+        __file_field.SetName(utils.clean_string(
+            __field
+        ).encode('utf-8'))
+        __file_layer.AlterFieldDefn(
+           __index, __file_field,
+           ogr.ALTER_NAME_FLAG
+        )
+
     # Close file
+    __file_layer.SyncToDisk()
     __file_src = None
 
-    return __rem_fields
+    return __rem_fields, len(__file_feat_rem)
 
 
 def get_projection(path):
@@ -456,14 +569,13 @@ def set_centroids(path):
 
         # Save value at new field
         __file_feat.SetField('centroid', __file_cent)
-
-        # Save feature at layer
         __file_layer.SetFeature(__file_feat)
         
         # Next feature
         __file_feat = __file_layer.GetNextFeature()
 
     # Close file
+    __file_layer.SyncToDisk()
     __file_src = None
 
 
@@ -518,6 +630,7 @@ def set_areas(path):
         __file_feat = __file_layer.GetNextFeature()
 
     # Close file
+    __file_layer.SyncToDisk()
     __file_src = None
 
 
@@ -578,6 +691,16 @@ def parse_ogr_return(outputs, errors):
 
     """
 
+    def clean_message(message):
+        return str(message).decode('string_escape').\
+            replace('  ', ' ').\
+            replace('"', '')
+
+    def unable_to_open_message():
+        return 'An error has occurred in the included files. ' \
+           'Please ensure that all necessary files have been uploaded ' \
+           'and check the internal relations between them.'
+
     # Create temporal output log
     __output = outputs.split('\n')
 
@@ -586,12 +709,16 @@ def parse_ogr_return(outputs, errors):
 
     # Search failures at output or errors
     __error = []
+    __warning = []
     for __o in range(len(__output)):
         if 'FAILURE' in __output[__o]:
             __error.append(__output[__o + 1])
     for __o in range(len(__errors)):
         if 'FAILURE' in __errors[__o]:
-            __error.append(__errors[__o + 1])
+            if 'Unable to open' in __errors[__o + 1]:
+                __error.append(unable_to_open_message())
+            else:
+                __error.append(__errors[__o + 1])
 
     # Remove empty lines and search only properties
     # from ogrinfo output
@@ -601,20 +728,57 @@ def parse_ogr_return(outputs, errors):
         and 'INFO' not in __o
     ]
 
-    # Remove empty lines and save only warnings
-    __warning = [
-        __e[__e.index(':') + 2:] for __e in __errors
-        if 'Warning' in __e and __e != ''
-    ]
+    # Save and parse warnings / errors
+    if len(__errors):
 
-    # Remove empty lines and save only errors
-    __error += [
-        __e[__e.index(':') + 2:] for __e in __errors
-        if 'ERROR' in __e and __e != ''
-    ]
+        # Check if there is any message truly
+        if __errors[0] != '':
 
-    # Remove duplicates
+            # Get first message to be parsed
+            __message = __errors[0]
+            __errors = __errors[1:]
+            __message_list = __error if \
+                __message.startswith('ERROR') else __warning
+            __message = __message[__message.index(':') + 2:]
+
+            for __e in __errors:
+
+                # Detect if string is an error
+                if __e.startswith('ERROR'):
+                    if 'Unable to open' in __message:
+                        __message = unable_to_open_message()
+                    __message_list.append(__message)
+                    __message_list = __error
+                    __message = __e[__e.index(':') + 2:]
+
+                # Detect if string is a warning
+                elif __e.startswith('Warning'):
+                    if 'Unable to open' in __message:
+                        __message = unable_to_open_message()
+                    __message_list.append(__message)
+                    __message_list = __warning
+                    __message = __e[__e.index(':') + 2:]
+
+                # Detect if string is empty
+                elif __e == '':
+                    if 'Unable to open' in __message:
+                        __message = unable_to_open_message()
+                    __message_list.append(__message)
+
+                # Detect if string must be added
+                else:
+                    __message += ' ' + __e
+
+    # Clean duplicates
     __error = list(set(__error))
+
+    # Clean messages
+    for __index in range(0, len(__output)):
+        __output[__index] = clean_message(__output[__index])
+    for __index in range(0, len(__warning)):
+        __warning[__index] = clean_message(__warning[__index])
+    for __index in range(0, len(__error)):
+        __error[__index] = clean_message(__error[__index])
 
     return {
         'info': __output,
@@ -752,7 +916,7 @@ class WorkerGIS(object):
             __g_info['error'][-1] += '\n'
             __g_info['error'] = [
                 'GDAL transformation\n'
-            ] + __g_info['warn']
+            ] + __g_info['error']
             return __g_info, None, \
                 None, None, None
 
@@ -817,9 +981,11 @@ class WorkerGIS(object):
 
             # Check if file has not features, bad
             # extend or any previous issue
-            if not check_geo_has_features(__gi_info['info']) or \
-               not check_geo_has_extent(__gi_info['info']) or \
-               len(__gi_info['error']):
+            if len(__gi_info['error']) or \
+               __gi_info['info_values']['features'] == 0 or \
+               not check_geo_has_extent(
+                   __gi_info['info_values']['bounding']
+               ):
 
                 # Add paths for deletion
                 __paths_index_delete.append(__path_rev_i)
@@ -848,12 +1014,29 @@ class WorkerGIS(object):
                 # Next file
                 continue
 
+            # Validate and save messages
+            __raw_validate_info, __rem_features = \
+                self.validate_fields(__path_rev)
+            if len(__raw_validate_info):
+                if __path_rev_i < len(__layers_name) - 1:
+                    __raw_validate_info[-1] += '\n'
+                __raw_validate_info = [
+                    'Layer - ' + __layers_md5[
+                        __layers_name[__path_rev_i]
+                    ] + ' - ' + __layers_name[
+                        __path_rev_i
+                    ] + '\n'
+                ] + __raw_validate_info
+                __g_info['warn'] += __raw_validate_info
+
+            # # Get updated information from GDAL if
+            # some features have been removed
+            if __rem_features > 0:
+                __gi_info = self.get_info(__path_rev)
+
             # Generate centroid and Area if Geometry
             # is kind of Polygon
-            if 'Geometry: Polygon' == [
-                __o for __o in __gi_info['info']
-                if 'Geometry:' in __o
-            ][0].lower():
+            if __gi_info['info_values']['geometry'] == 'Polygon':
 
                 # Execute centroids generation
                 set_centroids(__path_rev)
@@ -866,28 +1049,14 @@ class WorkerGIS(object):
             if __path_rev_i < len(__layers_name) - 1:
                 __raw_layer_info[-1] += '\n'
             __raw_layer_info = [
-                    'Layer - ' + __layers_md5[
-                        __layers_name[__path_rev_i]
-                    ] + ' - ' + __layers_name[
-                        __path_rev_i
-                    ] + '\n'
-                ] + __raw_layer_info
+                'Layer - ' + __layers_md5[
+                    __layers_name[__path_rev_i]
+                ] + ' - ' + __layers_name[
+                    __path_rev_i
+                ] + '\n'
+            ] + __raw_layer_info
             __layers_info['raw'].append(__raw_layer_info)
             __layers_info['info'].append(__gi_info['info_values'])
-
-            # Validate and save messages
-            __raw_validate_info = self.validate_fields(__path_rev)
-            if len(__raw_validate_info):
-                if __path_rev_i < len(__layers_name) - 1:
-                    __raw_validate_info[-1] += '\n'
-                __raw_validate_info = [
-                    'Layer - ' + __layers_md5[
-                        __layers_name[__path_rev_i]
-                    ] + ' - ' + __layers_name[
-                        __path_rev_i
-                    ] + '\n'
-                ] + __raw_validate_info
-                __g_info['warn'] += __raw_validate_info
 
             # Get information about new and old fields
             __raw_fields_info = self.get_fields(__path_rev)
@@ -907,8 +1076,16 @@ class WorkerGIS(object):
                 ] + __raw_fields_info
                 __layers_fields_info['raw'].append(__raw_fields_info)
 
+        # Check if file is empty
+        if len(__layers_md5) == len(__paths_index_delete):
+            __g_info['error'].append(
+                'An error has occurred in the included files. '
+                'Please ensure that the file contains geometries '
+                'or information necessary for saving.'
+            )
+
         # Check if file is not a GeoJSON
-        if __driver != 'GeoJSON':
+        elif __driver != 'GeoJSON':
 
             # Generate VRT for GeoJSON transformation
             __vrt_path = set_vrt(
@@ -1016,7 +1193,8 @@ class WorkerGIS(object):
             path (string): file's path
 
         Returns:
-            list: information about the outputs
+            tuple: information about the outputs and
+                how many features have been eliminated
 
         """
 
@@ -1028,7 +1206,7 @@ class WorkerGIS(object):
             return []
 
         # Validate fields from received information
-        __rem_fields = validate_ogr_fields(
+        __rem_fields, __rem_features = validate_ogr_fields(
             path, __info['info_values'].keys()
         )
 
@@ -1041,10 +1219,21 @@ class WorkerGIS(object):
             # Add new possible warning messages
             __log_messages += [
                 'Removed field ' + __f +
-                ' because is empty' for __f in __rem_fields
+                ' because is empty'
+                for __f in __rem_fields
             ]
 
-        return __log_messages
+        # Check if some features have been removed
+        if __rem_features > 0:
+
+            # Add warning message
+            __log_messages += [
+                'Removed ' + str(__rem_features) + ' features '
+                'because they have not any geometry or the '
+                'geometry was not valid.'
+            ]
+
+        return __log_messages, __rem_features
 
     def get_fields(self, path, inc_layers=False):
         """ This function allows to get fields' information
@@ -1099,8 +1288,10 @@ class WorkerGIS(object):
                 __field_type = str(__field_type).lower()
 
                 # Check field info
-                if __field_type == 'real' or __field_type == 'float':
-                    __field_type = 'double'
+                if __field_type == 'real':
+                    __field_type = 'float'
+                elif __field_type == 'integer64':
+                    __field_type = 'long'
 
                 # Save field structure
                 __values[__field_name] = __field_type
