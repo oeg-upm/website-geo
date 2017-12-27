@@ -290,8 +290,6 @@ def validate_ogr_fields(path, fields):
 
     while __file_feat is not None:
 
-        print __file_feat.ExportToJson()
-
         # Get Feature internal ID
         __file_feat_id = __file_feat.GetFID()
 
@@ -397,6 +395,9 @@ def validate_ogr_fields(path, fields):
             # Save removed field
             __rem_fields.append(__field)
 
+            # Remove field from flags structure
+            del __fields_flags[__field]
+
         # Rename to lowercase non-empty fields
         else:
 
@@ -468,9 +469,8 @@ def validate_ogr_fields(path, fields):
         # Get new field and rename to original name
         __index = __file_layer.FindFieldIndex(__field + '_tmp', 1)
         __file_field = __file_layer_def.GetFieldDefn(__index)
-        __file_field.SetName(utils.clean_string(
-            __field
-        ).encode('utf-8'))
+        __field_n = utils.clean_string(__field).encode('utf-8')
+        __file_field.SetName(__field_n)
         __file_layer.AlterFieldDefn(
            __index, __file_field,
            ogr.ALTER_NAME_FLAG
