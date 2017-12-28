@@ -187,7 +187,8 @@ def generate_redirection(
     """
 
     # Create base URL
-    __url = config.flask_host + '/' + url
+    __url = url if url[0] != '/' else url[1:]
+    __url = config.flask_host + '/' + __url
 
     # Add next URL param if it is necessary
     if next_url is not None:
