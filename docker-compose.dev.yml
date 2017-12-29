@@ -1,0 +1,55 @@
+
+##################################################
+
+geo.portal.redis:
+  hostname: geolinkeddata.portal.redis
+  domainname: localdomain
+  image: redis:alpine
+  restart: always
+  ports:
+    - 9000:6379
+  command: redis-server /usr/local/etc/redis/redis.conf
+  volumes:
+    - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    # - /volume:/data
+
+geo.portal.redis.cache:
+  hostname: geolinkeddata.portal.redis-cache
+  domainname: localdomain
+  image: redis:alpine
+  restart: always
+  ports:
+    - 9100:6379
+  command: redis-server /usr/local/etc/redis/redis.conf
+  volumes:
+    - ./redis/redis-cache.conf:/usr/local/etc/redis/redis.conf
+    # - /volume:/data
+
+##################################################
+
+geo.worker.redis:
+  hostname: geolinkeddata.worker.redis
+  domainname: localdomain
+  image: redis:alpine
+  restart: always
+  ports:
+    - 9200:6379
+  command: redis-server /usr/local/etc/redis/redis.conf
+  volumes:
+    - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    # - /volume:/data
+
+geo.rabbit:
+  hostname: geolinkeddata.rabbitmq
+  domainname: localdomain
+  image: rabbitmq:3.6-alpine
+  restart: always
+  environment:
+    - RABBITMQ_DEFAULT_USER=rabbitmq
+    - RABBITMQ_DEFAULT_PASS=password
+  ports:
+    - 5672:5672
+    - 15672:15672
+  #volumes:
+    # - /volume:/data/log
+    # - /volume:/data/mnesia
