@@ -279,7 +279,6 @@ def validate_ogr_fields(path, fields):
     __file = ogr.GetDriverByName(__driver)
     __file_src = __file.Open(path, 1)
     __file_layer = __file_src.GetLayer()
-    __file_layer.ResetReading()
     __file_layer_def = __file_layer.GetLayerDefn()
 
     # Create structure for remove features
@@ -363,7 +362,7 @@ def validate_ogr_fields(path, fields):
         # Go to Next feature
         __file_feat = __file_layer.GetNextFeature()
 
-    # Set Iterator at the beginning
+    # Reset pointer
     __file_layer.ResetReading()
 
     # Remove features without geometry
@@ -377,26 +376,20 @@ def validate_ogr_fields(path, fields):
             key=lambda x: x[1]['i']
         )
     ]
-    __f_pad = 0
-    __f_counter = 0
+
+    # Create structure for empty fields
     __rem_fields = []
 
     # Iterate and rebuild fields
     for __field in __sorted_fields:
 
         # Index of the field
-        __index = __f_counter - __f_pad
+        __index = __file_layer.FindFieldIndex(__field, 1)
 
-        # Remove empty fields from Shapefile
+        # Remove empty fields
         if not __fields_flags[__field]['b']:
             __file_layer.DeleteField(__index)
-            __f_pad += 1
-
-            # Save removed field
             __rem_fields.append(__field)
-
-            # Remove field from flags structure
-            del __fields_flags[__field]
 
         # Rename to lowercase non-empty fields
         else:
@@ -418,66 +411,45 @@ def validate_ogr_fields(path, fields):
                         ogr.ALTER_NAME_FLAG
                     )
 
-                # Remove field from flags structure
-                del __fields_flags[__field]
-
             else:
 
-                # Save name on fields
-                __fields_flags[__field]['n'] = __field_n
+                # Remove old field
+                __file_layer.DeleteField(__index)
 
-                # Create temporal field
+                # Create new field
                 __file_layer.CreateField(ogr.FieldDefn(
-                    __field_n + '_tmp',
+                    __field_n,
                     __fields_flags[__field]['t']['new']
                 ))
 
-        # Increase counter
-        __f_counter += 1
+                # Index of the new field
+                __index = __file_layer.FindFieldIndex(__field_n, 1)
 
-    # Iterate over fields to be re-generated
-    for __field in __fields_flags.keys():
+                # Iterate over features of the layer
+                __file_feat = __file_layer.GetNextFeature()
+                while __file_feat is not None:
 
-        # Get index for temporal field
-        __index = __file_layer.FindFieldIndex(
-            __field + '_tmp', 1
-        )
+                    # Get Feature internal ID
+                    __file_feat_id = __file_feat.GetFID()
 
-        # Iterate over features of the layer
-        __file_feat = __file_layer.GetNextFeature()
-        while __file_feat is not None:
+                    # Check if there is a saved value
+                    if __file_feat_id in __fields_flags[__field]['d']:
 
-            # Get Feature internal ID
-            __file_feat_id = __file_feat.GetFID()
+                        # Set value to feature
+                        __file_feat.SetField(
+                            __index, __fields_flags[__field]['d'][__file_feat_id]
+                        )
 
-            # Check if there is a saved value
-            if __file_feat_id in __fields_flags[__field]['d']:
+                    # Go to Next feature
+                    __file_layer.SetFeature(__file_feat)
+                    __file_feat = __file_layer.GetNextFeature()
 
-                # Set value to feature
-                __file_feat.SetField(
-                    __index, __fields_flags[__field]['d'][__file_feat_id]
-                )
-
-            # Go to Next feature
-            __file_layer.SetFeature(__file_feat)
-            __file_feat = __file_layer.GetNextFeature()
-
-        # Delete original field
-        __index = __file_layer.FindFieldIndex(__field, 1)
-        __file_layer.DeleteField(__index)
-
-        # Get new field and rename to original name
-        __index = __file_layer.FindFieldIndex(__field + '_tmp', 1)
-        __file_field = __file_layer_def.GetFieldDefn(__index)
-        __field_n = utils.clean_string(__field).encode('utf-8')
-        __file_field.SetName(__field_n)
-        __file_layer.AlterFieldDefn(
-           __index, __file_field,
-           ogr.ALTER_NAME_FLAG
-        )
+                # Reset pointer
+                __file_layer.ResetReading()
 
     # Close file
     __file_layer.SyncToDisk()
+    __fields_flags = None
     __file_src = None
 
     return __rem_fields, len(__file_feat_rem)
