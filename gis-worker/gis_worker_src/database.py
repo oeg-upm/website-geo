@@ -269,7 +269,7 @@ class WorkerRedis(object):
         self.redis['status'].zadd(
             identifier,
             database + ':' + str(status),
-            str(int(time.time()))
+            str(int(time.time()) + 1)
         )
 
     def save_record_log(self, identifier, database, kind, messages):
