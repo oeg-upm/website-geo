@@ -20,6 +20,7 @@ import crypto
 import shutil
 import zipfile
 import settings
+import traceback
 import unicodedata
 from os.path import splitext
 
@@ -38,7 +39,7 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-config = settings.Config()
+config = settings.config
 
 
 def print_exception(e=None, skip=True):
@@ -46,21 +47,12 @@ def print_exception(e=None, skip=True):
     Method to log exceptions
     """
 
-    timestamp = time.strftime('[%Y-%b-%d %H:%M]')
     if not skip:
         if e is not None:
-            config.error_logger.error(
-                '%s %s %s %s %s\n  %s', timestamp,
-                request.remote_addr, request.method,
-                request.scheme, request.full_path, e
-            )
+            config.error_logger.error(e)
         else:
             tb = traceback.format_exc()
-            config.error_logger.error(
-                '%s %s %s %s %s\n  %s', timestamp,
-                request.remote_addr, request.method,
-                request.scheme, request.full_path, tb
-            )
+            config.error_logger.error(tb)
 
 
 ##########################################################################
@@ -232,6 +224,24 @@ def generate_sha_path(path):
     return __sha
 
 
+def remove_task_path(identifier):
+    """ This function allows you to remove a
+        task from upload folder
+
+    Args:
+        identifier (string): internal task id
+
+    """
+
+    # Create path for task
+    __f = os.path.join(
+        config.upload_folder, identifier
+    )
+
+    # Delete folder if it is necessary
+    shutil.rmtree(__f, ignore_errors=True)
+
+
 def parse_path(path):
     """ This function allows you to parse a path.
 
@@ -273,8 +283,27 @@ def clean_string(string):
 
     """
 
-    uni_value = string.decode("utf-8")
-    form = unicodedata.normalize('NFKD', uni_value)
+    __string = string.decode("utf-8")
+    __form = unicodedata.normalize('NFKD', __string)
     return re.sub(r'[^a-zA-Z0-9]', '', u"".join(
-        [c for c in form if not unicodedata.combining(c)]
+        [c for c in __form if not unicodedata.combining(c)]
     )).lower()
+
+
+def uppercase_words(string):
+    """ This function allows you to convert
+        a specific string to uppercase (only words)
+
+    Args:
+        string (string): value to be parsed
+
+    Returns:
+        string: parsed value
+
+    """
+
+    __string = string.decode("utf-8")
+    __form = unicodedata.normalize('NFKD', __string)
+    return "".join(w.title() for w in re.compile(
+        "[^a-zA-Z0-9]+"
+    ).split(__form))
