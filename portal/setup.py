@@ -46,7 +46,7 @@ setup(
     install_requires=[
         'Flask', 'flask_negotiate', 'python-dateutil',
         'requests', 'user-agents', 'pycrypto', 'urllib3',
-        'gevent', 'gunicorn', 'rdflib-jsonld'
+        'gevent', 'gunicorn', 'rdflib-jsonld', 'ontospy'
     ],
     classifiers=[],
     scripts=['portal.py']

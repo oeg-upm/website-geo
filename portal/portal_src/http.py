@@ -17,8 +17,8 @@ import sys
 import json
 import uuid
 import time
-import crypto
 import random
+import crypto
 import settings
 import user_agents
 from datetime import datetime
@@ -39,7 +39,7 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-config = settings.Config()
+config = settings.config
 cookie_language = '_geo_portal_lang'
 cookie_user = '_geo_portal_usr_id'
 cookie_token = '_geo_portal_usr_token'

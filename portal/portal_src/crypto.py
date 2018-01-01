@@ -19,9 +19,9 @@ import hmac
 import json
 import base64
 import random
+import settings
 import requests
 import datetime
-import settings
 import traceback
 from Crypto.Cipher import AES
 from Crypto.Hash import MD5, SHA256
@@ -41,7 +41,7 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-config = settings.Config()
+config = settings.config
 
 
 def print_exception(e=None, skip=True):

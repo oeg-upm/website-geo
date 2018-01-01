@@ -17,7 +17,9 @@ import os
 import sys
 import json
 import shutil
+import threading
 import logging.handlers
+from ontospy import Ontospy
 
 if sys.version_info < (3, 0):
     reload(sys)
@@ -34,19 +36,20 @@ __email__ = "alejfcarrera@mail.ru"
 ##########################################################################
 
 
-class Singleton(type):
+class Singleton(object):
 
-    def __call__(cls, *args, **kwargs):
-        try:
-            return cls.__instance
-        except AttributeError:
-            cls.__instance = super(Singleton, cls).__call__(*args, **kwargs)
-            return cls.__instance
+    _instance = None
+    _lock = threading.RLock()
 
-
-class Config(object):
-    __metaclass__ = Singleton
-
+    @staticmethod
+    def get_instance():
+        if Singleton._instance is None:
+            Singleton._lock.acquire()
+            if Singleton._instance is None:
+                Singleton._instance = Singleton()
+            Singleton._lock.release()
+        return Singleton._instance
+    
     def __init__(self):
 
         def check_upload_folder(path):
@@ -72,6 +75,29 @@ class Config(object):
                         'Check the upload folder: ' + path
                     )
                 return True
+
+        def get_configuration_semantic():
+            """ This function iterates over all the declared namespaces
+                and get the object from ontologies
+
+            Returns:
+                dict: configuration ontologies.
+
+            """
+
+            # Create structure for ontologies
+            __onto = {}
+
+            # Iterate over namespaces
+            for __ns in self.semantic_ns:
+
+                # Optional link
+                if 'link' in __ns:
+                    __onto[__ns['name']] = Ontospy(__ns['link'])
+                else:
+                    __onto[__ns['name']] = Ontospy(__ns['url'])
+
+            return __onto
 
         def get_configuration_file():
             """ This function allows you to load a configuration from file.
@@ -161,6 +187,11 @@ class Config(object):
         self.redis_cache = settings['redis_cache']
         self.redis_worker = settings['redis_worker']
 
+        # SEMANTIC CONFIGURATION
+        self.semantic_ns = settings['namespaces']
+        self.semantic_nsd = {k['name']: k['url'] for k in self.semantic_ns}
+        self.semantic_nso = get_configuration_semantic()
+
         # TRANSLATIONS
         self.translations = get_configuration_translations()
 
@@ -195,3 +226,76 @@ class Config(object):
         self.error_logger.addHandler(error_logger_handler)
         internal_logger = logging.getLogger('werkzeug')
         internal_logger.disabled = True
+
+        Singleton._instance = self
+
+    def check_rdf_property(self, uri_predicate, type_object):
+        """ This function allows you to check if URI
+            of the predicate and object are good. Also,
+            it searches if the namespace is known.
+
+        Args:
+            self (Singleton): configuration object
+            uri_predicate (string): predicate's URI
+            type_object (string): object's URI
+
+        Returns:
+            bool: True if everything was good or
+                False otherwise
+
+        """
+
+        # Set namespaces
+        __ns_known = None
+
+        # Iterate over namespaces
+        for __ns in self.semantic_nsd.keys():
+            if not uri_predicate.startswith('http'):
+                if uri_predicate.startswith(__ns + ':'):
+                    __ns_known = __ns
+                    break
+            else:
+                if uri_predicate.startswith(
+                    self.semantic_nsd[__ns]
+                ):
+                    __ns_known = __ns
+                    break
+
+        # Returns the same because we need to
+        # trust on the user knowledge
+        if __ns_known is None:
+            return uri_predicate.startswith('http')
+
+        # Get property from ontology
+        __predicate = uri_predicate
+        if not uri_predicate.startswith('http'):
+            __predicate = __predicate.replace(
+                __ns_known + ':',
+                self.semantic_nsd[__ns_known]
+            )
+        __p = self.semantic_nso[__ns_known].getProperty(
+            uri=__predicate
+        )
+
+        # Check if the property exists
+        if __p is None:
+            return False
+
+        # Check if range exists
+        if not len(__p.ranges) and \
+           type_object == 'rdfs:Literal':
+            return True
+
+        # Iterate over the ranges
+        for __r in __p.ranges:
+
+            # Check if type is good
+            if __r.qname == type_object:
+                return True
+
+        return False
+
+    lockPrint = threading.Lock()
+
+
+config = Singleton.get_instance()
