@@ -17,6 +17,7 @@ import os
 import sys
 import utils
 import settings
+from datetime import datetime
 from dateutil.parser import parse
 from subprocess import Popen, PIPE
 
@@ -883,21 +884,27 @@ class WorkerGIS(object):
         # Execute OGR
         __g_info = cmd_ogr2ogr(__command)
 
-        # Detect if there were any errors
-        if len(__g_info['error']):
+        # Generate header of messages
+        __header = 'GDAL transformation - ' + \
+            datetime.now().strftime('%Y-%m-%d %H:%M') + '\n'
+
+        # Get messages from transformation
+        __transform_error = len(__g_info['error'])
+        __transform_warn = len(__g_info['warn'])
+
+        # Check if there are some errors
+        if __transform_error:
             __g_info['error'][-1] += '\n'
-            __g_info['error'] = [
-                'GDAL transformation\n'
-            ] + __g_info['error']
+            __g_info['error'] = [__header] + \
+                __g_info['error']
             return __g_info, None, \
                 None, None, None
 
-        # Detect warnings
-        if len(__g_info['warn']):
+        # Check if there are some warnings
+        if __transform_warn:
             __g_info['warn'][-1] += '\n'
-            __g_info['warn'] = [
-                'GDAL transformation\n'
-            ] + __g_info['warn']
+            __g_info['warn'] = [__header] + \
+                __g_info['warn']
 
         # Get all nodes from directory
         __path_files = os.listdir(__path_shp)
@@ -974,13 +981,21 @@ class WorkerGIS(object):
                     if os.path.isfile(__path_delete):
                         os.remove(__path_delete)
 
-                # Join error messages if they exist
+                # Check if there are some errors
                 if len(__gi_info['error']):
                     if __path_rev_i < len(__layers_name) - 1:
                         __gi_info['error'][-1] += '\n'
-                    __g_info['error'] += [
+
+                    # Check if header is present
+                    if not __transform_error:
+                        __g_info['error'] = [__header] + \
+                            __g_info['error']
+                        __transform_error = True
+
+                    # Add error messages
+                    __g_info['error'].append(
                         'Layer - ' + __layers_name[__path_rev_i] + '\n'
-                    ]
+                    )
                     __g_info['error'] += __gi_info['error']
 
                 # Next file
@@ -989,16 +1004,25 @@ class WorkerGIS(object):
             # Validate and save messages
             __raw_validate_info, __rem_features = \
                 self.validate_fields(__path_rev)
+
+            # Check if there are some warnings
             if len(__raw_validate_info):
                 if __path_rev_i < len(__layers_name) - 1:
                     __raw_validate_info[-1] += '\n'
-                __raw_validate_info = [
+
+                # Check if header is present
+                if not __transform_warn:
+                    __g_info['warn'] = [__header] + \
+                        __g_info['warn']
+                    __transform_warn = True
+
+                # Add warning messages
+                __g_info['warn'].append(
                     'Layer - ' + __layers_md5[
                         __layers_name[__path_rev_i]
                     ] + ' - ' + __layers_name[
                         __path_rev_i
-                    ] + '\n'
-                ] + __raw_validate_info
+                    ] + '\n')
                 __g_info['warn'] += __raw_validate_info
 
             # # Get updated information from GDAL if
@@ -1020,14 +1044,12 @@ class WorkerGIS(object):
             __raw_layer_info = __gi_info['info']
             if __path_rev_i < len(__layers_name) - 1:
                 __raw_layer_info[-1] += '\n'
-            __raw_layer_info = [
+            __layers_info['raw'].append([
                 'Layer - ' + __layers_md5[
                     __layers_name[__path_rev_i]
                 ] + ' - ' + __layers_name[
                     __path_rev_i
-                ] + '\n'
-            ] + __raw_layer_info
-            __layers_info['raw'].append(__raw_layer_info)
+                ] + '\n'] + __raw_layer_info)
             __layers_info['info'].append(__gi_info['info_values'])
 
             # Get information about new and old fields
@@ -1039,17 +1061,21 @@ class WorkerGIS(object):
                 __raw_fields_info = __raw_fields_info['info']
                 if __path_rev_i < len(__layers_name) - 1:
                     __raw_fields_info[-1] += '\n'
-                __raw_fields_info = [
+                __layers_fields_info['raw'].append([
                     'Layer - ' + __layers_md5[
                         __layers_name[__path_rev_i]
                     ] + ' - ' + __layers_name[
                         __path_rev_i
-                    ] + '\n'
-                ] + __raw_fields_info
-                __layers_fields_info['raw'].append(__raw_fields_info)
+                    ] + '\n'] + __raw_fields_info)
 
         # Check if file is empty
         if len(__layers_md5) == len(__paths_index_delete):
+
+            # Check if header is present
+            if not __transform_error:
+                __g_info['error'] = [__header] + \
+                    __g_info['error']
+
             __g_info['error'].append(
                 'An error has occurred in the included files. '
                 'Please ensure that the file contains geometries '

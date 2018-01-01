@@ -544,7 +544,7 @@ def init_mapping(identifier, logger):
                 # Save error messages
                 if len(__o_info['messages']['error']):
                     __redis.save_record_log(
-                        identifier, 'mapping-i', 'error',
+                        identifier, 'error',
                         __o_info['messages']['error']
                     )
 
@@ -562,7 +562,7 @@ def init_mapping(identifier, logger):
                 for __k in settings.kind_logs:
                     if len(__o_info['messages'][__k]):
                         __redis.save_record_log(
-                            identifier, 'mapping-i', __k,
+                            identifier, __k,
                             __o_info['messages'][__k]
                         )
 

@@ -141,11 +141,12 @@ class WorkerRedis(object):
         # Execute method to create new instance of Redis - Worker
         # 0) tasks - Control about lock / unlock tasks
         # 1) status - Status about finished tasks
-        # 2) files - Information about files from tasks
-        # 3) mapping-i - Initial mapping
-        # 4) mapping-i-m - Initial mapping messages
-        # 5) mapping-e - Extended mapping
-        # 6) mapping-e-m - Extended mapping messages
+        # 2) messages - Messages with information (backtrace)
+        # 3) files - Information about files from tasks
+        # 4) mapping-i - Initial mapping
+        # 5) mapping-v - Validation mapping
+        # 6) mapping-s - Semantic mapping
+        # 7) mapping-e - Extended mapping
         self.redis = configure_redis(config.redis_worker)
 
     def get_information(self, identifier):
@@ -192,8 +193,7 @@ class WorkerRedis(object):
         """
 
         # Remove any other trace
-        __databases = [mapping, mapping + '-m']
-        for __d in __databases:
+        for __d in [mapping, 'messages']:
             for __k in self.redis[__d].scan_iter(identifier + '*'):
                 self.redis[__d].delete(__k)
 
@@ -266,18 +266,15 @@ class WorkerRedis(object):
         """
 
         # Save new status on the database
-        self.redis['status'].zadd(
-            identifier,
-            database + ':' + str(status),
-            str(int(time.time()) + 1)
+        self.redis['status'].rpush(
+            identifier, database + ':' + str(status)
         )
 
-    def save_record_log(self, identifier, database, kind, messages):
+    def save_record_log(self, identifier, kind, messages):
         """ This function allows to save the status of the task.
 
         Args:
             identifier (string): key where save information
-            database (string): identifier of db
             kind (string): kind of logger
             messages (list): info messages returned from task
 
@@ -285,11 +282,6 @@ class WorkerRedis(object):
 
         # Set dash for new identifier
         __kind = '-' + kind
-
-        # Remove previous messages
-        self.redis[database + '-m'].delete(
-            identifier + __kind
-        )
 
         # Create new structure of messages
         __messages = [
@@ -300,7 +292,7 @@ class WorkerRedis(object):
 
         # Save structure
         for __message in __messages:
-            self.redis[database + '-m'].rpush(
+            self.redis['messages'].rpush(
                 identifier + __kind, __message
             )
 
