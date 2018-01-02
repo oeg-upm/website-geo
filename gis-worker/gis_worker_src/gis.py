@@ -250,6 +250,87 @@ def parse_ogr_value(value, kind):
         return parse_ogr_number(value)
 
 
+def extend_ogr_fields(path, fields):
+    """ This function checks the fields
+        of specific Geo-spatial file.
+
+    Args:
+        path (string): file's path
+        fields (dict): fields' information
+
+    Returns:
+        dict: extended info of fields
+
+    """
+
+    # Get information from path
+    __path = utils.parse_path(path)
+
+    # Get kind of file depending on final extension
+    __driver = get_ogr_driver(__path['extension'])
+
+    # Get names of fields
+    __fields = fields.keys()
+
+    # Create structure for values
+    __fields_values = {}
+
+    # Get layer from OGR Tools to check if
+    # there is any field is null or empty, so
+    # must be deleted, this file is opened as
+    # DataSource Read-Write (1)
+    from osgeo import ogr
+    __file = ogr.GetDriverByName(__driver)
+    __file_src = __file.Open(path, 1)
+    __file_layer = __file_src.GetLayer()
+
+    # Iterate over features of the layer
+    __file_feat = __file_layer.GetNextFeature()
+
+    while __file_feat is not None:
+
+        # Iterate over fields
+        for __field in __fields:
+
+            # Check if field info is saved (first time)
+            if __field not in __fields_values:
+                __fields_values[__field] = {
+                    'd': False, 'v': []
+                }
+
+            # Check if field is marked as duplicate
+            if __fields_values[__field]['d']:
+                continue
+
+            # Get real index
+            __index = __file_feat.GetFieldIndex(__field)
+
+            # Get value from field
+            __value = __file_feat.GetField(__index)
+
+            # Check if value is already inserted
+            if __value in __fields_values[__field]['v']:
+                __fields_values[__field]['d'] = True
+                continue
+            else:
+                __fields_values[__field]['v'].append(__value)
+
+        # Go to Next feature
+        __file_feat = __file_layer.GetNextFeature()
+
+    # Close file
+    __file_src = None
+
+    # Remove values to clean memory
+    # and re-structure dictionary
+    for __field in __fields_values.keys():
+        del __fields_values[__field]['v']
+        __fields_values[__field] = \
+            __fields_values[__field]['d']
+
+    return __fields_values
+
+
 def validate_ogr_fields(path, fields):
     """ This function checks the fields
         of specific Geo-spatial file.
@@ -284,11 +365,15 @@ def validate_ogr_fields(path, fields):
 
     # Create structure for remove features
     __file_feat_rem = []
+    __file_feat_count = 0
 
     # Iterate over features of the layer
     __file_feat = __file_layer.GetNextFeature()
 
     while __file_feat is not None:
+
+        # Set count
+        __file_feat_count += 1
 
         # Get Feature internal ID
         __file_feat_id = __file_feat.GetFID()
@@ -308,13 +393,7 @@ def validate_ogr_fields(path, fields):
 
             # Check if field info is saved (first time)
             if __field not in __fields_flags:
-                __fields_flags[__field] = {'b': False, 'd': {}}
-
-            # Check if field has at least one value and it is not
-            # necessary to check all the values of that column
-            if __fields_flags[__field]['b'] and \
-               not len(__fields_flags[__field]['d']):
-                continue
+                __fields_flags[__field] = {'v': {}}
 
             # Get real index
             __index = __file_feat.GetFieldIndex(__field)
@@ -330,35 +409,29 @@ def validate_ogr_fields(path, fields):
             # Check if original value is valid
             if __field_v is not None:
 
-                # Set Flag to not be deleted
-                __fields_flags[__field]['b'] = True
-
                 # Get original kind of field
                 __field_k = __file_feat.GetFieldType(__index)
 
                 # Parse value and kind to verify them
                 __field_info = parse_ogr_value(__field_v, __field_k)
 
+                # Save value to dictionary
+                __fields_flags[__field]['v'][__file_feat_id] = \
+                    __field_info['value']
+
                 # Check if real and ogr types are different
                 if __field_k != __field_info['ogr']:
 
-                    # Check if there is more than one type
-                    # on the same column, big mistake
-                    if 't' in __fields_flags[__field] and \
-                       __fields_flags[__field]['t']['new'] != \
-                       __field_info['ogr']:
-                        __fields_flags[__field]['d'] = {}
-                        continue
-
-                    elif 't' not in __fields_flags[__field]:
-                        __fields_flags[__field]['t'] = {
-                            'old': __field_k,
-                            'new': __field_info['ogr']
-                        }
-
-                    # Save data to create new column
-                    __fields_flags[__field]['d'][__file_feat_id] = \
-                        __field_info['value']
+                    # Check if column has more than one type
+                    if 't' in __fields_flags[__field]:
+                        if __fields_flags[__field]['t'] == 'invalid':
+                            continue
+                        elif __fields_flags[__field]['t'] != \
+                                __field_info['ogr']:
+                            __fields_flags[__field]['t'] = 'invalid'
+                            continue
+                    else:
+                        __fields_flags[__field]['t'] = __field_info['ogr']
 
         # Go to Next feature
         __file_feat = __file_layer.GetNextFeature()
@@ -387,19 +460,26 @@ def validate_ogr_fields(path, fields):
         # Index of the field
         __index = __file_layer.FindFieldIndex(__field, 1)
 
-        # Remove empty fields
-        if not __fields_flags[__field]['b']:
+        # Calculate filled values
+        __filled = float(len(__fields_flags[__field]['v'])) / \
+            float(__file_feat_count)
+
+        # Remove empty fields or less 1% filled
+        if len(__fields_flags[__field]['v']) == 0 or __filled < 0.01:
             __file_layer.DeleteField(__index)
             __rem_fields.append(__field)
 
-        # Rename to lowercase non-empty fields
+        # Rename or change type of column
         else:
 
             # Generate cleaned field's name
             __field_n = utils.clean_string(__field).encode('utf-8')
 
             # Check if field needs to be renamed
-            if not len(__fields_flags[__field]['d']):
+            if 't' not in __fields_flags[__field] or (
+                't' in __fields_flags[__field] and
+                __fields_flags[__field]['t'] == 'invalid'
+            ):
 
                 # Clean name of the field
                 __file_field = __file_layer_def.GetFieldDefn(__index)
@@ -419,8 +499,7 @@ def validate_ogr_fields(path, fields):
 
                 # Create new field
                 __file_layer.CreateField(ogr.FieldDefn(
-                    __field_n,
-                    __fields_flags[__field]['t']['new']
+                    __field_n, __fields_flags[__field]['t']
                 ))
 
                 # Index of the new field
@@ -434,11 +513,11 @@ def validate_ogr_fields(path, fields):
                     __file_feat_id = __file_feat.GetFID()
 
                     # Check if there is a saved value
-                    if __file_feat_id in __fields_flags[__field]['d']:
+                    if __file_feat_id in __fields_flags[__field]['v']:
 
                         # Set value to feature
                         __file_feat.SetField(
-                            __index, __fields_flags[__field]['d'][__file_feat_id]
+                            __index, __fields_flags[__field]['v'][__file_feat_id]
                         )
 
                     # Go to Next feature
@@ -527,7 +606,7 @@ def set_centroids(path):
     __file_layer = __file_src.GetLayer()
 
     # Add field to layer
-    __file_field = ogr.FieldDefn('centroid', ogr.OFTString)
+    __file_field = ogr.FieldDefn('geometry_c', ogr.OFTString)
     __file_layer.CreateField(__file_field)
 
     # Iterate over features of the layer
@@ -541,68 +620,14 @@ def set_centroids(path):
         __file_cent = __file_geom.Centroid().ExportToWkt()
 
         # Save value at new field
-        __file_feat.SetField('centroid', __file_cent)
+        __file_feat.SetField('geometry_c', __file_cent)
         __file_layer.SetFeature(__file_feat)
         
         # Next feature
         __file_feat = __file_layer.GetNextFeature()
 
     # Close file
-    __file_layer.SyncToDisk()
-    __file_src = None
-
-
-def set_areas(path):
-    """ This function calculates the area
-        for geometries of specific Geo-spatial
-        file and save them on the same file.
-
-    Args:
-        path (string): file's path
-
-    """
-
-    # Get information from path
-    __path = utils.parse_path(path)
-
-    # Get kind of file depending on final extension
-    __driver = get_ogr_driver(__path['extension'])
-
-    # Get layer from OGR Tools to check if
-    # there is any field is null or empty, so
-    # must be deleted, this file is opened as
-    # DataSource Read-Write (1)
-    from osgeo import ogr
-    __file = ogr.GetDriverByName(__driver)
-    __file_src = __file.Open(path, 1)
-    __file_layer = __file_src.GetLayer()
-
-    # Add field to layer
-    __file_field = ogr.FieldDefn('area', ogr.OFTReal)
-    __file_field.SetWidth(32)
-    __file_field.SetPrecision(2)
-    __file_layer.CreateField(__file_field)
-
-    # Iterate over features of the layer
-    __file_feat = __file_layer.GetNextFeature()
-    while __file_feat is not None:
-
-        # Get Geometry
-        __file_geom = __file_feat.GetGeometryRef()
-
-        # Get area value
-        __file_cent = __file_geom.GetArea() 
-
-        # Save value at new field
-        __file_feat.SetField('area', __file_cent)
-
-        # Save feature at layer
-        __file_layer.SetFeature(__file_feat)
-        
-        # Next feature
-        __file_feat = __file_layer.GetNextFeature()
-
-    # Close file
+    __file_layer.ResetReading()
     __file_layer.SyncToDisk()
     __file_src = None
 
@@ -1030,15 +1055,11 @@ class WorkerGIS(object):
             if __rem_features > 0:
                 __gi_info = self.get_info(__path_rev)
 
-            # Generate centroid and Area if Geometry
-            # is kind of Polygon
+            # Generate centroid if is a Polygon
             if __gi_info['info_values']['geometry'] == 'Polygon':
 
                 # Execute centroids generation
                 set_centroids(__path_rev)
-
-                # Execute area generation
-                set_areas(__path_rev)
 
             # Save layers' information
             __raw_layer_info = __gi_info['info']
@@ -1052,12 +1073,13 @@ class WorkerGIS(object):
                 ] + '\n'] + __raw_layer_info)
             __layers_info['info'].append(__gi_info['info_values'])
 
-            # Get information about new and old fields
-            __raw_fields_info = self.get_fields(__path_rev)
+            # Get information about new information fields
+            __raw_fields_info = self.get_fields(__path_rev, False, True)
             if len(__raw_fields_info['info']):
-                __layers_fields_info['info'].append(
-                    __raw_fields_info['info_values']
-                )
+                __layers_fields_info['info'].append({
+                    'values': __raw_fields_info['info_values'],
+                    'dup': __raw_fields_info['info_extended']
+                })
                 __raw_fields_info = __raw_fields_info['info']
                 if __path_rev_i < len(__layers_name) - 1:
                     __raw_fields_info[-1] += '\n'
@@ -1233,13 +1255,14 @@ class WorkerGIS(object):
 
         return __log_messages, __rem_features
 
-    def get_fields(self, path, inc_layers=False):
+    def get_fields(self, path, inc_layers=False, extend=False):
         """ This function allows to get fields' information
             from specific file thanks to GDAL tools.
 
         Args:
             path (string): file's path
             inc_layers (bool): flag to include layers' name
+            extend (bool): flag to include extended info
 
         Returns:
             dict: information about the outputs
@@ -1262,8 +1285,10 @@ class WorkerGIS(object):
             and 'Extent: (' not in __o
         ]
 
-        # Check if layers name must be included
+        # Check if layers must be included
         if not inc_layers:
+
+            # Remove layer name from info
             __info['info'] = [
                 __o for __o in __info['info']
                 if 'Layer name:' not in __o
@@ -1293,6 +1318,13 @@ class WorkerGIS(object):
 
                 # Save field structure
                 __values[__field_name] = __field_type
+
+            # Check if extended information
+            if extend:
+
+                # Get extra information
+                __info['info_extended'] = \
+                    extend_ogr_fields(path, __values)
 
             # Save structure
             __info['info_values'] = __values

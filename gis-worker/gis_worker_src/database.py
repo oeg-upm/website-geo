@@ -238,7 +238,7 @@ class WorkerRedis(object):
         Args:
             identifier (string): key where save information
             layers (list): transformed files' names
-            layers_fields (list): transformed files' fields
+            layers_fields (dict): transformed files' fields
 
         """
 
@@ -248,12 +248,18 @@ class WorkerRedis(object):
             # Get identifier of layer
             __layer = layers[__k]
 
-            # Set layer fields
-            self.redis['mapping-i'].hmset(
-                identifier + ':layer:' +
-                __layer + ':fields',
-                layers_fields[__k]
-            )
+            # Iterate over fields
+            for __f in layers_fields[__k]['values']:
+
+                # Generate value
+                __v = layers_fields[__k]['values'][__f] + \
+                    ' - ' + str(int(layers_fields[__k]['dup'][__f]))
+
+                # Save field on database
+                self.redis['mapping-i'].hset(
+                    identifier + ':layer:' + __layer,
+                    __f, __v
+                )
 
     def save_record_status(self, identifier, database, status):
         """ This function allows to save the status of the task.
