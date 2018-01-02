@@ -474,6 +474,14 @@ def validate_ogr_fields(path, fields):
 
             # Generate cleaned field's name
             __field_n = utils.clean_string(__field).encode('utf-8')
+            
+            # Check if name is authorized
+            if __field_n == 'geometry_c' or __field_n == 'geometry':
+                __n = 0
+                __field_n = __field_n[:-2] + str(__n)
+                while __field_n in __sorted_fields:
+                    __field_n = __field_n[:-1] + str(__n)
+                    __n += 1
 
             # Check if field needs to be renamed
             if 't' not in __fields_flags[__field] or (
