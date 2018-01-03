@@ -270,13 +270,44 @@ def parse_path(path):
     }
 
 
-def clean_string(string):
+def clean_predicate(string):
+    """ This function allows you to remove
+        latin characters and spaces or bad chars
+        from any string.
+
+    Args:
+        string (string): predicate to be parsed
+
+    Returns:
+        string: parsed value
+
+    """
+
+    # Check if predicate has prefix
+    if ':' in string:
+
+        # Split the string
+        __string = string.split(':')
+
+        # Check string
+        if len(__string) != 2:
+            return None
+
+        return clean_string(__string[0]) + ':' + \
+            clean_string(__string[1], False)
+
+    else:
+        return None
+
+
+def clean_string(string, lower=True):
     """ This function allows you to remove
         latin characters and spaces or bad chars
         from any string.
 
     Args:
         string (string): value to be parsed
+        lower (bool): flag for lowering string
 
     Returns:
         string: parsed value
@@ -285,9 +316,10 @@ def clean_string(string):
 
     __string = string.decode("utf-8")
     __form = unicodedata.normalize('NFKD', __string)
-    return re.sub(r'[^a-zA-Z0-9]', '', u"".join(
+    __form = re.sub(r'[^a-zA-Z0-9]', '', u"".join(
         [c for c in __form if not unicodedata.combining(c)]
-    )).lower()
+    ))
+    return __form.lower() if lower else __form
 
 
 def uppercase_words(string):
