@@ -52,9 +52,9 @@
 				<div id="picture">
 					<div>
 						{% if 'picture' not in info %}
-						<img id="input-picture-img" src="">
+						<img id="input-picture-img" src="" alt="{{ headers.translations.profile_picture}}">
 						{% else %}
-						<img id="input-picture-img" src="{{ info.picture }}">
+						<img id="input-picture-img" src="{{ info.picture }}" alt="{{ headers.translations.profile_picture}}">
 						{% endif %}
 						<i class="fa fa-picture-o" aria-hidden="true"></i>
 					</div>

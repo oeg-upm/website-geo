@@ -23,7 +23,7 @@
 }
 
 .div-container > #div-details > form > p.title {
-    text-align: justify;
+    text-align: left;
     font-size: 14px;
     border-bottom: 1px solid #BBB;
     font-weight: 600;
@@ -85,7 +85,7 @@
     box-shadow: none;
     color: #1d5995;
     border: 1px solid #1d5995;
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .div-container > #div-details > form > div > input {
@@ -185,6 +185,15 @@
 
 /* ################################################################## */
 
+@media (min-width: 375px) {
+
+    .div-container > #div-details > form > div > input,
+    .div-container > #div-details > form > div > textarea {
+        font-size: 14px;
+    }
+
+}
+
 @media (min-width: 414px) {
 
     .div-container > #div-details {
@@ -226,6 +235,11 @@
 
     .div-container > #div-details > form > div {
         max-width: none;
+    }
+
+    .div-container > #div-details > form > div > input,
+    .div-container > #div-details > form > div > textarea {
+        font-size: 16px;
     }
 
     .div-container > #div-details > form > #picture {
