@@ -273,11 +273,25 @@ def generate_render(html_name, headers, values=None, status=200):
     # Set new values to jinja arguments
     __values = {} if values is None else values.copy()
     __values['headers'] = {
-        'session': headers, 'tokens': config.keys,
-        'debug': config.debug, 'time': datetime.utcnow(),
+        'session': headers,
+        'tokens': config.keys,
+        'debug': config.debug,
         'translations': config.translations[__locale],
         'domain': config.flask_host
     }
+
+    # Generate current date
+    __time = datetime.utcnow()
+    __date = {
+        'year': __time.year,
+        'month': str(__time.month),
+        'day': str(__time.day)
+    }
+    if len(__date['month']) == 1:
+        __date['month'] = '0' + __date['month']
+    if len(__date['day']) == 1:
+        __date['day'] = '0' + __date['day']
+    __values['headers']['time'] = __date
 
     # Check if error is present
     if 'error' not in __values:
