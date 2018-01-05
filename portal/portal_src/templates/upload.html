@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block head_css %}
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload.min.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload_bar.min.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload_file.min.css')}}"/>
 {% endblock %}
 {% block head_js %}
 <script type="text/javascript">var fileSize={{ file_size }};</script>
@@ -9,7 +10,7 @@
 {% block content %}
 <div class="div-container y-centered">
     <div id="breadcrumb">
-        <div class="step marked active elements-row y-centered">
+        <div class="step active elements-row y-centered">
             <p class="counter">1</p>
             <p>{{ headers.translations.upload_step_one }}</p>
         </div>
@@ -29,8 +30,8 @@
     <div id="file-zone">
         <form id="file-form" class="flex" action="/upload" method="POST" enctype="multipart/form-data">
             <div id="file">
-                <div id="file-kind">
-                    <p>{{ headers.translations.upload_kind_file }}</p>
+                <fieldset id="file-kind">
+                    <legend>{{ headers.translations.upload_kind_file }}</legend>
                     <label for="file-shp">
                         <input class="file-radio" type="radio" id="file-shp" name="file-kind" value="shp" checked/>
                         <p>Shapefile (.shp)</p>
@@ -47,7 +48,7 @@
                         <input class="file-radio" type="radio" id="file-csv" name="file-kind" value="csv"/>
                         <p>Comma-Separated Values (.csv)</p>
                     </label>
-                </div>
+                </fieldset>
                 <div id="file-container">
                     <p>{{ headers.translations.upload_chooser }}</p>
                     <label for="file-chooser">
@@ -66,6 +67,5 @@
             </div>
         </form>
     </div>
-
 </div>
 {% endblock %}

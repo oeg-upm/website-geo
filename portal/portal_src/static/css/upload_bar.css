@@ -1,0 +1,155 @@
+/*
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Ontology Engineering Group
+        http://www.oeg-upm.net/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Copyright (C) 2017 Ontology Engineering Group.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  GeoLinkeddata Open Data Portal is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
+/* ################################################################## */
+
+#main-container {
+    background-color: #f9f9f9;
+}
+
+#main-container .div-container {
+    height: 100%;
+    min-height: 540px;
+    margin-bottom: 40px;
+}
+
+#breadcrumb {
+    width: 92%;
+    display: inline-block;
+    overflow: hidden;
+    border-radius: 8px;
+    background: white;
+    height: 176px;
+    border: 2px solid #BBB;
+    margin-top: 40px;
+}
+
+#breadcrumb > .step {
+    width: 100%;
+    float: left;
+    height: 44px;
+    border-bottom: 2px solid #BBB;
+}
+
+#breadcrumb > .step:after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    width: 20px;
+    height: 20px;
+    transform: rotate(135deg);
+    background: white;
+    box-shadow: 3px -3px 0 0 #BBB;
+    border-radius: 0 2px 0 100%;
+    z-index: 1000;
+    bottom: -8px;
+}
+
+#breadcrumb > .step:last-child {
+    content: none;
+}
+
+#breadcrumb > .step.marked:after {
+    background: #e8f1fc;
+}
+
+#breadcrumb > .step.marked {
+    background: #e8f1fc;
+}
+
+#breadcrumb > .step.active {
+    font-weight: 600;
+    display: -webkit-box;
+	display: -webkit-flex;
+	display: -ms-flexbox;
+	display: flex;
+}
+
+#breadcrumb > .step > p {
+	line-height: 1.5;
+    display: block;
+    float: left;
+}
+
+#breadcrumb > .step > .counter {
+	font-size: 12px;
+    line-height: 1.5;
+    width: 18px;
+    padding: 0;
+    text-align: center;
+    border-radius: 50%;
+    background-color: white;
+    height: 18px;
+    border: 1px solid #BBB;
+    margin: 0 21px;
+}
+
+#breadcrumb > .step.active > p {
+    color: #595959;
+}
+
+#breadcrumb > .step.active > .counter {
+    border: 2px solid #BBB;
+    margin: 0 20px;
+}
+
+/* ################################################################## */
+
+@media (min-width: 375px) {
+
+    #breadcrumb {
+        width: 90%;
+    }
+
+}
+
+@media (min-width: 768px) {
+
+    #breadcrumb {
+        height: 44px;
+    }
+
+    #breadcrumb > .step {
+        width: 25%;
+        border: none;
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+    }
+
+    #breadcrumb > .step:after {
+        right: -10px;
+        width: 44px;
+        height: 44px;
+        transform: rotate(45deg);
+        bottom: 0;
+    }
+
+    #breadcrumb > .step > .counter,
+    #breadcrumb > .step.active > .counter {
+        margin: 0 10px 0 0;
+    }
+
+}
+
+@media (min-width: 1024px) {
+
+    #main-container > .div-container {
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        margin-bottom: 0;
+    }
+
+}

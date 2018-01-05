@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% block head_css %}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload_bar.min.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/upload_status.min.css')}}"/>
+{% endblock %}
+{% block head_js %}
+<script type="text/javascript" src="{{url_for('static', filename='js/upload_status.min.js')}}"></script>
+{% endblock %}
+{% block content %}
+<div class="div-container y-centered">
+    <div id="breadcrumb">
+        {% if task_current_code == 0 %}
+        <div class="step active elements-row y-centered">
+        {% else %}
+        <div class="step marked elements-row y-centered">
+        {% endif %}
+            <p class="counter">1</p>
+            <p>{{ headers.translations.upload_step_one }}</p>
+        </div>
+        {% if task_current_code == 1 %}
+        <div class="step active elements-row y-centered">
+        {% elif task_current_code > 1 %}
+        <div class="step marked elements-row y-centered">
+        {% else %}
+        <div class="step elements-row y-centered">
+        {% endif %}
+            <p class="counter">2</p>
+            <p>{{ headers.translations.upload_step_two }}</p>
+        </div>
+        {% if task_current_code == 2 %}
+        <div class="step active elements-row y-centered">
+        {% elif task_current_code > 2 %}
+        <div class="step marked elements-row y-centered">
+        {% else %}
+        <div class="step elements-row y-centered">
+        {% endif %}
+            <p class="counter">3</p>
+            <p>{{ headers.translations.upload_step_three }}</p>
+        </div>
+        {% if task_current_code == 3 %}
+        <div class="step active elements-row y-centered">
+        {% else %}
+        <div class="step elements-row y-centered">
+        {% endif %}
+            <p class="counter">4</p>
+            <p>{{ headers.translations.upload_step_four }}</p>
+        </div>
+    </div>
+    <div id="file-status" class="x-centered y-centered">
+        {% if task_current_status == 'upload' %}
+        <div class="message-waiting">
+            <i class="fa fa-cogs"></i>
+            <h3>{{ headers.translations.upload_waiting }}</h3>
+        </div>
+        {% else %}
+        <div class="message-status">
+            <p class="title">{{ headers.translations.upload_process }}</p>
+            {% if task_current_status == 'mapping-i:1' %}
+            <i class="fa fa-hand-paper-o" aria-hidden="true"></i>
+            <h3>{{ headers.translations.upload_status_0 }}</h3>
+            <form id="file-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="delete">
+                <input class="delete" value="{{ headers.translations.button_upload_again }}" type="submit">
+            </form>
+            {% elif task_current_status == 'mapping-i:0' or task_current_status == 'mapping-v:1' %}
+            <i class="explanation-big fa fa-list-alt" aria-hidden="true"></i>
+            <h3 class="explanation-big">{{ headers.translations.upload_status_1 }}</h3>
+            <h3 class="explanation"><i class="fa fa-check-circle-o" aria-hidden="true"></i> {{ headers.translations.upload_status_1 }}</h3>
+            <h4>{{ headers.translations.upload_status_1_dis }}</h4>
+            <form id="validation-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="validate">
+                {% for task in task_fields %}
+                <div class="field-status">
+                    <p>{{ headers.translations.upload_layer }} - {{ task_fields[task]['name'] }}</p>
+                    {% for field in task_fields[task]['fields'] %}
+                    <div class="field-status-row elements-row y-centered">
+                        <p>{{ field }}</p>
+                        <label for="{{ field }}">{{ headers.translations.upload_field }} {{ field }}</label>
+                        <select id="{{ field }}" name="{{ task }}_{{ field }}" class="field-status-select vf">
+                            {% if task_fields[task]['fields'][field] == 'string' %}
+                            <option value="string" selected="selected" label="{{ headers.translations.upload_field_string }}">{{ headers.translations.upload_field_string }}</option>
+                            {% else %}
+                            <option value="string" label="{{ headers.translations.upload_field_string }}">{{ headers.translations.upload_field_string }}</option>
+                            {% endif %}
+                            {% if task_fields[task]['fields'][field] == 'integer' %}
+                            <option value="integer" selected="selected" label="{{ headers.translations.upload_field_int }}">{{ headers.translations.upload_field_int }}</option>
+                            {% else %}
+                            <option value="integer" label="{{ headers.translations.upload_field_int }}">{{ headers.translations.upload_field_int }}</option>
+                            {% endif %}
+                            {% if task_fields[task]['fields'][field] == 'float' %}
+                            <option value="float" selected="selected" label="{{ headers.translations.upload_field_float }}">{{ headers.translations.upload_field_float }}</option>
+                            {% else %}
+                            <option value="float" label="{{ headers.translations.upload_field_float }}">{{ headers.translations.upload_field_float }}</option>
+                            {% endif %}
+                            {% if task_fields[task]['fields'][field] == 'long' %}
+                            <option value="long" selected="selected" label="{{ headers.translations.upload_field_long }}">{{ headers.translations.upload_field_long }}</option>
+                            {% else %}
+                            <option value="long" label="{{ headers.translations.upload_field_long }}">{{ headers.translations.upload_field_long }}</option>
+                            {% endif %}
+                            {% if task_fields[task]['fields'][field] == 'date' %}
+                            <option value="date" selected="selected" label="{{ headers.translations.upload_field_date }}">{{ headers.translations.upload_field_date }}</option>
+                            {% else %}
+                            <option value="date" label="{{ headers.translations.upload_field_date }}">{{ headers.translations.upload_field_date }}</option>
+                            {% endif %}
+                            <option value="disabled" label="{{ headers.translations.upload_field_disable }}">{{ headers.translations.upload_field_disable }}</option>
+                        </select>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                <input value="{{ headers.translations.button_upload_validate }}" type="submit">
+            </form>
+            <form id="file-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="delete">
+                <input class="delete" value="{{ headers.translations.button_upload_again_zero }}" type="submit">
+            </form>
+            {% elif task_current_status == 'mapping-v:0' or task_current_status == 'mapping-s:1' %}
+            <i class="explanation-big fa fa-list-alt" aria-hidden="true"></i>
+            <h3 class="explanation-big">{{ headers.translations.upload_status_2 }}</h3>
+            <h3 class="explanation expanded"><i class="fa fa-list-alt" aria-hidden="true"></i> {{ headers.translations.upload_status_2 }}</h3>
+            <h4 class="explanation-note">{{ headers.translations.upload_status_2_dis }}</h4>
+            <div class="semantic-prefix">
+                <p class="title">{{ headers.translations.upload_prefix }}</p>
+                <ol class="semantic-prefix-list">
+                    {% for ns in namespaces %}
+                    <li><a href="{{ ns['url'] }}" target="_blank">{{ ns['name'] }}:</a></li>
+                    {% endfor %}
+                </ol>
+            </div>
+            <form id="semantic-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="semantic">
+                {% for task in task_fields %}
+                <div class="field-status">
+                    <div class="field-status-header">
+                        <p>{{ headers.translations.upload_layer }} - {{ task_fields[task]['name'] }}</p>
+                        <span>{{ headers.translations.upload_uri }}</span>
+                        <input name="{{ task }}" aria-label="{{ headers.translations.upload_uri_aria }}" placeholder="{{ headers.domain }}/def/{{ task_fields[task]['name_norm'] }}" data-unscoped-placeholder="{{ headers.translations.upload_uri_aria }}" data-scoped-placeholder="{{ headers.translations.upload_uri_aria }}" type="text" value="{{ headers.domain }}/def/{{ task_fields[task]['name_norm'] }}">
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="field">{{ headers.translations.upload_field }}</th>
+                                <th class="predicate">{{ headers.translations.upload_predicate }}</th>
+                                <th class="type">{{ headers.translations.upload_type }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in task_fields[task]['fields'] %}
+                            <tr>
+                                <td class="field" data-title="{{ headers.translations.upload_field }}"><p>{{ field }}</p></td>
+                                <td class="predicate" data-title="URI">
+                                    <input name="{{ task }}_{{ field }}_p" aria-label="{{ headers.translations.upload_predicate }}" data-unscoped-placeholder="{{ headers.translations.upload_predicate }}" data-scoped-placeholder="{{ headers.translations.upload_predicate }}" type="text" value="">
+                                </td>
+                                <td class="type" data-title="{{ headers.translations.upload_type }}">
+                                    <label for="{{ field }}">{{ headers.translations.upload_field }} - {{ field }}</label>
+                                    <select id="{{ field }}" name="{{ task }}_{{ field }}_o" class="field-status-select">
+                                        {% if task_fields[task]['fields'][field] == 'string' %}
+                                        <option value="rdfs:Literal" selected="selected" label="rdfs:Literal">rdfs:Literal</option>
+                                        <option value="uri" label="URI">URI</option>
+                                        {% elif task_fields[task]['fields'][field] == 'integer' %}
+                                        <option value="xsd:integer" selected="selected" label="xsd:integer">xsd:integer</option>
+                                        <option value="rdfs:Literal" label="rdfs:Literal">rdfs:Literal</option>
+                                        {% elif task_fields[task]['fields'][field] == 'float' %}
+                                        <option value="xsd:float" selected="selected" label="xsd:float">xsd:float</option>
+                                        <option value="rdfs:Literal" label="rdfs:Literal">rdfs:Literal</option>
+                                        {% elif task_fields[task]['fields'][field] == 'long' %}
+                                        <option value="xsd:long" selected="selected" label="xsd:long">xsd:long</option>
+                                        <option value="rdfs:Literal" label="rdfs:Literal">rdfs:Literal</option>
+                                        {% else %}
+                                        <option value="xsd:date" selected="selected" label="xsd:date">xsd:date</option>
+                                        <option value="rdfs:Literal" label="rdfs:Literal">rdfs:Literal</option>
+                                        {% endif %}
+                                    </select>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+                <input value="{{ headers.translations.button_upload_validate }}" type="submit">
+            </form>
+            <form id="file-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="delete">
+                <input class="delete" value="{{ headers.translations.button_upload_again_zero }}" type="submit">
+            </form>
+            {% else %}
+            <i class="explanation-big fa fa-map-o" aria-hidden="true"></i>
+            <h3 class="explanation-big">{{ headers.translations.upload_status_3 }}</h3>
+            <h3 class="explanation expanded"><i class="fa fa-map-o" aria-hidden="true"></i> {{ headers.translations.upload_status_3 }}</h3>
+            <form id="metadata-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="catalog">
+                {% if task_fields|length > 1 %}
+                <div class="field-status">
+                    <div class="field-status-header">
+                        <p>{{ headers.translations.upload_catalog }} <a href="https://joinup.ec.europa.eu/release/geodcat-ap/v101" target="_blank">GeoDCAT-AP Core</a></p>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_title }} *</p>
+                        <div>
+					        <input name="{{ task_identifier }}_title" aria-label="{{ headers.translations.upload_dcat_title }}" placeholder="{{ headers.translations.upload_dcat_title_catalog_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_title_catalog_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_title_catalog_place }}" type="text" required>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_description }} *</p>
+                        <div>
+					        <textarea name="{{ task_identifier }}_desc" aria-label="{{ headers.translations.upload_dcat_description }}" placeholder="{{ headers.translations.upload_dcat_description_catalog_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_description_catalog_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_description_catalog_place }}" maxlength="3000" required></textarea>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_language }} - <a href="http://publications.europa.eu/mdr/resource/authority/language/html/languages-eng.html" target="_blank">{{ headers.translations.upload_dcat_language_code }}</a> *</p>
+                        <div>
+					        <input name="{{ task_identifier }}_lang" aria-label="{{ headers.translations.upload_dcat_language }}" placeholder="{{ headers.translations.upload_dcat_language_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_language_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_language_place }}" type="text" required>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_provenance }} *</p>
+                        <div>
+					        <input name="{{ task_identifier }}_prov" aria-label="{{ headers.translations.upload_dcat_provenance }}" placeholder="{{ headers.translations.upload_dcat_provenance_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_provenance_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_provenance_place }}" type="text" required>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_issued }}</p>
+                        <div>
+					        <input name="{{ task_identifier }}_issue" aria-label="{{ headers.translations.upload_dcat_issued }}" placeholder="{{ headers.translations.upload_dcat_date_place }} ({{ headers.time.year }}-{{ headers.time.month }}-{{ headers.time.day }})" data-unscoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" type="text">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_modified }}</p>
+                        <div>
+					        <input name="{{ task_identifier }}_mod" aria-label="{{ headers.translations.upload_dcat_modified }}" placeholder="{{ headers.translations.upload_dcat_date_place }} ({{ headers.time.year }}-{{ headers.time.month }}-{{ headers.time.day }})" data-unscoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" type="text">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% for task in task_fields %}
+                <div class="field-status">
+                    <div class="field-status-header">
+                        <p class="dataset">{{ headers.translations.upload_dataset }} <a href="https://joinup.ec.europa.eu/release/geodcat-ap/v101" target="_blank">GeoDCAT-AP Core</a></p>
+                        <span>{{ headers.translations.upload_uri_dataset }}</span>
+                        <div>
+                            <input name="{{ task }}" aria-label="{{ headers.translations.upload_uri_dataset_aria }}" placeholder="{{ headers.domain }}/def/{{ task_fields[task]['name_norm'] }}/" data-unscoped-placeholder="{{ headers.translations.upload_uri_dataset_aria }}" data-scoped-placeholder="{{ headers.translations.upload_uri_dataset_aria }}" type="text" value="{{ headers.domain }}/def/{{ task_fields[task]['name_norm'] }}/">
+                            <label for="generation">{{ headers.translations.upload_uri_dataset_way }} {{ field }}</label>
+                            <select id="generation" name="{{ task }}_generation" class="field-status-select">
+                                <option value="auto_generation" selected="selected" label="{{ headers.translations.upload_field_auto }}">{{ headers.translations.upload_field_auto }}</option>
+                                {% for field in task_fields[task]['fields'] %}
+                                <option value="{{ field }}" selected="selected" label="{{ field }}">{{ headers.translations.upload_field }} - {{ field }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_title }} *</p>
+                        <div>
+                            <input name="{{ task_identifier }}_{{ task }}_title" aria-label="{{ headers.translations.upload_dcat_title }}" placeholder="{{ headers.translations.upload_dcat_title_dataset_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_title_dataset_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_title_dataset_place }}" type="text" required>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_description }} *</p>
+                        <div>
+                            <textarea name="{{ task_identifier }}_{{ task }}_desc" aria-label="{{ headers.translations.upload_dcat_description_dataset_place }}" placeholder="{{ headers.translations.upload_dcat_description_dataset_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_description_dataset_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_description_dataset_place }}" maxlength="3000" required></textarea>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_language }} - <a href="http://publications.europa.eu/mdr/resource/authority/language/html/languages-eng.html" target="_blank">{{ headers.translations.upload_dcat_language_code }}</a> *</p>
+                        <div>
+                            <input name="{{ task_identifier }}_{{ task }}_lang" aria-label="{{ headers.translations.upload_dcat_language }}" placeholder="{{ headers.translations.upload_dcat_language_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_language_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_language_place }}" type="text" required>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_provenance }} *</p>
+                        <div>
+                            <input name="{{ task_identifier }}_{{ task }}_prov" aria-label="{{ headers.translations.upload_dcat_provenance }}" placeholder="{{ headers.translations.upload_dcat_provenance_place }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_provenance_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_provenance_place }}" type="text" required>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title"><a href="http://opendefinition.org/licenses/" target="_blank">{{ headers.translations.upload_dcat_license }}</a> *</p>
+                        <div>
+                            <label for="license">{{ headers.translations.upload_dcat_license_way }}</label>
+                            <select id="license" name="{{ task }}_license" class="field-status-select">
+                                {% for translation in headers.translations %}
+                                {% if 'upload_license' in translation %}
+                                <option value="{{ translation.replace('upload_license_', '') }}" selected="selected" label="{{ headers.translations[translation] }}">{{ headers.translations[translation] }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="license_link">{{ headers.translations.upload_dcat_license_private }}</label>
+                            <input id="license_link" name="{{ task }}_license_url" aria-label="{{ headers.translations.upload_dcat_license_url }}" placeholder="{{ headers.translations.upload_dcat_license_url }}" data-unscoped-placeholder="{{ headers.translations.upload_dcat_license_url }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_license_url }}" type="text">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_theme }} *</p>
+                        <fieldset>
+                            <legend>{{ headers.translations.upload_dcat_legend }}</legend>
+                            {% for translation in headers.translations %}
+                            {% if 'upload_theme' in translation %}
+                            <div>
+                                <input id="theme_{{ translation.replace('upload_theme_', '') }}" name="{{ task_identifier }}_{{ task }}_theme" type="checkbox" value="http://inspire.ec.europa.eu/theme/{{ translation.replace('upload_theme_', '') }}" required="required">
+                                <label for="theme_{{ translation.replace('upload_theme_', '') }}">{{ headers.translations[translation] }}</label>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </fieldset>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_issued }}</p>
+                        <div>
+                            <input name="{{ task_identifier }}_{{ task }}_issue" aria-label="{{ headers.translations.upload_dcat_issued }}" placeholder="{{ headers.translations.upload_dcat_date_place }} ({{ headers.time.year }}-{{ headers.time.month }}-{{ headers.time.day }})" data-unscoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" type="text">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <p class="title">{{ headers.translations.upload_dcat_modified }}</p>
+                        <div>
+                            <input name="{{ task_identifier }}_{{ task }}_mod" aria-label="{{ headers.translations.upload_dcat_modified }}" placeholder="{{ headers.translations.upload_dcat_date_place }} ({{ headers.time.year }}-{{ headers.time.month }}-{{ headers.time.day }})" data-unscoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" data-scoped-placeholder="{{ headers.translations.upload_dcat_date_place }}" type="text">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <input value="{{ headers.translations.button_upload_validate }}" type="submit">
+            </form>
+            <form id="file-form" class="flex" action="{{ request.path }}" method="POST">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token }}">
+                <input name="action" type=hidden value="delete">
+                <input class="delete" value="{{ headers.translations.button_upload_again_zero }}" type="submit">
+            </form>
+            {% endif %}
+        </div>
+        <div class="message-logs">
+            <p class="title">{{ headers.translations.upload_log }}</p>
+            <div class="messages states">
+                <div id="button-expand-status" class="messages-title elements-row y-centered">
+                    <span class="section-title">{{ headers.translations.upload_step_status }}</span>
+                    <i id="arrow-status" class="fa fa-angle-double-down" aria-hidden="true"></i>
+                </div>
+                <div id="messages-panel-status" class="messages-panel non-expanded">
+                    {% for task_message in task_status_list %}
+                    {% if ':0' in task_message or task_message == 'upload' %}
+                    {% if task_message == 'upload' %}
+                    <p class="message status">{{ headers.translations.upload_task_status_up }} <i class="fa fa-check" aria-hidden="true"></i></p>
+                    {% elif 'mapping-i' in task_message %}
+                    <p class="message status">{{ headers.translations.upload_task_status_mi }} <i class="fa fa-check" aria-hidden="true"></i></p>
+                    {% elif 'mapping-v' in task_message %}
+                    <p class="message status">{{ headers.translations.upload_task_status_mv }} <i class="fa fa-check" aria-hidden="true"></i></p>
+                    {% elif 'mapping-s' in task_message %}
+                    <p class="message status">{{ headers.translations.upload_task_status_ms }} <i class="fa fa-check" aria-hidden="true"></i></p>
+                    {% endif %}
+                    {% else %}
+                    {% if 'mapping-i' in task_message %}
+                    <p class="message status">{{ headers.translations.upload_task_status_mi }} <i class="fa fa-times" aria-hidden="true"></i></p>
+                    {% elif 'mapping-s' in task_message %}
+                    <p class="message status">{{ headers.translations.upload_task_status_ms }} <i class="fa fa-times" aria-hidden="true"></i></p>
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% if task_logs_warn is not none and task_logs_warn|length > 0 %}
+             <div class="messages">
+                 <div id="button-expand-warn" class="messages-title elements-row y-centered">
+                    <span class="section-title">{{ headers.translations.upload_step_warn }}</span>
+                    <i id="arrow-warn" class="fa fa-angle-double-down" aria-hidden="true"></i>
+                 </div>
+                 <div id="messages-panel-warn" class="messages-panel non-expanded">
+                     {% for task_message in task_logs_warn %}
+                     {% if 'GDAL transformation' in task_message %}
+                     <p class="message-header step">{{ task_message.replace('GDAL transformation', headers.translations.upload_task_status_up) }}</p>
+                     {% elif 'Layer' in task_message %}
+                     <p class="message-header">{{ headers.translations.upload_layer }}{{ task_message.replace('Layer', '') }}</p>
+                     {% else %}
+                     <p class="message">{{ task_message }}</p>
+                     {% endif %}
+                     {% endfor %}
+                 </div>
+             </div>
+            {% endif %}
+            {% if task_logs_error is not none and task_logs_error|length > 0 %}
+             <div class="messages">
+                 <div id="button-expand-error" class="messages-title elements-row y-centered">
+                    <span class="section-title">{{ headers.translations.upload_step_error }}</span>
+                    <i id="arrow-error" class="fa fa-angle-double-down" aria-hidden="true"></i>
+                 </div>
+                 <div id="messages-panel-error" class="messages-panel non-expanded">
+                     {% for task_message in task_logs_error %}
+                     {% if 'GDAL transformation' in task_message %}
+                     <p class="message-header step">{{ task_message.replace('GDAL transformation', headers.translations.upload_task_status_up) }}</p>
+                     {% elif 'Fields validation' in task_message %}
+                     <p class="message-header step">{{ task_message.replace('Fields validation', headers.translations.upload_task_status_mv) }}</p>
+                     {% elif 'Semantic validation' in task_message %}
+                     <p class="message-header step">{{ task_message.replace('Semantic validation', headers.translations.upload_task_status_ms) }}</p>
+                     {% elif 'Layer' in task_message %}
+                     <p class="message-header">{{ headers.translations.upload_layer }}{{ task_message.replace('Layer', '') }}</p>
+                     {% else %}
+                     <p class="message">{{ task_message }}</p>
+                     {% endif %}
+                     {% endfor %}
+                 </div>
+             </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

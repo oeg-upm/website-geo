@@ -1,0 +1,1008 @@
+/*
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Ontology Engineering Group
+        http://www.oeg-upm.net/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  Copyright (C) 2017 Ontology Engineering Group.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  GeoLinkeddata Open Data Portal is licensed under a
+  Creative Commons Attribution-NC 4.0 International License.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
+/* ################################################################## */
+
+#main-container .div-container {
+    min-height: 488px;
+}
+
+/* ################################################################## */
+
+#file-status {
+    width: 92%;
+    -webkit-box-flex: 1;
+	-webkit-flex-grow: 1;
+	-ms-flex-positive: 1;
+	flex-grow: 1;
+}
+
+/* ################################################################## */
+
+.field-status,
+.message-waiting,
+.message-status,
+.message-status > title,
+.message-status > form,
+.message-status > form > .field-row,
+.message-status > form > .field-row > div,
+.message-status > form > .field-status,
+.message-status > form > .field-status > .field-status-row > p,
+.message-status > form > .field-status > .field-status-row > select,
+.message-status > form > .field-status > .field-status-header,
+.message-status > form > .field-status > .field-row,
+.message-status > form > .field-status > .field-row > div,
+.message-status > form > .field-status > .field-row > fieldset,
+.message-status > form > .field-status > table,
+.message-status > form > input[type="submit"],
+.message-logs,
+.message-logs > .title,
+.message-logs > .messages > .messages-title,
+.message-logs > .messages > .messages-title > span {
+    width: 100%;
+}
+
+.message-status > form > .field-status > .field-row > fieldset > legend,
+.message-status > form > .field-status > .field-row  > p {
+    width: 90%;
+}
+
+.semantic-prefix > .semantic-prefix-list,
+.message-status > form > .field-status > .field-row > fieldset > div,
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-status-header > div > select {
+    width: 88%;
+}
+
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    width: 80%;
+}
+
+.semantic-prefix > p,
+.semantic-prefix > .semantic-prefix-list,
+.message-waiting > h3,
+.message-status > h3,
+.message-status > h4,
+.message-status > form > .field-status > p,
+.message-status > form > .field-status > .field-status-header > p,
+.message-status > form > .field-status > .field-status-header > span,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > table > tbody > tr > td > select,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > select {
+    text-align: center;
+}
+
+.semantic-prefix > .semantic-prefix-list,
+.message-waiting > i,
+.message-status > i,
+.message-status > form > .field-status > .field-status-header > span,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-row > fieldset > div,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    margin: 0 auto;
+}
+
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-row  > p {
+    margin: 0 auto 20px;
+}
+
+.message-waiting > h3,
+.message-status > h3,
+.message-status > h4,
+.message-status > form,
+.message-status > form > .field-status,
+.message-status > form > .field-status > .field-row,
+.message-status > form > .field-status > table > tbody > tr,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-logs > .messages {
+    margin: 20px auto 0;
+}
+
+.message-status > form > .field-status > .field-row:first-child,
+.message-status > form > .field-status > .field-row:last-child {
+    margin: 20px auto;
+}
+
+.semantic-prefix,
+.message-status > #validation-form > input[type="submit"],
+.message-status > #semantic-form > input[type="submit"],
+.message-status > #metadata-form > input[type="submit"],
+.message-logs > .messages.states {
+    margin: 40px auto 0;
+}
+
+.message-logs {
+    margin: 40px auto 20px;
+}
+
+.message-status > h4,
+.message-status > form > .field-status > .field-status-header > span,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-status-row > select,
+.message-status > form > .field-status > table > tbody > tr > td > select,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > .field-row > fieldset > legend,
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.message-logs > .messages > .messages-title > span {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.message-waiting > i,
+.message-status > i {
+    font-size: 80px;
+}
+
+.message-status > i.fa-list-alt {
+    line-height: 64px;
+    margin-top: 28px;
+}
+
+.message-waiting > h3,
+.message-status > h3,
+.message-status > h4 {
+    max-width: 260px;
+}
+
+.message-status > .explanation.expanded,
+.message-status > #validation-form,
+.message-logs > .messages {
+    max-width: 768px;
+}
+
+.semantic-prefix,
+.message-status > #validation-form > .field-status,
+.message-status > #semantic-form > .field-status > .field-status-header,
+.message-status > #metadata-form > .field-status,
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-status-row > select,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > table > tbody > tr,
+.message-status > form > .field-status > table > tbody > tr > td > select {
+    border: 1px solid #BBB;
+}
+
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > table > tbody > tr > td > input,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    border: 1px solid #1d5995;
+}
+
+.message-status > form > .field-status > .field-status-header > input:focus,
+.message-status > form > .field-status > .field-status-header > input:active,
+.message-status > form > .field-status > .field-status-header > div > input:focus,
+.message-status > form > .field-status > .field-status-header > div > input:active,
+.message-status > form > .field-status > table > tbody > tr > td > input:focus,
+.message-status > form > .field-status > table > tbody > tr > td > input:active,
+.message-status > form > .field-status > .field-row > div > input:focus,
+.message-status > form > .field-status > .field-row > div > input:active {
+    border: 1px solid #595959;
+}
+
+.message-status > .title,
+.message-status > form > .field-status > .field-status-row,
+.message-status > form > .field-status > .field-row > p,
+.message-status > #metadata-form > .field-status > .field-status-header > p,
+.message-logs > .title,
+.message-logs > .messages > .messages-panel > p {
+    border-bottom: 1px solid #BBB;
+}
+
+.semantic-prefix > p,
+.message-status > #metadata-form > .field-status,
+.message-status > form > .field-status > .field-status-header,
+.message-status > form > .field-status > .field-status-header > p,
+.message-logs > .messages > .messages-panel > .message-header:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.semantic-prefix,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    border-radius: 6px;
+}
+
+.semantic-prefix > p,
+.message-status > form > .field-status > p,
+.message-status > form > .field-status > .field-status-row,
+.message-status > form > .field-status > .field-status-header > p,
+.message-status > form > .field-status > .field-status-header > span,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    padding: 10px;
+}
+
+.message-status > h4,
+.message-status > form > .field-status > .field-row > fieldset > legend,
+.message-logs > .messages > .messages-panel > .message > i.fa-check {
+    color: #006100;
+}
+
+.message-logs > .messages > .messages-panel > .message > i.fa-times {
+    color: #610000;
+}
+
+.message-status > form > .field-status > .field-status-header > input:focus,
+.message-status > form > .field-status > .field-status-header > input:active,
+.message-status > form > .field-status > .field-status-header > div > input:focus,
+.message-status > form > .field-status > .field-status-header > div > input:active,
+.message-status > form > .field-status > table > tbody > tr > td > input:focus,
+.message-status > form > .field-status > table > tbody > tr > td > input:active,
+.message-status > form > .field-status > .field-row > div > input:focus,
+.message-status > form > .field-status > .field-row > div > input:active {
+    color: #595959;
+}
+
+.message-status > form > .field-status > .field-status-row.disabled > p,
+.message-status > form > .field-status > .field-status-row.disabled > select {
+    color: #BBB;
+}
+
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > table > tbody > tr > td > input,
+.message-status > form > .field-status > .field-row > fieldset > div > label:before,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > textarea {
+    color: #1d5995;
+}
+
+.message-status > form > input[type="submit"],
+.message-status > form > input[type="submit"]:focus,
+.message-status > form > input[type="submit"]:active,
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-status-row > select,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > table > tbody > tr > td > select,
+.message-logs > .messages > .messages-title,
+.message-logs > .messages > .messages-panel > .message-header.step {
+	color: white;
+}
+
+.message-logs > .messages > .messages-panel > .message-header.step {
+    background: #494949;
+}
+
+.semantic-prefix > p,
+.message-status > form > .field-status > p,
+.message-status > form > .field-status > .field-status-header > p,
+.message-logs > .messages > .messages-panel > .message-header {
+    background: #e8f1fc;
+}
+
+.message-status > form > input[type="submit"],
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > .field-status-row > select,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > table > tbody > tr > td > select,
+.message-logs > .messages > .messages-title {
+    background: #1d5995;
+}
+
+.message-status > form > input[type="submit"].delete {
+    background: #610000;
+}
+
+.semantic-prefix,
+.message-status > form > .field-status,
+.message-status > form > .field-status > .field-status-row.disabled > select,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-row > div > input,
+.message-logs > .messages > .messages-panel {
+    background: white;
+}
+
+.message-status > form > .field-status > .field-status-row > select,
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-status-header > div > input,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > .field-row > div > input,
+.message-status > form > .field-status > .field-row > div > select,
+.message-status > form > .field-status > table > tbody > tr > td > select,
+.message-status > form > .field-status > .field-row > div > textarea {
+    box-shadow: none;
+}
+
+.message-status > .explanation,
+.message-status > form > .field-status > .field-status-row > label,
+.message-status > form > .field-status > .field-status-row > label,
+.message-status > form > .field-status > .field-status-header > div > label,
+.message-status > form > .field-status > .field-row > div > label,
+.message-status > form > .field-status > table > thead,
+.message-status > form > .field-status > table > tfoot,
+.message-status > form > .field-status > table > tbody > tr > td > label,
+.no-js .message-logs > .messages > .messages-title > i,
+.message-logs > .messages > .messages-panel.non-expanded {
+    display: none;
+}
+
+/* ################################################################## */
+
+.semantic-prefix > p {
+    display: block;
+}
+
+.semantic-prefix > .semantic-prefix-list {
+    padding: 12px 0;
+}
+
+.semantic-prefix > .semantic-prefix-list > li {
+    display: inline-block;
+    margin: 4px 2px;
+}
+
+/* ################################################################## */
+
+.message-status > .title,
+.message-logs > .title {
+    font-weight: 600;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.message-status > .explanation {
+    max-width: 420px;
+}
+
+.message-status > .explanation-big {
+    display: block;
+}
+
+.message-status > form {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+.message-status > form > input[type="submit"] {
+	height: 50px;
+	padding: 0;
+	font-size: 16px;
+	text-align: center;
+	border: 0;
+	cursor: pointer;
+}
+
+.message-status > form > .field-status > .field-status-row {
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+}
+
+.message-status > form > .field-status > .field-status-row:last-child {
+    border-bottom: none;
+}
+
+.message-status > form > .field-status > .field-status-row > p {
+    word-break: break-all;
+    padding: 0 10px 0 0;
+}
+
+.message-status > form > .field-status > .field-status-row > select {
+    outline: none;
+    overflow: hidden;
+    padding: 0 5px;
+    height: 30px;
+    border-radius: 3px;
+    max-width: 200px;
+}
+
+/* ################################################################## */
+
+.message-status > #semantic-form > .field-status > .field-status-header {
+    padding-bottom: 20px;
+}
+
+.message-status > form > .field-status > .field-status-header > span {
+    width: 88%;
+}
+
+.message-status > form > .field-status > .field-row  > p {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 10px;
+}
+
+.message-status > form > .field-status > .field-status-header > input,
+.message-status > form > .field-status > .field-row > div > input {
+    height: 20px;
+}
+
+.message-status > form > .field-status > .field-row > div > textarea {
+    text-align: justify;
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ################################################################## */
+
+.message-status > form > .field-status > table {
+    max-width: 100%;
+}
+
+.message-status > form > .field-status > table > tbody {
+    display: block;
+}
+
+.message-status > form > .field-status > table > thead > tr > th.type {
+    max-width: 135px;
+    width: 135px;
+}
+
+.message-status > form > .field-status > table > thead > tr > th.predicate {
+    max-width: 260px;
+    width: 260px;
+}
+
+.message-status > form > .field-status > table > tbody > tr {
+    display: block;
+    padding: 5px 0;
+}
+
+.message-status > form > .field-status > table > tbody > tr:last-child {
+    border-radius: 0 0 6px 6px;
+}
+
+.message-status > form > .field-status > table > tbody > tr > td {
+    padding: 10px 5%;
+    border: 0;
+    vertical-align: middle;
+    display: block;
+    text-align: right;
+    white-space: normal;
+}
+
+.message-status > form > .field-status > table > tbody > tr > td > input {
+    height: 18px;
+    width: 100px;
+    border-radius: 6px 0 0 6px;
+    padding: 6px;
+    text-align: right;
+}
+
+.message-status > form > .field-status > table > tbody > tr > td > select,
+.message-status > form > .field-status > .field-status-header > div > select,
+.message-status > form > .field-status > .field-row > div > select {
+    outline: none;
+    overflow: hidden;
+    padding: 0 5px;
+    height: 30px;
+}
+
+.message-status > form > .field-status > table > tbody > tr > td > select {
+    width: 115px;
+    border-radius: 6px 0 0 6px;
+}
+
+.message-status > form > .field-status > table > tbody > tr > td.predicate:before {
+    padding-top: 8px;
+}
+
+.message-status > form > .field-status >table > tbody > tr > td.type:before {
+    padding-top: 6px;
+}
+
+.message-status > form > .field-status > table > tbody > tr > td[data-title]:before {
+    content: attr(data-title);
+    float: left;
+    color: #BBB;
+    padding-right: 20px;
+}
+
+/* ################################################################## */
+
+.message-status > form > .field-status > .field-row > fieldset > legend {
+    margin: 0 5% 20px;
+    text-align: center;
+}
+
+.message-status > form > .field-status > .field-row > fieldset > div > input[type="checkbox"]:not(:checked),
+.message-status > form > .field-status > .field-row > fieldset > div > input[type="checkbox"]:checked {
+    position: absolute;
+    left: -9999px;
+    display: none;
+}
+
+.message-status > form > .field-status > .field-row > fieldset > div > label {
+    position: relative;
+    line-height: 30px;
+    padding-left: 40px;
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+.message-status > form > .field-status > .field-row > fieldset > div > label:before {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: 'FontAwesome';
+    font-size: 22px;
+}
+
+.message-status > form > .field-status > .field-row > fieldset > div > input[type="checkbox"]:not(:checked) + label:before {
+    content: '\f096';
+}
+
+.message-status > form > .field-status > .field-row > fieldset > div > input[type="checkbox"]:checked + label:before {
+    content: '\f046';
+    transition: all .2s;
+}
+
+/* ################################################################## */
+
+.message-logs > .messages {
+    width: 92%;
+}
+
+.message-logs > .messages > .messages-title {
+    padding: 12px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.no-js .message-logs > .messages > .messages-title {
+    cursor: auto;
+}
+
+.message-logs > .messages > .messages-title > i {
+    font-size: 36px;
+    margin-left: 20px;
+}
+
+.message-logs > .messages > .messages-panel {
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 2px solid #BBB;
+}
+
+.message-logs > .messages > .messages-panel.expanded,
+.no-js .message-logs > .messages > .messages-panel.non-expanded {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+.message-logs > .messages > .messages-panel > p {
+    padding-right: 20px;
+}
+
+.message-logs > .messages > .messages-panel > p:last-child {
+    border-bottom: none;
+}
+
+.message-logs > .messages > .messages-panel > .message-header {
+    padding: 8px 18px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 25px;
+    word-break: break-all;
+}
+
+.message-logs > .messages > .messages-panel > .message-header:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.message-logs > .messages > .messages-panel > .message {
+    padding: 8px 18px;
+    font-size: 12px;
+    line-height: 21px;
+    position: relative;
+}
+
+.message-logs > .messages > .messages-panel > .message.status {
+    line-height: 40px;
+}
+
+.message-logs > .messages > .messages-panel > .message > i {
+    position: absolute;
+    top: 17px;
+    font-size: 22px;
+}
+
+.message-logs > .messages > .messages-panel > .message > i.fa-check {
+    right: 20px;
+}
+
+.message-logs > .messages > .messages-panel > .message > i.fa-times {
+    right: 23px;
+}
+
+/* ################################################################## */
+
+@media (min-width: 320px) {
+
+    .message-status > form > .field-status > table > tbody > tr > td {
+        padding: 10px 5.75%;
+    }
+
+}
+
+@media (min-width: 375px) {
+
+    #file-status,
+    .message-logs > .messages {
+        width: 90%;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td {
+        padding: 10px 6.5%;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td > input {
+        width: 140px;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td > select {
+        width: 155px;
+    }
+
+}
+
+@media (min-width: 400px) {
+
+    #file-form,
+    .message-status > form > input[type="submit"] {
+        max-width: 320px;
+    }
+
+    .message-status > form > .field-status > p,
+    .message-status > form > .field-status > .field-status-header > p {
+        padding: 16px 10px;
+        font-size: 16px;
+        line-height: 24px;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td {
+        padding: 10px 7%;
+    }
+
+}
+
+@media (min-width: 450px) {
+
+    .message-waiting > h3,
+    .message-status > h3,
+    .message-status > h4 {
+        max-width: 600px;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td > input {
+        width: 180px;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td > select {
+        width: 195px;
+    }
+
+}
+
+
+@media (min-width: 500px) {
+
+    .message-status > form > .field-status > .field-status-header > span {
+        margin-bottom: 10px;
+    }
+
+    .semantic-prefix > .semantic-prefix-list,
+    .message-status > form > .field-status > .field-row > fieldset > div,
+    .message-status > form > .field-status > .field-row > div > select,
+    .message-status > form > .field-status > .field-status-header > div > select,
+    .message-status > form > .field-status > .field-status-header > input {
+        width: 86%;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td {
+        padding: 10px 4.5%;
+    }
+
+}
+
+@media (min-width: 600px) {
+
+    .semantic-prefix > .semantic-prefix-list,
+    .message-status > form > .field-status > .field-row > div > select,
+    .message-status > form > .field-status > .field-row > fieldset > div,
+    .message-status > form > .field-status > .field-status-header > div > select,
+    .message-status > form > .field-status > .field-status-header > input {
+        width: 85%;
+    }
+
+}
+
+@media (min-width: 700px) {
+
+    .semantic-prefix > .semantic-prefix-list,
+    .message-status > form > .field-status > .field-row > div > select,
+    .message-status > form > .field-status > .field-row > fieldset > div,
+    .message-status > form > .field-status > .field-status-header > div > select,
+    .message-status > form > .field-status > .field-status-header > input {
+        width: 84%;
+    }
+
+}
+
+@media (min-width: 768px) {
+
+    .message-status {
+        margin: 40px auto 0;
+    }
+
+    .message-status > form > .field-status > .field-row > fieldset {
+        width: 84%;
+        position: relative;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .message-status > form > .field-status > .field-row > fieldset > div {
+        width: auto;
+        position: relative;
+        padding: 20px;
+        display: inline-block;
+    }
+
+    .message-status > form > .field-status > .field-status-row,
+    .message-status > form > .field-status > p,
+    .message-status > form > .field-status > .field-status-header > p {
+        padding: 16px;
+    }
+
+    .message-status > form > .field-status > .field-status-header > span,
+    .message-status > form > .field-status > .field-status-header > input {
+        margin-top: 10px;
+    }
+
+    .message-status > form > .field-status > .field-status-header > span {
+        color: #494949;
+    }
+
+    .message-status > form > .field-status > .field-row > div > select,
+    .message-status > form > .field-status > .field-status-row > select,
+    .message-status > form > .field-status > .field-status-header > div > select {
+        font-size: 14px;
+        line-height: 21px;
+    }
+
+    .message-status > form > .field-status > table {
+        margin: 20px auto 0;
+    }
+
+    .message-status > form > .field-status > table > thead > tr > th,
+    .message-status > form > .field-status > table > tbody > tr > th,
+    .message-status > form > .field-status > table > tfoot > tr > th,
+    .message-status > form > .field-status > table > thead > tr > td,
+    .message-status > form > .field-status > table > tbody > tr > td,
+    .message-status > form > .field-status > table > tfoot > tr > td {
+        text-align: left;
+        padding: 20px;
+        vertical-align: middle;
+        border: 0;
+    }
+
+    .message-status > form > .field-status > table > thead,
+    .message-status > form > .field-status > table > tbody > tr {
+        border-bottom: 1px solid #BBB;
+    }
+
+    .message-status > form > .field-status > table > thead {
+        display: table-header-group;
+    }
+
+    .message-status > form > .field-status > table > thead > tr > th {
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .message-status > form > .field-status > table > tbody {
+        display: table-row-group;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr {
+        display: table-row;
+        border: none;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr:last-child {
+        border-bottom: none;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr:hover > td {
+        background-color: #e8f1fc;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr:hover > td.field {
+        font-weight: 600;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td {
+        display: table-cell;
+        width: 33%;
+        text-align: center;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td[data-title]:before {
+        display: none;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td.show {
+        width: 100px;
+    }
+
+    .message-status > form > .field-status > table > tbody > tr > td > input,
+    .message-status > form > .field-status > table > tbody > tr > td > select {
+        text-align: center;
+        border-radius: 6px;
+        width: 70%;
+    }
+
+    .message-status > .title,
+    .message-logs > .title,
+    .message-status > form > .field-status > .field-status-row > p,
+    .message-status > form > .field-status > .field-status-header > span,
+    .message-status > form > .field-status > .field-row > fieldset > div > label {
+        font-size: 16px;
+        line-height: 24px;
+    }
+
+    .message-status > form > input[type="submit"] {
+        font-size: 18px;
+        line-height: 26px;
+    }
+
+    .messages > .messages-panel > .message-header {
+        line-height: 32px;
+    }
+
+    .messages > .messages-panel > .message {
+        padding-left: 30px;
+    }
+
+    .message-status > form > .field-status > .field-status-header > div > input,
+    .message-status > form > .field-status > .field-row > div > input,
+    .message-status > form > .field-status > .field-row > div > textarea,
+    .messages > .messages-panel > .message {
+        font-size: 14px;
+        line-height: 25px;
+    }
+
+    .message-status > form > .field-status > .field-status-header > div {
+        -webkit-box-orient: horizontal;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: row;
+        -ms-flex-direction: row;
+        flex-direction: row;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        width: 83%;
+        margin: 0 auto;
+    }
+
+    .message-status > form > .field-status > .field-status-header > div > select {
+        width: 200px;
+        max-width: 200px;
+        margin: 0 auto 0 20px;
+    }
+
+    .message-status > #semantic-form > .field-status {
+        border: 1px solid #BBB;
+        border-radius: 6px;
+    }
+
+    .message-status > #semantic-form > .field-status > .field-status-header {
+        border: none;
+        padding-bottom: 0;
+    }
+
+    .message-status > #semantic-form > .field-status > .field-status-header > p {
+        padding: 16px 0;
+    }
+
+}
+
+@media (min-width: 800px) {
+
+    .message-status > form > .field-status > .field-status-header > div {
+        width: 82%;
+    }
+
+    .message-status > form > .field-status > .field-row > div > select,
+    .message-status > form > .field-status > .field-row > fieldset,
+    .message-status > form > .field-status > .field-status-header > input {
+        width: 83%;
+    }
+
+}
+
+@media (min-width: 1024px) {
+
+    .message-status > form > .field-status > .field-status-header > div {
+        width: 81%;
+    }
+
+    .message-status > form > .field-status > .field-row > div > select,
+    .message-status > form > .field-status > .field-row > fieldset,
+    .message-status > form > .field-status > .field-status-header > input {
+        width: 82%;
+    }
+
+    .message-status {
+        margin: 60px auto 0;
+    }
+
+    .message-logs {
+        margin: 40px auto;
+    }
+
+    .message-waiting > i {
+        font-size: 100px;
+    }
+
+    .message-waiting > h3,
+    .message-status > h3 {
+        font-size: 18px;
+        line-height: 26px;
+    }
+
+    .message-status > h4 {
+        max-width: 768px;
+        font-size: 16px;
+        line-height: 24px;
+    }
+
+    .messages > .messages-panel > .message-header {
+        padding-left: 20px;
+    }
+
+    .messages > .messages-panel > .message {
+        padding-left: 40px;
+    }
+
+    .message-status > .explanation {
+        display: inline-block;
+    }
+
+    .message-status > .explanation-big {
+        display: none;
+    }
+
+}

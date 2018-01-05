@@ -94,7 +94,7 @@
 					<tbody>
 						{% for data in info_datasets_pending %}
 						<tr>
-							<td data-title="{{ headers.translations.profile_table_name }}"><a href="/datasets/{{ data['id'] }}">{{ data['name'] }}</a></td>
+							<td data-title="{{ headers.translations.profile_table_name }}"><a href="/resources/{{ data['id'] }}">{{ data['name'] }}</a></td>
 							{% if data['status'] == -1 %}
 							<td data-title="{{ headers.translations.profile_table_status }}">{{ headers.translations.profile_table_status_0 }}</td>
 							{% elif data['status'] == 0 %}
@@ -127,7 +127,7 @@
 					<tbody>
 						{% for data in info_datasets %}
 						<tr>
-							<td data-title="{{ headers.translations.profile_table_name }}"><a href="/datasets/{{ data['id'] }}">{{ data['name'] }}</a></td>
+							<td data-title="{{ headers.translations.profile_table_name }}"><a href="/resources/{{ data['id'] }}">{{ data['name'] }}</a></td>
 							<td data-title="{{ headers.translations.profile_table_downloads }}">{{ data['downloads'] }}</td>
 							<td data-title="{{ headers.translations.profile_table_date }}">{{ data['date'] }}</td>
 						</tr>
